@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WD Maintenance - Executive Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-white flex-shrink-0 hidden md:flex flex-col shadow-xl z-20">
+        <div class="p-6 flex items-center border-b border-slate-700">
+            <i class="fas fa-chart-line text-blue-400 text-2xl mr-3"></i>
+            <span class="font-bold text-lg tracking-wide">WD Manager</span>
+        </div>
+        <nav class="flex-1 p-4 space-y-2">
+            <a href="#" class="flex items-center px-4 py-3 bg-blue-600 text-white rounded-lg shadow-md transition transform hover:scale-105">
+                <i class="fas fa-home w-6"></i>
+                <span class="font-bold">ภาพรวม (Dashboard)</span>
+            </a>
+            <a href="#" onclick="alert('ฟีเจอร์ในอนาคต')" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-lg transition">
+                <i class="fas fa-file-alt w-6"></i>
+                <span>รายงาน (Reports)</span>
+            </a>
+            <a href="#" onclick="alert('ฟีเจอร์ในอนาคต')" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-lg transition">
+                <i class="fas fa-users w-6"></i>
+                <span>ประสิทธิภาพช่าง</span>
+            </a>
+        </nav>
+        <div class="p-4 border-t border-slate-700">
+            <button onclick="logout()" class="flex items-center w-full px-4 py-2 text-red-400 hover:bg-slate-800 rounded-lg transition">
+                <i class="fas fa-sign-out-alt w-6"></i>
+                <span>ออกจากระบบ</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        
+        <!-- Topbar -->
+        <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6 z-10">
+            <h2 class="text-xl font-bold text-gray-700">📊 สรุปผลการดำเนินงานซ่อมบำรุง</h2>
+            <div class="flex items-center gap-2">
+                <span id="connectionStatus" class="text-xs px-3 py-1 rounded-full bg-gray-200 text-gray-500 font-bold">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Scrollable Dashboard -->
+        <main class="flex-1 overflow-y-auto p-6 scroll-smooth">
+            
+            <!-- Login Overlay -->
+            <div id="loginOverlay" class="absolute inset-0 bg-gray-900 z-50 flex items-center justify-center">
+                <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md text-center">
+                    <div class="mb-6 inline-block p-4 rounded-full bg-blue-100 text-blue-600">
+                        <i class="fas fa-user-tie text-4xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">เข้าสู่ระบบผู้บริหาร</h2>
+                    <p class="text-gray-500 mb-6 text-sm">กรุณาระบุ URL และ Key เพื่อเข้าถึงข้อมูล</p>
+                    
+                    <input type="text" id="supaUrl" class="w-full border-gray-300 border rounded-lg px-4 py-3 mb-3 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Project URL">
+                    <input type="password" id="supaKey" class="w-full border-gray-300 border rounded-lg px-4 py-3 mb-6 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="API Key">
+                    
+                    <button onclick="connectAndLoad()" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800 transition transform hover:scale-105">
+                        เข้าใช้งาน Dashboard
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Body -->
+            <div id="dashboardBody" class="hidden space-y-6">
+                
+                <!-- Filter Bar -->
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-wrap gap-4 items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-blue-100 text-blue-700 p-2 rounded-lg"><i class="fas fa-filter"></i></div>
+                        <span class="font-bold text-gray-700">ตัวกรองข้อมูล:</span>
+                    </div>
+                    <div class="flex gap-3">
+                        <select id="filterYear" class="border-gray-300 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" onchange="applyFilter()">
+                            <!-- JS will populate years -->
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                        </select>
+                        <select id="filterMonth" class="border-gray-300 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" onchange="applyFilter()">
+                            <option value="all">ทั้งปี</option>
+                            <option value="0">มกราคม</option>
+                            <option value="1">กุมภาพันธ์</option>
+                            <option value="2">มีนาคม</option>
+                            <option value="3">เมษายน</option>
+                            <option value="4">พฤษภาคม</option>
+                            <option value="5">มิถุนายน</option>
+                            <option value="6">กรกฎาคม</option>
+                            <option value="7">สิงหาคม</option>
+                            <option value="8">กันยายน</option>
+                            <option value="9">ตุลาคม</option>
+                            <option value="10">พฤศจิกายน</option>
+                            <option value="11">ธันวาคม</option>
+                        </select>
+                        <button onclick="applyFilter()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 font-bold shadow-md">
+                            <i class="fas fa-search mr-1"></i> ค้นหา
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Overview Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 font-medium">งานซ่อมทั้งหมด</p>
+                            <h3 class="text-3xl font-bold text-gray-800 mt-1" id="kpiTotal">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 text-xl">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 font-medium">ปิดงานสำเร็จ</p>
+                            <h3 class="text-3xl font-bold text-green-600 mt-1" id="kpiClosed">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-green-600 text-xl">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 font-medium">กำลังดำเนินการ</p>
+                            <h3 class="text-3xl font-bold text-yellow-600 mt-1" id="kpiProgress">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-yellow-50 rounded-full flex items-center justify-center text-yellow-600 text-xl">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 font-medium">รออนุมัติ</p>
+                            <h3 class="text-3xl font-bold text-purple-600 mt-1" id="kpiPending">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center text-purple-600 text-xl">
+                            <i class="fas fa-user-clock"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    <!-- Chart 1: Machine Breakdown -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <h3 class="font-bold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-industry text-orange-500 mr-2"></i> เครื่องจักรที่เสียบ่อยที่สุด (Top 5)
+                        </h3>
+                        <div class="h-64 relative">
+                            <canvas id="machineChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Common Issues -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <h3 class="font-bold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-exclamation-circle text-red-500 mr-2"></i> อาการเสียยอดฮิต
+                        </h3>
+                        <div class="h-64 relative flex justify-center">
+                            <canvas id="issueChart"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Recent Activity Table -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                        <h3 class="font-bold text-gray-800"><i class="fas fa-list-alt mr-2 text-indigo-500"></i> รายการแจ้งซ่อมล่าสุด</h3>
+                        <span class="text-xs text-gray-400">แสดง 10 รายการล่าสุด</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50/50">
+                                <tr>
+                                    <th class="px-6 py-3">วันที่แจ้ง</th>
+                                    <th class="px-6 py-3">เครื่องจักร</th>
+                                    <th class="px-6 py-3">อาการ</th>
+                                    <th class="px-6 py-3">สถานะ</th>
+                                    <th class="px-6 py-3 text-right">ผู้แจ้ง</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentTableBody">
+                                <!-- Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let supabaseClient = null;
+        let allTickets = [];
+        let machineChartInstance = null;
+        let issueChartInstance = null;
+
+        // --- INIT ---
+        window.onload = () => {
+            // Auto fill current year
+            const yearSelect = document.getElementById('filterYear');
+            const currentYear = new Date().getFullYear();
+            yearSelect.value = currentYear;
+            
+            // Check Local Storage
+            const savedUrl = localStorage.getItem('cmms_url');
+            const savedKey = localStorage.getItem('cmms_key');
+            if(savedUrl && savedKey) {
+                document.getElementById('supaUrl').value = savedUrl;
+                document.getElementById('supaKey').value = savedKey;
+                connectAndLoad();
+            }
+        };
+
+        // --- CONNECT ---
+        async function connectAndLoad() {
+            const url = document.getElementById('supaUrl').value.trim();
+            const key = document.getElementById('supaKey').value.trim();
+            if(!url || !key) return alert("กรุณากรอกข้อมูลให้ครบ");
+
+            try {
+                const { createClient } = supabase;
+                supabaseClient = createClient(url, key);
+                
+                // Test Connection
+                await supabaseClient.from('assets').select('count', { count: 'exact', head: true });
+
+                // UI Update
+                document.getElementById('loginOverlay').classList.add('hidden');
+                document.getElementById('dashboardBody').classList.remove('hidden');
+                document.getElementById('connectionStatus').innerHTML = '<i class="fas fa-circle text-green-400 text-[8px] mr-1"></i> Online';
+                document.getElementById('connectionStatus').className = "text-xs px-3 py-1 rounded-full bg-green-100 text-green-700 font-bold border border-green-200";
+
+                // Save Login
+                localStorage.setItem('cmms_url', url);
+                localStorage.setItem('cmms_key', key);
+
+                // Fetch Data
+                await fetchAllData();
+
+            } catch(e) {
+                alert("เชื่อมต่อไม่สำเร็จ: " + e.message);
+            }
+        }
+
+        async function fetchAllData() {
+            try {
+                // Fetch ALL tickets (we will filter in JS for flexibility)
+                const { data, error } = await supabaseClient
+                    .from('tickets')
+                    .select(`
+                        *,
+                        assets (name),
+                        profiles (full_name)
+                    `)
+                    .order('incident_time', { ascending: false });
+
+                if(error) throw error;
+                allTickets = data;
+                
+                applyFilter(); // Initial render
+
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        // --- FILTER & LOGIC ---
+        function applyFilter() {
+            const year = parseInt(document.getElementById('filterYear').value);
+            const month = document.getElementById('filterMonth').value; // 'all' or '0'-'11'
+
+            const filtered = allTickets.filter(t => {
+                const date = new Date(t.incident_time);
+                const matchYear = date.getFullYear() === year;
+                const matchMonth = (month === 'all') ? true : (date.getMonth() === parseInt(month));
+                return matchYear && matchMonth;
+            });
+
+            updateUI(filtered);
+        }
+
+        function updateUI(data) {
+            updateKPI(data);
+            renderCharts(data);
+            renderTable(data);
+        }
+
+        // --- KPI CARDS ---
+        function updateKPI(data) {
+            document.getElementById('kpiTotal').innerText = data.length;
+            document.getElementById('kpiClosed').innerText = data.filter(t => t.status === 'CLOSED').length;
+            document.getElementById('kpiProgress').innerText = data.filter(t => t.status === 'IN_PROGRESS' || t.status === 'PENDING_INSPECTION').length;
+            document.getElementById('kpiPending').innerText = data.filter(t => t.status === 'PENDING_APPROVAL').length;
+        }
+
+        // --- CHARTS (CHART.JS) ---
+        function renderCharts(data) {
+            // 1. Machine Freq Logic
+            const machineCounts = {};
+            data.forEach(t => {
+                const name = t.assets?.name || 'Unknown';
+                machineCounts[name] = (machineCounts[name] || 0) + 1;
+            });
+            // Sort top 5
+            const sortedMachines = Object.entries(machineCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+            // 2. Issue Logic
+            const issueCounts = {};
+            data.forEach(t => {
+                const issue = t.issue_text;
+                issueCounts[issue] = (issueCounts[issue] || 0) + 1;
+            });
+            const sortedIssues = Object.entries(issueCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+            // --- RENDER MACHINE CHART ---
+            const ctxMachine = document.getElementById('machineChart').getContext('2d');
+            if(machineChartInstance) machineChartInstance.destroy();
+            
+            machineChartInstance = new Chart(ctxMachine, {
+                type: 'bar',
+                data: {
+                    labels: sortedMachines.map(x => x[0]),
+                    datasets: [{
+                        label: 'จำนวนครั้งที่เสีย',
+                        data: sortedMachines.map(x => x[1]),
+                        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision:0 } } }
+                }
+            });
+
+            // --- RENDER ISSUE CHART ---
+            const ctxIssue = document.getElementById('issueChart').getContext('2d');
+            if(issueChartInstance) issueChartInstance.destroy();
+
+            issueChartInstance = new Chart(ctxIssue, {
+                type: 'doughnut',
+                data: {
+                    labels: sortedIssues.map(x => x[0]),
+                    datasets: [{
+                        data: sortedIssues.map(x => x[1]),
+                        backgroundColor: [
+                            '#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#6366F1'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { position: 'right' } 
+                    }
+                }
+            });
+        }
+
+        // --- TABLE ---
+        function renderTable(data) {
+            const tbody = document.getElementById('recentTableBody');
+            tbody.innerHTML = '';
+            
+            // Show only top 10 recent
+            data.slice(0, 10).forEach(t => {
+                let statusClass = '';
+                if(t.status === 'CLOSED') statusClass = 'bg-green-100 text-green-700';
+                else if(t.status === 'OPEN') statusClass = 'bg-red-100 text-red-700';
+                else if(t.status === 'PENDING_APPROVAL') statusClass = 'bg-purple-100 text-purple-700';
+                else statusClass = 'bg-yellow-100 text-yellow-700';
+
+                const row = `
+                    <tr class="bg-white border-b hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 text-gray-500">${dayjs(t.incident_time).format('DD/MM/YY HH:mm')}</td>
+                        <td class="px-6 py-4 font-bold text-gray-800">${t.assets?.name || '-'}</td>
+                        <td class="px-6 py-4 text-gray-700">${t.issue_text}</td>
+                        <td class="px-6 py-4">
+                            <span class="${statusClass} px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">${t.status.replace('_', ' ')}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right text-gray-500">${t.profiles?.full_name || '-'}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function logout() {
+            localStorage.clear();
+            location.reload();
+        }
+    </script>
+</body>
+</html>
