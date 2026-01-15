@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - WD Maintenance</title>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .nav-item.active { background-color: rgba(255, 255, 255, 0.1); border-left: 4px solid #10b981; color: white; }
+        .nav-item { border-left: 4px solid transparent; }
+        
+        @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .animate-zoom-in { animation: zoomIn 0.2s ease-out; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #qrModal, #qrModal * { visibility: visible; }
+            #qrModal { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: white; display: flex; align-items: center; justify-content: center; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-gray-300 flex-shrink-0 hidden md:flex flex-col shadow-xl z-20 no-print">
+        <div class="p-6 flex items-center border-b border-slate-700">
+            <i class="fas fa-user-shield text-green-500 text-2xl mr-3"></i>
+            <h1 class="text-xl font-bold tracking-wider text-white">ADMIN</h1>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-4 space-y-1">
+            <!-- Fixed Link -->
+            <a href="javascript:safeRedirect('manager_dashboard_v8.html')" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition">
+                <i class="fas fa-chart-pie w-6"></i> <span>Executive Dashboard</span>
+            </a>
+            <a href="#" id="nav-users" class="nav-item active flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition" onclick="switchTab('USERS')">
+                <i class="fas fa-users w-6"></i> <span>จัดการผู้ใช้งาน (Users)</span>
+            </a>
+            <a href="#" id="nav-assets" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition" onclick="switchTab('ASSETS')">
+                <i class="fas fa-industry w-6"></i> <span>จัดการเครื่องจักร (Assets)</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-700">
+            <div class="text-xs text-gray-500 text-center mb-2">Logged in as</div>
+            <div class="font-bold text-white text-center truncate" id="userName">-</div>
+            <button onclick="logout()" class="w-full mt-3 bg-red-600 hover:bg-red-700 text-white py-2 rounded text-sm transition shadow-lg">
+                ออกจากระบบ
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden relative">
+        <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6 z-10 shrink-0 no-print">
+            <div class="flex items-center gap-4">
+                <button class="md:hidden text-gray-600"><i class="fas fa-bars text-xl"></i></button>
+                <h2 class="text-xl font-semibold text-gray-800" id="pageTitle">จัดการผู้ใช้งาน</h2>
+            </div>
+            <div>
+                <button onclick="openModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow flex items-center gap-2 transition font-bold text-sm">
+                    <i class="fas fa-plus"></i> <span id="addBtnText">เพิ่มผู้ใช้ใหม่</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-auto p-6 bg-gray-50 relative no-print" id="contentArea">
+            <div class="flex justify-center items-center h-full text-gray-400">
+                <i class="fas fa-spinner fa-spin text-3xl mr-3"></i> กำลังโหลดข้อมูล...
+            </div>
+        </div>
+    </main>
+
+    <!-- Generic Modal -->
+    <div id="genericModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center backdrop-blur-sm transition-opacity no-print">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform scale-100 animate-zoom-in">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-edit text-blue-500"></i> <span id="modalTitle">Title</span>
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <form id="modalForm" onsubmit="handleFormSubmit(event)">
+                <input type="hidden" id="editId">
+                <div id="modalFields" class="space-y-4"></div>
+                <div class="mt-6 flex gap-3 pt-4 border-t">
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-bold transition">ยกเลิก</button>
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold shadow-lg shadow-blue-200 transition">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div id="qrModal" class="fixed inset-0 bg-black/80 hidden z-[60] flex items-center justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-[320px] p-8 text-center transform scale-100 animate-zoom-in relative">
+            <button onclick="document.getElementById('qrModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl no-print">&times;</button>
+            <h3 class="text-lg font-bold text-gray-800 mb-1">QR Code เครื่องจักร</h3>
+            <p class="text-sm text-gray-500 mb-4">สแกนเพื่อดูประวัติหรือแจ้งซ่อม</p>
+            <div class="border-2 border-gray-100 rounded-xl p-4 inline-block bg-white shadow-inner mb-4">
+                <div id="qrcode"></div>
+            </div>
+            <div class="text-left bg-gray-50 p-3 rounded-lg border border-gray-100 mb-6">
+                <p class="text-xs text-gray-500">ชื่อเครื่องจักร:</p>
+                <p class="font-bold text-gray-800 text-sm truncate" id="qrAssetName">-</p>
+                <p class="text-xs text-gray-500 mt-2">รหัส (ID):</p>
+                <p class="font-mono text-xs text-blue-600 truncate" id="qrAssetId">-</p>
+            </div>
+            <button onclick="window.print()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold shadow-lg transition flex items-center justify-center gap-2 no-print">
+                <i class="fas fa-print"></i> พิมพ์ QR Code
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://nmezqexpvhdozpdzxxek.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tZXpxZXhwdmhkb3pwZHp4eGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5OTAwNTEsImV4cCI6MjA4MjU2NjA1MX0.N1OjCh1sp0xx0DGFjR6yX2hix5oIX7suzrnvQk8qPWU';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentTab = 'USERS';
+        let dataList = [];
+
+        // --- SAFE REDIRECT (Improved) ---
+        function safeRedirect(url) {
+            // Check if environment is blob/preview
+            if (window.location.protocol === 'blob:' || window.location.href.includes('usercontent.goog')) {
+                console.warn('Redirect prevented in preview mode');
+                document.body.innerHTML = `
+                    <div class="fixed inset-0 bg-slate-900/90 flex flex-col items-center justify-center z-50 p-6 text-center">
+                        <div class="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
+                            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h2 class="text-xl font-bold text-slate-800 mb-2">ยืนยันการเปลี่ยนหน้า</h2>
+                            <p class="text-slate-500 text-sm mb-6">ระบบต้องการนำคุณไปยังหน้า <strong>${url}</strong></p>
+                            <a href="${url}" class="block w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow hover:bg-blue-700 transition">
+                                ไปต่อ <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>`;
+                return;
+            }
+            try {
+                window.location.href = url;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const session = localStorage.getItem('cmms_user_session');
+            if(!session) { safeRedirect('index.html'); return; }
+            const user = JSON.parse(session);
+            if(user.role !== 'admin') { 
+                alert('Access Denied: สำหรับผู้ดูแลระบบเท่านั้น (Admin Only)'); 
+                safeRedirect('manager_dashboard_v8.html'); // Changed to v8
+                return; 
+            }
+            
+            document.getElementById('userName').innerText = user.full_name || user.username;
+            fetchData();
+        });
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if(tab === 'USERS') document.getElementById('nav-users').classList.add('active');
+            if(tab === 'ASSETS') document.getElementById('nav-assets').classList.add('active');
+            
+            if (tab === 'USERS') {
+                document.getElementById('pageTitle').innerText = 'จัดการผู้ใช้งาน (User Management)';
+                document.getElementById('addBtnText').innerText = 'เพิ่มผู้ใช้ใหม่';
+            } else {
+                document.getElementById('pageTitle').innerText = 'จัดการเครื่องจักร (Asset Management)';
+                document.getElementById('addBtnText').innerText = 'เพิ่มเครื่องจักรใหม่';
+            }
+            fetchData();
+        }
+
+        async function fetchData() {
+            const container = document.getElementById('contentArea');
+            container.innerHTML = '<div class="flex justify-center items-center h-64 text-gray-400"><i class="fas fa-spinner fa-spin text-3xl mr-3"></i> กำลังโหลดข้อมูล...</div>';
+
+            try {
+                let query;
+                if (currentTab === 'USERS') {
+                    query = supabaseClient.from('profiles').select('*').order('username', { ascending: true });
+                } else {
+                    query = supabaseClient.from('assets').select('*').order('name', { ascending: true });
+                }
+
+                let { data, error } = await query;
+                
+                if (error) {
+                    if (error.code === '42P01') throw new Error(`ไม่พบตาราง "${currentTab === 'USERS' ? 'profiles' : 'assets'}" ในฐานข้อมูล`);
+                    throw error;
+                }
+                dataList = data || [];
+                renderTable();
+            } catch (e) {
+                container.innerHTML = `<div class="text-center text-red-500 py-10"><i class="fas fa-exclamation-circle text-4xl mb-2"></i><br>เกิดข้อผิดพลาด: ${e.message}</div>`;
+            }
+        }
+
+        function renderTable() {
+            const container = document.getElementById('contentArea');
+            if (dataList.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 py-10 bg-white rounded-xl shadow-sm border border-gray-100"><i class="fas fa-folder-open text-4xl mb-2 opacity-50"></i><br>ไม่พบข้อมูล</div>`;
+                return;
+            }
+
+            let tableHeader = '';
+            let tableRows = '';
+
+            if (currentTab === 'USERS') {
+                tableHeader = `
+                    <th class="px-6 py-4">Username</th>
+                    <th class="px-6 py-4">ชื่อ-นามสกุล</th>
+                    <th class="px-6 py-4 text-center">สิทธิ์ (Role)</th>
+                    <th class="px-6 py-4 text-center">แผนก</th>
+                    <th class="px-6 py-4 text-center">จัดการ</th>`;
+                
+                dataList.forEach(u => {
+                    let roleBadge = '';
+                    switch(u.role) {
+                        case 'admin': roleBadge = '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">ADMIN</span>'; break;
+                        case 'manager': roleBadge = '<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold">MANAGER</span>'; break;
+                        case 'technician': roleBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">TECH</span>'; break;
+                        default: roleBadge = '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">USER</span>';
+                    }
+
+                    tableRows += `
+                        <tr class="hover:bg-blue-50 border-b last:border-0 transition bg-white">
+                            <td class="px-6 py-4 font-bold text-gray-700">${u.username || '-'}</td>
+                            <td class="px-6 py-4 text-gray-600">${u.full_name || '-'}</td>
+                            <td class="px-6 py-4 text-center">${roleBadge}</td>
+                            <td class="px-6 py-4 text-center text-gray-500 text-sm">${u.department || '-'}</td>
+                            <td class="px-6 py-4 text-center">
+                                <button onclick="openModal('${u.id}')" class="text-blue-500 hover:text-blue-700 mx-1" title="แก้ไข"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteItem('${u.id}')" class="text-red-400 hover:text-red-600 mx-1" title="ลบ"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>`;
+                });
+            } else {
+                tableHeader = `
+                    <th class="px-6 py-4">รหัสทรัพย์สิน</th>
+                    <th class="px-6 py-4">ชื่อเครื่องจักร</th>
+                    <th class="px-6 py-4">สถานที่ตั้ง</th>
+                    <th class="px-6 py-4 text-center">สถานะ</th>
+                    <th class="px-6 py-4 text-center w-32">QR Code</th>
+                    <th class="px-6 py-4 text-center">จัดการ</th>`;
+                
+                dataList.forEach(a => {
+                    const statusClass = a.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+                    tableRows += `
+                        <tr class="hover:bg-blue-50 border-b last:border-0 transition bg-white">
+                            <td class="px-6 py-4 font-mono text-gray-500 text-sm">${a.asset_code || '-'}</td>
+                            <td class="px-6 py-4 font-bold text-gray-700">${a.name}</td>
+                            <td class="px-6 py-4 text-gray-600">${a.location || '-'}</td>
+                            <td class="px-6 py-4 text-center"><span class="${statusClass} px-2 py-1 rounded text-xs font-bold uppercase">${a.status || 'active'}</span></td>
+                            <td class="px-6 py-4 text-center">
+                                <button onclick="openQRModal('${a.id}')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded text-xs font-bold border border-gray-300 flex items-center justify-center gap-1 mx-auto transition">
+                                    <i class="fas fa-qrcode"></i> QR
+                                </button>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <button onclick="openModal('${a.id}')" class="text-blue-500 hover:text-blue-700 mx-1"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteItem('${a.id}')" class="text-red-400 hover:text-red-600 mx-1"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>`;
+                });
+            }
+
+            container.innerHTML = `
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden fade-in">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50 text-slate-600 uppercase text-xs font-semibold tracking-wider border-b border-slate-200"><tr>${tableHeader}</tr></thead>
+                            <tbody class="divide-y divide-gray-100 text-sm text-gray-700">${tableRows}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+        }
+
+        function openModal(id = null) {
+            const modalTitle = document.getElementById('modalTitle');
+            const fieldsContainer = document.getElementById('modalFields');
+            document.getElementById('editId').value = id || '';
+            document.getElementById('genericModal').classList.remove('hidden');
+
+            let data = null;
+            if (id) data = dataList.find(i => i.id === id);
+
+            if (currentTab === 'USERS') {
+                modalTitle.innerText = id ? 'แก้ไขข้อมูลผู้ใช้' : 'เพิ่มผู้ใช้ใหม่';
+                fieldsContainer.innerHTML = `
+                    <div><label class="block text-sm font-bold text-gray-700 mb-1">Username <span class="text-red-500">*</span></label><input type="text" name="username" value="${data?.username || ''}" class="w-full border rounded-lg px-3 py-2 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" required ${id ? 'readonly' : ''}></div>
+                    <div><label class="block text-sm font-bold text-gray-700 mb-1">Password ${id ? '(เว้นว่างถ้าไม่เปลี่ยน)' : '<span class="text-red-500">*</span>'}</label><input type="text" name="password" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="ตั้งรหัสผ่าน..." ${!id ? 'required' : ''}></div>
+                    <div><label class="block text-sm font-bold text-gray-700 mb-1">ชื่อ-นามสกุล</label><input type="text" name="full_name" value="${data?.full_name || ''}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-bold text-gray-700 mb-1">แผนก</label><input type="text" name="department" value="${data?.department || ''}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                        <div><label class="block text-sm font-bold text-gray-700 mb-1">สิทธิ์การใช้งาน (Role)</label>
+                            <select name="role" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                <option value="user" ${data?.role === 'user' ? 'selected' : ''}>User (แจ้งซ่อม)</option>
+                                <option value="technician" ${data?.role === 'technician' ? 'selected' : ''}>Technician (ช่าง)</option>
+                                <option value="manager" ${data?.role === 'manager' ? 'selected' : ''}>Manager (หัวหน้า)</option>
+                                <option value="admin" ${data?.role === 'admin' ? 'selected' : ''}>Admin (ดูแลระบบ)</option>
+                            </select>
+                        </div>
+                    </div>`;
+            } else {
+                modalTitle.innerText = id ? 'แก้ไขข้อมูลเครื่องจักร' : 'เพิ่มเครื่องจักรใหม่';
+                fieldsContainer.innerHTML = `
+                    <div><label class="block text-sm font-bold text-gray-700 mb-1">รหัสทรัพย์สิน (Code)</label><input type="text" name="asset_code" value="${data?.asset_code || ''}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="เช่น MC-001"></div>
+                    <div><label class="block text-sm font-bold text-gray-700 mb-1">ชื่อเครื่องจักร <span class="text-red-500">*</span></label><input type="text" name="name" value="${data?.name || ''}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" required></div>
+                    <div><label class="block text-sm font-bold text-gray-700 mb-1">สถานที่ตั้ง (Location)</label><input type="text" name="location" value="${data?.location || ''}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="เช่น Line A, อาคาร 2"></div>
+                    <div><label class="block text-sm font-bold text-gray-700 mb-1">สถานะ</label><select name="status" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white"><option value="active" ${data?.status === 'active' ? 'selected' : ''}>Active (ใช้งานปกติ)</option><option value="inactive" ${data?.status === 'inactive' ? 'selected' : ''}>Inactive (เลิกใช้งาน/ซ่อมยาว)</option></select></div>`;
+            }
+        }
+
+        function closeModal() { document.getElementById('genericModal').classList.add('hidden'); }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const id = document.getElementById('editId').value;
+            const data = Object.fromEntries(formData.entries());
+            const table = currentTab === 'USERS' ? 'profiles' : 'assets';
+            if(currentTab === 'USERS' && id && !data.password) delete data.password;
+
+            try {
+                if (id) await supabaseClient.from(table).update(data).eq('id', id);
+                else await supabaseClient.from(table).insert([data]);
+                alert('บันทึกข้อมูลเรียบร้อย ✅'); closeModal(); fetchData();
+            } catch (err) { alert('Error: ' + err.message); }
+        }
+
+        async function deleteItem(id) {
+            if(!confirm('ยืนยันลบข้อมูลนี้? การกระทำนี้ไม่สามารถย้อนกลับได้')) return;
+            const table = currentTab === 'USERS' ? 'profiles' : 'assets';
+            try {
+                const { error } = await supabaseClient.from(table).delete().eq('id', id);
+                if(error) throw error;
+                fetchData();
+            } catch (err) { alert('ลบไม่สำเร็จ: ' + err.message); }
+        }
+
+        function openQRModal(assetId) {
+            const asset = dataList.find(a => a.id === assetId);
+            if (!asset) return;
+            document.getElementById('qrModal').classList.remove('hidden');
+            document.getElementById('qrAssetName').innerText = asset.name;
+            document.getElementById('qrAssetId').innerText = asset.id;
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = ''; 
+            new QRCode(qrContainer, { text: asset.id, width: 128, height: 128, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
+        }
+
+        function logout() { localStorage.removeItem('cmms_user_session'); safeRedirect('index.html'); }
+    </script>
+</body>
+</html>

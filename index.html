@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ - WD Maintenance System</title>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Fonts -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; }
+        
+        /* Background & Glassmorphism */
+        .bg-image {
+            background-image: url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=2070');
+            background-size: cover;
+            background-position: center;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+        
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        
+        /* Input Focus Effects */
+        .input-group:focus-within label { color: #f97316; }
+        .input-group:focus-within i { color: #f97316; }
+        .input-group input:focus { border-color: #f97316; box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1); }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex items-center justify-center bg-image relative overflow-hidden">
+    
+    <!-- Overlay -->
+    <div class="absolute inset-0 bg-gradient-to-br from-slate-900/80 to-slate-800/60 z-0"></div>
+
+    <!-- Login Container -->
+    <div class="glass-panel w-full max-w-md p-8 rounded-3xl z-10 mx-4 shadow-2xl animate-fade-in relative overflow-hidden">
+        
+        <!-- Decorative Circle -->
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-orange-400 rounded-full blur-3xl opacity-20"></div>
+        <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-400 rounded-full blur-3xl opacity-20"></div>
+
+        <!-- Header -->
+        <div class="text-center mb-6 relative">
+            <div class="w-20 h-20 bg-white rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-4 transform rotate-3 hover:rotate-0 transition duration-300">
+                <i class="fas fa-tools text-4xl text-orange-500"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 tracking-wide">WD Maintenance</h1>
+            <p class="text-sm text-gray-500 mt-1">ระบบแจ้งซ่อมและบริหารจัดการงานบำรุงรักษา</p>
+        </div>
+
+        <!-- DEMO BUTTONS (For Testing) -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-6 text-center animate-fade-in delay-100">
+            <p class="text-xs font-bold text-blue-600 mb-2 uppercase tracking-wider">--- Demo Quick Login ---</p>
+            <div class="grid grid-cols-4 gap-2">
+                <button onclick="fillLogin('user', '1234')" class="bg-white border border-blue-100 hover:bg-blue-100 text-blue-600 rounded-lg py-1.5 text-xs font-bold transition shadow-sm">User</button>
+                <button onclick="fillLogin('technician', '1234')" class="bg-white border border-orange-100 hover:bg-orange-100 text-orange-600 rounded-lg py-1.5 text-xs font-bold transition shadow-sm">Tech</button>
+                <button onclick="fillLogin('manager', '1234')" class="bg-white border border-purple-100 hover:bg-purple-100 text-purple-600 rounded-lg py-1.5 text-xs font-bold transition shadow-sm">Mgr</button>
+                <button onclick="fillLogin('admin', '1234')" class="bg-white border border-green-100 hover:bg-green-100 text-green-600 rounded-lg py-1.5 text-xs font-bold transition shadow-sm">Admin</button>
+            </div>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="space-y-5" onsubmit="handleLogin(event)">
+            
+            <!-- Username -->
+            <div class="input-group animate-fade-in delay-100 opacity-0">
+                <label class="block text-xs font-bold text-gray-600 mb-1 ml-1 uppercase tracking-wider transition-colors">Username</label>
+                <div class="relative">
+                    <i class="fas fa-user absolute left-4 top-3.5 text-gray-400 transition-colors"></i>
+                    <input type="text" id="username" class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-300 bg-white/50 focus:bg-white outline-none transition duration-200 text-gray-700 font-medium" placeholder="ชื่อผู้ใช้งาน" required>
+                </div>
+            </div>
+
+            <!-- Password -->
+            <div class="input-group animate-fade-in delay-200 opacity-0">
+                <label class="block text-xs font-bold text-gray-600 mb-1 ml-1 uppercase tracking-wider transition-colors">Password</label>
+                <div class="relative">
+                    <i class="fas fa-lock absolute left-4 top-3.5 text-gray-400 transition-colors"></i>
+                    <input type="password" id="password" class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-300 bg-white/50 focus:bg-white outline-none transition duration-200 text-gray-700 font-medium" placeholder="รหัสผ่าน" required>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="btnLogin" class="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-orange-200 transform hover:-translate-y-0.5 transition duration-200 flex items-center justify-center gap-2 mt-2 animate-fade-in delay-200 opacity-0 group">
+                <span>เข้าสู่ระบบ</span>
+                <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+            </button>
+
+        </form>
+
+        <!-- Loading Overlay (Hidden by default) -->
+        <div id="loadingOverlay" class="absolute inset-0 bg-white/90 z-20 hidden flex flex-col items-center justify-center">
+            <div class="w-12 h-12 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mb-3"></div>
+            <p class="text-sm font-bold text-gray-600 animate-pulse">กำลังตรวจสอบข้อมูล...</p>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="absolute bottom-4 text-center w-full z-10">
+        <p class="text-[10px] text-white/50 font-light">© 2026 WD Manufacturing Co., Ltd. All rights reserved.</p>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://nmezqexpvhdozpdzxxek.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tZXpxZXhwdmhkb3pwZHp4eGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5OTAwNTEsImV4cCI6MjA4MjU2NjA1MX0.N1OjCh1sp0xx0DGFjR6yX2hix5oIX7suzrnvQk8qPWU';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Demo Helper
+        function fillLogin(u, p) {
+            document.getElementById('username').value = u;
+            document.getElementById('password').value = p;
+            // Auto click login for convenience
+            document.getElementById('btnLogin').click();
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const userIn = document.getElementById('username').value.trim();
+            const passIn = document.getElementById('password').value.trim();
+            const btn = document.getElementById('btnLogin');
+            const loader = document.getElementById('loadingOverlay');
+
+            // UI Feedback
+            loader.classList.remove('hidden');
+            
+            try {
+                // 1. Check User in 'profiles' table
+                const { data: user, error } = await supabaseClient
+                    .from('profiles')
+                    .select('*')
+                    .eq('username', userIn)
+                    .single();
+
+                if (error || !user) {
+                    throw new Error('ไม่พบชื่อผู้ใช้งานนี้ในระบบ');
+                }
+
+                // 2. Simple Password Check (In production, use hashing!)
+                // Note: For this demo app, we compare plain text. 
+                // Real apps should use supabase.auth.signInWithPassword()
+                if (user.password !== passIn) {
+                    throw new Error('รหัสผ่านไม่ถูกต้อง');
+                }
+
+                // 3. Login Success
+                localStorage.setItem('cmms_user_session', JSON.stringify(user));
+                
+                // Redirect based on Role (แก้ไขชื่อไฟล์ให้ตรงกับที่คุณมี)
+                setTimeout(() => {
+                    switch(user.role) {
+                        case 'admin': 
+                            window.location.href = 'admin_dashboard.html'; // ล่าสุด v3
+                            break;
+                        case 'manager': 
+                            window.location.href = 'manager_dashboard_v8.html'; // ล่าสุด v8
+                            break;
+                        case 'technician': 
+                            window.location.href = 'technician_dashboard_v2.html'; // ล่าสุด v2
+                            break;
+                        default: 
+                            // สำหรับ User ทั่วไป หรือ Role อื่นๆ
+                            window.location.href = 'repair_app_connected.html'; 
+                    }
+                }, 800); // Small delay for UX
+
+            } catch (err) {
+                loader.classList.add('hidden');
+                // Shake Animation
+                const panel = document.querySelector('.glass-panel');
+                panel.classList.add('animate-bounce');
+                setTimeout(() => panel.classList.remove('animate-bounce'), 500);
+                
+                alert("Login Failed: " + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

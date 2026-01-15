@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Dashboard - WD Maintenance</title>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/th.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script> dayjs.locale('th'); </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Modal Animation */
+        @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .animate-zoom-in { animation: zoomIn 0.2s ease-out; }
+
+        /* Print Styles - Refined for A4 */
+        @media print {
+            @page { 
+                size: A4; 
+                margin: 0; 
+            }
+            
+            body * { visibility: hidden; }
+            
+            #printModal {
+                visibility: visible !important;
+                position: fixed !important;
+                left: 0; top: 0; right: 0; bottom: 0;
+                background: white !important;
+                z-index: 99999;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+                overflow: visible !important;
+            }
+
+            #printArea, #printArea * { visibility: visible; }
+            #printArea {
+                position: absolute;
+                left: 0; top: 0;
+                width: 210mm;
+                min-height: 296mm;
+                margin: 0 auto;
+                padding: 15mm 15mm 10mm 15mm;
+                background: white;
+                font-size: 10pt;
+                line-height: 1.3;
+                color: black;
+                box-sizing: border-box;
+            }
+
+            .no-print, .close-btn, .print-btn-group, ::-webkit-scrollbar { display: none !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+
+        /* Screen Preview Styles */
+        #printArea {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm;
+            background: white;
+            margin: 0 auto;
+            box-shadow: 0 0 15px rgba(0,0,0,0.15);
+            font-size: 10pt;
+            color: #333;
+            position: relative;
+        }
+
+        /* Document Design Class */
+        .doc-border { border: 1px solid #000; }
+        .doc-row { display: flex; border-bottom: 1px solid #ccc; }
+        .doc-row:last-child { border-bottom: none; }
+        .doc-col-label { width: 140px; background-color: #f9fafb; font-weight: bold; padding: 6px 8px; border-right: 1px solid #ccc; display: flex; align-items: center; }
+        .doc-col-value { flex: 1; padding: 6px 8px; display: flex; align-items: center; }
+        
+        .doc-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt; }
+        .doc-table th { background-color: #e5e7eb; border: 1px solid #9ca3af; padding: 6px; text-align: center; font-weight: bold; }
+        .doc-table td { border: 1px solid #d1d5db; padding: 6px; }
+        
+        .doc-box { border: 1px solid #9ca3af; border-radius: 4px; padding: 10px; margin-bottom: 15px; }
+        .doc-title { font-size: 11pt; font-weight: bold; border-bottom: 2px solid #374151; padding-bottom: 4px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-end; }
+    </style>
+</head>
+<body class="bg-gray-100 flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-white flex-shrink-0 hidden md:flex flex-col shadow-xl z-20 no-print">
+        <div class="p-6 flex items-center border-b border-slate-700">
+            <i class="fas fa-chart-pie text-blue-400 text-2xl mr-3"></i>
+            <h1 class="text-xl font-bold tracking-wider">EXECUTIVE</h1>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-4">
+            <a href="#" class="flex items-center px-6 py-3 bg-white/10 border-l-4 border-blue-500 text-white mb-1">
+                <i class="fas fa-columns w-6"></i> <span>ภาพรวม (Overview)</span>
+            </a>
+            <a href="inventory_management.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-slate-800 hover:text-white transition mb-1">
+                <i class="fas fa-boxes w-6"></i> <span>คลังอะไหล่ (Stock)</span>
+            </a>
+            <a href="javascript:safeRedirect('admin_management.html')" class="flex items-center px-6 py-3 text-gray-400 hover:bg-slate-800 hover:text-white transition mb-1">
+                <i class="fas fa-cogs w-6"></i> <span>ตั้งค่าระบบ (Admin)</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-700">
+            <button onclick="logout()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded shadow transition flex items-center justify-center gap-2">
+                <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden relative">
+        <!-- Topbar -->
+        <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6 z-10 no-print">
+            <div class="flex items-center gap-4">
+                <button class="md:hidden text-gray-600"><i class="fas fa-bars text-xl"></i></button>
+                <h2 class="text-xl font-semibold text-gray-800">Dashboard ภาพรวมการซ่อมบำรุง</h2>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="text-right hidden sm:block">
+                    <p class="text-sm font-bold text-gray-700" id="userName">Loading...</p>
+                    <p class="text-xs text-gray-500" id="userRole">...</p>
+                </div>
+                <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border-2 border-blue-200">
+                    M
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <div class="flex-1 overflow-auto p-6 bg-gray-50 no-print">
+            
+            <!-- 1. Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 fade-in">
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center">
+                    <div class="p-4 rounded-lg bg-blue-50 text-blue-600 mr-4"><i class="fas fa-clipboard-list text-2xl"></i></div>
+                    <div><p class="text-gray-500 text-sm">งานทั้งหมด</p><h3 class="text-2xl font-bold text-gray-800" id="statTotal">-</h3></div>
+                </div>
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center">
+                    <div class="p-4 rounded-lg bg-red-50 text-red-600 mr-4"><i class="fas fa-tools text-2xl"></i></div>
+                    <div><p class="text-gray-500 text-sm">กำลังซ่อม</p><h3 class="text-2xl font-bold text-gray-800" id="statWIP">-</h3></div>
+                </div>
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center">
+                    <div class="p-4 rounded-lg bg-green-50 text-green-600 mr-4"><i class="fas fa-check-circle text-2xl"></i></div>
+                    <div><p class="text-gray-500 text-sm">เสร็จสิ้น</p><h3 class="text-2xl font-bold text-gray-800" id="statDone">-</h3></div>
+                </div>
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center cursor-pointer hover:bg-purple-50 transition border-l-4 border-l-purple-500" onclick="scrollToVerify()">
+                    <div class="p-4 rounded-lg bg-purple-50 text-purple-600 mr-4"><i class="fas fa-stopwatch text-2xl"></i></div>
+                    <div><p class="text-gray-500 text-sm font-bold text-purple-700">รอตรวจงาน</p><h3 class="text-2xl font-bold text-gray-800" id="statVerify">-</h3></div>
+                </div>
+            </div>
+
+            <!-- 2. Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 fade-in" style="animation-delay: 0.1s;">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-700 mb-4 flex items-center"><i class="fas fa-chart-pie mr-2 text-blue-500"></i> สัดส่วนอาการเสีย</h3>
+                    <div class="h-64 flex justify-center relative"><canvas id="issueChart"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-700 mb-4 flex items-center"><i class="fas fa-trophy mr-2 text-yellow-500"></i> 5 อันดับเครื่องจักรเสียบ่อย</h3>
+                    <div class="h-64 relative"><canvas id="assetChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- 3. Table Section -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden fade-in" id="ticketTableSection">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <h3 class="font-bold text-lg text-gray-800">รายการแจ้งซ่อม (Work Orders)</h3>
+                    <button onclick="fetchData()" class="text-blue-600 hover:text-blue-800 text-sm font-bold bg-white px-3 py-1 rounded border border-blue-200 shadow-sm transition"><i class="fas fa-sync-alt mr-1"></i> Refresh</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-white text-gray-600 uppercase text-xs font-semibold border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4">วันที่แจ้ง</th>
+                                <th class="px-6 py-4">เครื่องจักร</th>
+                                <th class="px-6 py-4">อาการเสีย</th>
+                                <th class="px-6 py-4 text-center">สถานะ</th>
+                                <th class="px-6 py-4">ผู้แจ้ง</th>
+                                <th class="px-6 py-4 text-right">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ticketTableBody" class="divide-y divide-gray-100 text-sm">
+                            <tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">กำลังโหลด...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Verify Modal -->
+    <div id="verifyModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center backdrop-blur-sm transition-opacity no-print">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-0 transform scale-100 animate-zoom-in overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="p-5 border-b bg-gray-50 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-tasks text-purple-600"></i> ตรวจสอบงานซ่อม</h3>
+                <button onclick="closeVerifyModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1">
+                <input type="hidden" id="verifyTicketId">
+                <div class="mb-4 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <div class="flex justify-between mb-1">
+                        <span class="font-bold text-blue-800 text-lg" id="verifyAssetName">-</span>
+                        <span class="text-xs bg-white px-2 py-1 rounded border border-blue-200 text-blue-600 font-mono" id="verifyDate">-</span>
+                    </div>
+                    <p class="text-sm text-gray-700"><span class="font-bold">อาการ:</span> <span id="verifyIssue">-</span></p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">รายละเอียดการซ่อม (โดยช่าง):</label>
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-gray-800 min-h-[60px]" id="verifyRepairDetails">-</div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">อะไหล่ที่ใช้:</label>
+                    <div id="verifyPartsList" class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm text-gray-600 min-h-[40px]">-</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">รูปภาพ/หลักฐาน หลังซ่อม:</label>
+                    <div class="grid grid-cols-3 gap-2" id="verifyMediaContainer">
+                        <div class="col-span-3 text-center py-4 text-gray-400 text-xs bg-gray-50 rounded border border-dashed">ไม่มีรูปภาพแนบมา</div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-5 border-t bg-gray-50 flex gap-3">
+                <button onclick="handleVerify('REJECT')" class="flex-1 bg-white border border-red-200 text-red-600 py-2.5 rounded-lg font-bold hover:bg-red-50 transition shadow-sm"><i class="fas fa-times-circle mr-1"></i> ส่งกลับแก้ไข</button>
+                <button onclick="handleVerify('APPROVE')" class="flex-1 bg-green-600 text-white py-2.5 rounded-lg font-bold hover:bg-green-700 transition shadow-lg shadow-green-200"><i class="fas fa-check-circle mr-1"></i> อนุมัติ / ปิดงาน</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Preview Modal -->
+    <div id="printModal" class="fixed inset-0 bg-black/80 hidden z-[60] flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-gray-200 rounded-lg shadow-2xl w-full max-w-5xl h-[95vh] flex flex-col relative">
+            
+            <button onclick="document.getElementById('printModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl z-50 no-print bg-white rounded-full w-10 h-10 shadow flex items-center justify-center">&times;</button>
+            
+            <div class="bg-white p-4 border-b flex justify-between items-center rounded-t-lg no-print">
+                <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-print text-blue-600"></i> ตัวอย่างใบงาน (A4 Preview)</h3>
+                <div class="flex gap-2 print-btn-group">
+                    <button onclick="document.getElementById('printModal').classList.add('hidden')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-bold">ยกเลิก</button>
+                    <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold shadow transition flex items-center gap-2"><i class="fas fa-print"></i> สั่งพิมพ์</button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-auto p-4 md:p-8 bg-gray-500 flex justify-center no-print-bg">
+                
+                <!-- PAPER START -->
+                <div id="printArea">
+                    
+                    <!-- Header -->
+                    <div class="flex justify-between items-center mb-6 pb-4 border-b-2 border-black">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 bg-gray-200 rounded flex items-center justify-center text-gray-400 font-bold text-xs border border-gray-400">LOGO</div>
+                            <div>
+                                <h1 class="text-xl font-bold text-black uppercase tracking-wide">บริษัท ไทยรุ่งกิจ ไวท์ดั๊ก จำกัด</h1>
+                                <p class="text-sm text-gray-600">Thairoongkij Whiteduck Co., Ltd.</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <h2 class="text-lg font-bold text-black border-2 border-black px-2 py-0.5 inline-block mb-1">ใบแจ้งซ่อม / ใบเบิกอะไหล่</h2>
+                            <p class="text-[10px] uppercase font-bold tracking-widest text-gray-500">Maintenance Work Order</p>
+                            <p class="text-xs mt-1">เลขที่: <span class="font-mono font-bold text-black text-sm" id="p_ticketId">WO-XXXX</span></p>
+                        </div>
+                    </div>
+
+                    <!-- 1. General Info -->
+                    <div class="doc-box">
+                        <div class="doc-title">
+                            <span>1. ข้อมูลการแจ้งซ่อม (Request Info)</span>
+                            <span class="text-xs font-normal text-gray-500">วันที่แจ้ง: <span id="p_date">-</span></span>
+                        </div>
+                        <div class="grid grid-cols-2 text-sm gap-y-1">
+                            <div class="doc-row">
+                                <div class="doc-col-label">ชื่อผู้แจ้ง</div>
+                                <div class="doc-col-value" id="p_requester">-</div>
+                            </div>
+                            <div class="doc-row">
+                                <div class="doc-col-label">แผนก/ส่วนงาน</div>
+                                <div class="doc-col-value" id="p_dept">ฝ่ายผลิต</div>
+                            </div>
+                            <div class="doc-row col-span-2">
+                                <div class="doc-col-label">ทรัพย์สิน/เครื่องจักร</div>
+                                <div class="doc-col-value font-bold" id="p_asset">-</div>
+                            </div>
+                            <div class="doc-row col-span-2" style="border-bottom: none;">
+                                <div class="doc-col-label">อาการเสีย/ปัญหา</div>
+                                <div class="doc-col-value text-red-700" id="p_issue">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Repair Info -->
+                    <div class="doc-box">
+                        <div class="doc-title">
+                            <span>2. การดำเนินการซ่อม (Action Taken)</span>
+                        </div>
+                        <div class="text-sm">
+                            <div class="doc-row">
+                                <div class="doc-col-label">ช่างผู้ปฏิบัติงาน</div>
+                                <div class="doc-col-value" id="p_technician">-</div>
+                            </div>
+                            <div class="doc-row">
+                                <div class="doc-col-label">ระยะเวลา</div>
+                                <div class="doc-col-value">
+                                    เริ่ม: <span id="p_startDate" class="mr-4">-</span> 
+                                    เสร็จ: <span id="p_endDate">-</span>
+                                </div>
+                            </div>
+                            <div class="p-2 border-t border-gray-200">
+                                <span class="font-bold text-gray-700 block mb-1">รายละเอียดการแก้ไข:</span>
+                                <div id="p_repairDetail" class="pl-2 text-gray-800 min-h-[40px]">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Spare Parts -->
+                    <div class="doc-box">
+                        <div class="doc-title">
+                            <span>3. รายการอะไหล่ที่ใช้ (Spare Parts)</span>
+                        </div>
+                        <table class="doc-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;">#</th>
+                                    <th>รายการ (Description)</th>
+                                    <th style="width: 60px;">จำนวน</th>
+                                    <th style="width: 60px;">หน่วย</th>
+                                    <th style="width: 100px;">หมายเหตุ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="p_partsTableBody">
+                                <!-- JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 4. Images (Grid Layout) -->
+                    <div class="doc-box">
+                        <div class="doc-title">
+                            <span>4. รูปภาพประกอบ (Images)</span>
+                        </div>
+                        <div class="flex gap-4 h-32 overflow-hidden px-2 pb-2" id="p_imageContainer">
+                            <!-- JS -->
+                        </div>
+                    </div>
+
+                    <!-- 5. Signatures (Fixed Bottom) -->
+                    <div class="mt-4 border border-black rounded p-4">
+                        <div class="grid grid-cols-3 gap-6 text-center">
+                            <div class="flex flex-col justify-end h-24">
+                                <div class="border-b border-dotted border-black mb-1 mx-2"></div>
+                                <p class="text-xs font-bold">ผู้แจ้งซ่อม</p>
+                                <p class="text-[9px]">วันที่ ...../...../.....</p>
+                            </div>
+                            <div class="flex flex-col justify-end h-24">
+                                <div class="border-b border-dotted border-black mb-1 mx-2"></div>
+                                <p class="text-xs font-bold">ช่างซ่อมบำรุง</p>
+                                <p class="text-[9px]">วันที่ ...../...../.....</p>
+                            </div>
+                            <div class="flex flex-col justify-end h-24">
+                                <div class="border-b border-dotted border-black mb-1 mx-2"></div>
+                                <p class="text-xs font-bold">ผู้อนุมัติ/ตรวจสอบ</p>
+                                <p class="text-[9px]">วันที่ ...../...../.....</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-[9px] text-slate-400 text-center mt-2">
+                        Generated by CMMS System | Printed on: <span id="p_printDate"></span>
+                    </div>
+
+                </div>
+                <!-- PAPER END -->
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Preview (Hidden on print) -->
+    <div id="imagePreviewModal" class="fixed inset-0 bg-black/95 z-[60] hidden flex items-center justify-center cursor-pointer no-print" onclick="this.classList.add('hidden')">
+        <img id="previewImage" src="" class="max-w-[90%] max-h-[90%] rounded-lg shadow-2xl">
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://nmezqexpvhdozpdzxxek.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tZXpxZXhwdmhkb3pwZHp4eGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5OTAwNTEsImV4cCI6MjA4MjU2NjA1MX0.N1OjCh1sp0xx0DGFjR6yX2hix5oIX7suzrnvQk8qPWU';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let issueChartInstance = null;
+        let assetChartInstance = null;
+        let currentTickets = [];
+
+        function safeRedirect(url) {
+            try { window.location.href = url; } catch (e) { alert("Redirect Error: " + url); }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const sessionStr = localStorage.getItem('cmms_user_session');
+            if (!sessionStr) { safeRedirect('index.html'); return; }
+            const user = JSON.parse(sessionStr);
+            if (!['admin', 'manager'].includes(user.role)) { alert('Access Denied'); safeRedirect('index.html'); return; }
+            document.getElementById('userName').innerText = user.full_name || user.username;
+            document.getElementById('userRole').innerText = user.role.toUpperCase();
+            fetchData();
+        });
+
+        async function fetchData() {
+            try {
+                let { data: tickets, error } = await supabaseClient.from('tickets').select('*').order('incident_time', { ascending: false });
+                if (error) throw error;
+                if (!tickets) tickets = [];
+
+                const assetIds = [...new Set(tickets.map(t => t.asset_id).filter(id => id))];
+                const userIds = [...new Set(tickets.map(t => t.requester_id).filter(id => id))];
+                const ticketIds = tickets.map(t => t.id);
+
+                let assetsMap = {}, profilesMap = {}, partsMap = {};
+
+                if (assetIds.length > 0) {
+                    const { data: assets } = await supabaseClient.from('assets').select('id, name').in('id', assetIds);
+                    if(assets) assets.forEach(a => assetsMap[a.id] = a.name);
+                }
+
+                if (userIds.length > 0) {
+                    const { data: profiles } = await supabaseClient.from('profiles').select('id, full_name, username').in('id', userIds);
+                    if(profiles) profiles.forEach(p => profilesMap[p.id] = p.full_name || p.username);
+                }
+
+                // Fetch Parts Requests
+                if (ticketIds.length > 0) {
+                    const { data: parts } = await supabaseClient.from('spare_parts_requests').select('*').in('ticket_id', ticketIds);
+                    if(parts) {
+                        parts.forEach(p => {
+                            if(!partsMap[p.ticket_id]) partsMap[p.ticket_id] = [];
+                            partsMap[p.ticket_id].push(p);
+                        });
+                    }
+                }
+
+                currentTickets = tickets.map(t => ({
+                    ...t,
+                    asset_name: assetsMap[t.asset_id] || 'ไม่ระบุ',
+                    requester_name: profilesMap[t.requester_id] || 'Unknown',
+                    parts_data: partsMap[t.id] || []
+                }));
+                
+                updateStats(currentTickets);
+                renderCharts(currentTickets);
+                renderTable(currentTickets);
+
+            } catch (err) { console.error(err); }
+        }
+
+        function updateStats(tickets) {
+            const total = tickets.length;
+            const open = tickets.filter(t => t.status === 'OPEN').length;
+            const wip = tickets.filter(t => t.status === 'IN_PROGRESS' || t.status === 'PENDING_APPROVAL').length;
+            const verify = tickets.filter(t => t.status === 'PENDING_INSPECTION').length;
+            const closed = tickets.filter(t => t.status === 'CLOSED').length;
+
+            document.getElementById('statTotal').innerText = total;
+            document.getElementById('statWIP').innerText = open + wip;
+            document.getElementById('statVerify').innerText = verify;
+            document.getElementById('statDone').innerText = closed;
+        }
+
+        function renderCharts(tickets) {
+            const issueCounts = {};
+            const assetCounts = {};
+            tickets.forEach(t => {
+                const issue = t.issue_text || 'อื่นๆ';
+                const asset = t.asset_name;
+                issueCounts[issue] = (issueCounts[issue] || 0) + 1;
+                assetCounts[asset] = (assetCounts[asset] || 0) + 1;
+            });
+            
+            const ctxIssue = document.getElementById('issueChart').getContext('2d');
+            if(issueChartInstance) issueChartInstance.destroy();
+            issueChartInstance = new Chart(ctxIssue, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(issueCounts),
+                    datasets: [{
+                        data: Object.values(issueCounts),
+                        backgroundColor: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#64748b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+            });
+
+            const sortedAssets = Object.entries(assetCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const ctxAsset = document.getElementById('assetChart').getContext('2d');
+            if(assetChartInstance) assetChartInstance.destroy();
+            assetChartInstance = new Chart(ctxAsset, {
+                type: 'bar',
+                data: {
+                    labels: sortedAssets.map(i => i[0]),
+                    datasets: [{
+                        label: 'จำนวนครั้ง',
+                        data: sortedAssets.map(i => i[1]),
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderTable(tickets) {
+            const tbody = document.getElementById('ticketTableBody');
+            tbody.innerHTML = '';
+
+            if (tickets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">ยังไม่มีข้อมูล</td></tr>`;
+                return;
+            }
+
+            tickets.slice(0, 20).forEach(t => {
+                let statusBadge = `<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold">${t.status}</span>`;
+                let actionBtn = '';
+
+                if (t.status === 'PENDING_INSPECTION') {
+                    statusBadge = '<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold animate-pulse">รอตรวจ</span>'; 
+                    actionBtn = `<button onclick="openVerifyModal('${t.id}')" class="bg-purple-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-purple-700 transition shadow-sm hover:shadow-md">ตรวจสอบงาน</button>`;
+                } else if (t.status === 'CLOSED') {
+                    statusBadge = '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">เสร็จสิ้น</span>';
+                    actionBtn = `<button onclick="openPrintModal('${t.id}')" class="bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded text-xs font-bold hover:bg-gray-50 flex items-center ml-auto gap-1 shadow-sm"><i class="fas fa-print"></i> พิมพ์</button>`;
+                }
+
+                const dateStr = t.incident_time ? dayjs(t.incident_time).format('DD/MM/YY HH:mm') : '-';
+
+                const row = `
+                    <tr class="bg-white border-b hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 text-gray-500 font-mono text-xs">${dateStr}</td>
+                        <td class="px-6 py-4 font-bold text-gray-800">${t.asset_name}</td>
+                        <td class="px-6 py-4 text-gray-700">${t.issue_text || '-'}</td>
+                        <td class="px-6 py-4 text-center">${statusBadge}</td>
+                        <td class="px-6 py-4 text-gray-500 text-sm">${t.requester_name}</td>
+                        <td class="px-6 py-4 text-right">${actionBtn}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        async function openPrintModal(ticketId) {
+            const ticket = currentTickets.find(t => t.id === ticketId);
+            if(!ticket) return;
+
+            // Fill Data
+            document.getElementById('p_ticketId').innerText = ticket.id.substring(0,8).toUpperCase();
+            document.getElementById('p_date').innerText = dayjs(ticket.incident_time).format('DD/MM/YYYY');
+            document.getElementById('p_requester').innerText = ticket.requester_name;
+            document.getElementById('p_asset').innerText = ticket.asset_name;
+            document.getElementById('p_issue').innerText = ticket.issue_text;
+            
+            document.getElementById('p_technician').innerText = 'Technician Team'; // Mock, needs fetch if strict
+            
+            const start = ticket.started_at ? dayjs(ticket.started_at).format('DD/MM/YY HH:mm') : '-';
+            const end = ticket.finished_at ? dayjs(ticket.finished_at).format('DD/MM/YY HH:mm') : '-';
+            document.getElementById('p_startDate').innerText = start;
+            document.getElementById('p_endDate').innerText = end;
+            
+            document.getElementById('p_repairDetail').innerText = ticket.repair_details || '-';
+            document.getElementById('p_printDate').innerText = dayjs().format('DD/MM/YYYY HH:mm');
+
+            // Parts Table
+            const pBody = document.getElementById('p_partsTableBody');
+            pBody.innerHTML = '';
+            if(ticket.parts_data && ticket.parts_data.length > 0) {
+                ticket.parts_data.forEach((p, idx) => {
+                    pBody.innerHTML += `
+                        <tr>
+                            <td style="text-align:center;">${idx+1}</td>
+                            <td>${p.part_name}</td>
+                            <td style="text-align:center;">${p.quantity}</td>
+                            <td style="text-align:center;">หน่วย</td>
+                            <td>-</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                pBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-400 italic">ไม่มีการเบิกอะไหล่</td></tr>`;
+            }
+
+            // Images
+            const imgContainer = document.getElementById('p_imageContainer');
+            imgContainer.innerHTML = '<div class="w-full text-center text-xs pt-4">Loading images...</div>';
+            
+            const { data: media } = await supabaseClient.from('media').select('*').eq('ticket_id', ticketId).eq('type', 'IMAGE').limit(2);
+            imgContainer.innerHTML = '';
+            
+            if(media && media.length > 0) {
+                media.forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = 'flex-1 bg-white border border-slate-300 rounded overflow-hidden p-1 flex items-center justify-center h-full';
+                    div.innerHTML = `<img src="${m.url}" style="max-height:100%; max-width:100%; object-fit:contain;">`;
+                    imgContainer.appendChild(div);
+                });
+                // Fill blank if only 1 image
+                if (media.length < 2) {
+                     imgContainer.innerHTML += `<div class="flex-1 bg-slate-50 border border-dashed border-slate-300 rounded flex items-center justify-center text-slate-300 text-[10px]">No Image</div>`;
+                }
+            } else {
+                imgContainer.innerHTML = `<div class="w-full h-full bg-slate-50 border border-dashed border-slate-300 rounded flex items-center justify-center text-slate-400 text-xs">ไม่มีรูปภาพประกอบ</div>`;
+            }
+
+            document.getElementById('printModal').classList.remove('hidden');
+        }
+
+        // --- VERIFY MODAL LOGIC (Duplicate code kept for standalone functionality) ---
+        async function openVerifyModal(ticketId) {
+            const ticket = currentTickets.find(t => t.id === ticketId);
+            if (!ticket) return;
+
+            document.getElementById('verifyTicketId').value = ticketId;
+            document.getElementById('verifyAssetName').innerText = ticket.asset_name;
+            document.getElementById('verifyDate').innerText = dayjs(ticket.incident_time).format('DD/MM/YYYY HH:mm');
+            document.getElementById('verifyIssue').innerText = ticket.issue_text;
+            document.getElementById('verifyRepairDetails').innerText = ticket.repair_details || '- ไม่มีรายละเอียด -';
+
+            // Show Parts
+            const partsListEl = document.getElementById('verifyPartsList');
+            if(ticket.parts_data && ticket.parts_data.length > 0) {
+                partsListEl.innerHTML = `<ul class="list-disc pl-4 text-sm">${ticket.parts_data.map(p => `<li>${p.part_name} (x${p.quantity})</li>`).join('')}</ul>`;
+            } else {
+                partsListEl.innerText = '- ไม่ใช้อะไหล่ -';
+            }
+
+            // Fetch Media
+            const container = document.getElementById('verifyMediaContainer');
+            container.innerHTML = '<div class="col-span-3 text-center py-4 text-gray-400"><i class="fas fa-spinner fa-spin"></i> กำลังโหลด...</div>';
+            
+            try {
+                const { data: media } = await supabaseClient.from('media').select('*').eq('ticket_id', ticketId);
+                container.innerHTML = '';
+                if (media && media.length > 0) {
+                    media.forEach(m => {
+                        const div = document.createElement('div');
+                        div.className = 'relative aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:opacity-90 transition';
+                        div.onclick = () => showImagePreview(m.url);
+                        if (m.type === 'IMAGE') div.innerHTML = `<img src="${m.url}" class="w-full h-full object-cover">`;
+                        else div.innerHTML = `<video src="${m.url}" class="w-full h-full object-cover"></video>`;
+                        container.appendChild(div);
+                    });
+                } else {
+                    container.innerHTML = '<div class="col-span-3 text-center py-4 text-gray-400 text-xs bg-gray-50 rounded border border-dashed">ไม่มีรูปภาพ</div>';
+                }
+            } catch (e) { container.innerHTML = 'Error loading media'; }
+
+            document.getElementById('verifyModal').classList.remove('hidden');
+        }
+
+        function closeVerifyModal() { document.getElementById('verifyModal').classList.add('hidden'); }
+
+        async function handleVerify(action) {
+            const ticketId = document.getElementById('verifyTicketId').value;
+            const newStatus = action === 'APPROVE' ? 'CLOSED' : 'IN_PROGRESS';
+            if (action === 'REJECT' && !confirm("ส่งงานกลับไปให้ช่างแก้ไข?")) return;
+            if (action === 'APPROVE' && !confirm("ยืนยันปิดงานซ่อมนี้?")) return;
+
+            try {
+                const { error } = await supabaseClient.from('tickets').update({ status: newStatus }).eq('id', ticketId);
+                if (error) throw error;
+                alert(action === 'APPROVE' ? "✅ อนุมัติปิดงานเรียบร้อย" : "↩️ ส่งงานกลับไปแก้ไขเรียบร้อย");
+                closeVerifyModal(); fetchData();
+            } catch (e) { alert("Error: " + e.message); }
+        }
+
+        function showImagePreview(url) {
+            document.getElementById('previewImage').src = url;
+            document.getElementById('imagePreviewModal').classList.remove('hidden');
+        }
+
+        function scrollToVerify() {
+            document.getElementById('ticketTableSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function logout() {
+            localStorage.removeItem('cmms_user_session');
+            location.reload();
+        }
+    </script>
+</body>
+</html>
