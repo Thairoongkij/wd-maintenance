@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Executive Dashboard - WD Maintenance</title>
     
     <!-- Libraries -->
@@ -15,411 +15,345 @@
     
     <script> dayjs.locale('th'); </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Sarabun', sans-serif; }
-        .fade-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700;800&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; }
         
-        /* Modal Animation */
-        @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .animate-zoom-in { animation: zoomIn 0.2s ease-out; }
+        .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Print Styles - Refined for A4 */
-        @media print {
-            @page { 
-                size: A4; 
-                margin: 0; 
-            }
-            
-            body * { visibility: hidden; }
-            
-            #printModal {
-                visibility: visible !important;
-                position: fixed !important;
-                left: 0; top: 0; right: 0; bottom: 0;
-                background: white !important;
-                z-index: 99999;
-                margin: 0 !important;
-                padding: 0 !important;
-                display: block !important;
-                overflow: visible !important;
-            }
-
-            #printArea, #printArea * { visibility: visible; }
-            #printArea {
-                position: absolute;
-                left: 0; top: 0;
-                width: 210mm;
-                min-height: 296mm;
-                margin: 0 auto;
-                padding: 15mm 15mm 10mm 15mm;
-                background: white;
-                font-size: 10pt;
-                line-height: 1.3;
-                color: black;
-                box-sizing: border-box;
-            }
-
-            .no-print, .close-btn, .print-btn-group, ::-webkit-scrollbar { display: none !important; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        /* Sidebar Transition Logic (Fixed) */
+        #mobileSidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        @media (max-width: 768px) {
+            #mobileSidebar.closed { transform: translateX(-100%); }
         }
 
-        /* Screen Preview Styles */
-        #printArea {
-            width: 210mm;
-            min-height: 297mm;
-            padding: 15mm;
-            background: white;
-            margin: 0 auto;
-            box-shadow: 0 0 15px rgba(0,0,0,0.15);
-            font-size: 10pt;
-            color: #333;
-            position: relative;
-        }
+        #sidebarOverlay { transition: opacity 0.3s ease; }
+        #sidebarOverlay.hidden { opacity: 0; pointer-events: none; }
 
-        /* Document Design Class */
-        .doc-border { border: 1px solid #000; }
-        .doc-row { display: flex; border-bottom: 1px solid #ccc; }
-        .doc-row:last-child { border-bottom: none; }
-        .doc-col-label { width: 140px; background-color: #f9fafb; font-weight: bold; padding: 6px 8px; border-right: 1px solid #ccc; display: flex; align-items: center; }
-        .doc-col-value { flex: 1; padding: 6px 8px; display: flex; align-items: center; }
+        /* Gradients & Colors */
+        .sidebar-gradient { background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); }
+        .hero-gradient { background: linear-gradient(120deg, #2563eb 0%, #7c3aed 100%); }
         
-        .doc-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt; }
-        .doc-table th { background-color: #e5e7eb; border: 1px solid #9ca3af; padding: 6px; text-align: center; font-weight: bold; }
-        .doc-table td { border: 1px solid #d1d5db; padding: 6px; }
+        .card-gradient-blue { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+        .card-gradient-orange { background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); }
+        .card-gradient-purple { background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); }
+        .card-gradient-green { background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); }
         
-        .doc-box { border: 1px solid #9ca3af; border-radius: 4px; padding: 10px; margin-bottom: 15px; }
-        .doc-title { font-size: 11pt; font-weight: bold; border-bottom: 2px solid #374151; padding-bottom: 4px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-end; }
+        /* Menu Item Styling */
+        .menu-btn { transition: all 0.2s; position: relative; overflow: hidden; }
+        .menu-btn:hover { background-color: rgba(255,255,255,0.1); transform: translateX(5px); }
+        .menu-btn.active { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); border: none; }
+        .menu-btn.active i { color: white !important; }
+
+        .glass-icon { background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.3); }
+        .hover-scale { transition: transform 0.2s; }
+        .hover-scale:hover { transform: translateY(-4px); }
+        
+        .glass-panel { background: white; border-radius: 1.5rem; box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05); }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body class="h-screen flex overflow-hidden bg-gray-100 text-gray-800">
 
-    <!-- Sidebar -->
-    <aside class="w-64 bg-slate-900 text-white flex-shrink-0 hidden md:flex flex-col shadow-xl z-20 no-print">
-        <div class="p-6 flex items-center border-b border-slate-700">
-            <i class="fas fa-chart-pie text-blue-400 text-2xl mr-3"></i>
-            <h1 class="text-xl font-bold tracking-wider">EXECUTIVE</h1>
+    <!-- Sidebar Overlay (Mobile Only) -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm md:hidden" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar (Fixed Width 280px, Static on Desktop) -->
+    <aside id="mobileSidebar" class="fixed inset-y-0 left-0 w-[280px] sidebar-gradient text-slate-300 z-50 shadow-2xl transform closed md:translate-x-0 md:static md:flex flex-col transition-transform duration-300 border-r border-slate-800 font-sans shrink-0">
+        
+        <!-- Logo Area -->
+        <div class="h-20 flex items-center px-6 border-b border-slate-800/50 bg-slate-900/50 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-white shadow-lg border border-white/10">
+                    <i class="fas fa-chart-line text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight text-white leading-none">WD Maint.</h1>
+                    <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mt-1">Executive</p>
+                </div>
+            </div>
+            <button onclick="toggleSidebar()" class="md:hidden ml-auto text-slate-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
         </div>
         
-        <nav class="flex-1 overflow-y-auto py-4">
-            <a href="#" class="flex items-center px-6 py-3 bg-white/10 border-l-4 border-blue-500 text-white mb-1">
-                <i class="fas fa-columns w-6"></i> <span>ภาพรวม (Overview)</span>
-            </a>
-            <a href="inventory_management.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-slate-800 hover:text-white transition mb-1">
-                <i class="fas fa-boxes w-6"></i> <span>คลังอะไหล่ (Stock)</span>
-            </a>
-            <a href="javascript:safeRedirect('admin_management.html')" class="flex items-center px-6 py-3 text-gray-400 hover:bg-slate-800 hover:text-white transition mb-1">
-                <i class="fas fa-cogs w-6"></i> <span>ตั้งค่าระบบ (Admin)</span>
-            </a>
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-6">
+            
+            <!-- Group 1: General -->
+            <div>
+                <div class="px-2 mb-3 text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                    <span class="w-8 h-[1px] bg-slate-700"></span> Dashboards
+                </div>
+                <div class="space-y-1">
+                    <!-- Active Menu -->
+                    <a href="#" class="menu-btn active flex items-center px-4 py-3 rounded-xl font-medium text-white shadow-lg shadow-blue-900/20">
+                        <i class="fas fa-th-large w-6 text-center text-lg mr-2"></i> <span>ภาพรวมระบบ</span>
+                    </a>
+                    <a href="inventory_management.html" class="menu-btn flex items-center px-4 py-3 rounded-xl font-medium text-slate-300 hover:text-white">
+                        <i class="fas fa-boxes w-6 text-center text-lg text-orange-400 mr-2"></i> <span>คลังอะไหล่</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Group 2: Config -->
+            <div>
+                <div class="px-2 mb-3 text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                    <span class="w-8 h-[1px] bg-slate-700"></span> System
+                </div>
+                <div class="space-y-1">
+                    <a href="admin_dashboard.html" class="menu-btn flex items-center px-4 py-3 rounded-xl font-medium text-slate-300 hover:text-white">
+                        <i class="fas fa-cogs w-6 text-center text-lg text-slate-400 mr-2"></i> <span>ตั้งค่าระบบ</span>
+                    </a>
+                </div>
+            </div>
+
         </nav>
 
-        <div class="p-4 border-t border-slate-700">
-            <button onclick="logout()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded shadow transition flex items-center justify-center gap-2">
-                <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
+        <!-- Footer -->
+        <div class="p-4 border-t border-slate-800 bg-slate-900/80 shrink-0">
+            <button onclick="Auth.logout()" class="w-full bg-red-500/10 hover:bg-red-600 hover:text-white text-red-400 py-3.5 rounded-xl transition flex items-center justify-center gap-2 font-bold text-sm border border-red-500/20 hover:border-red-500 hover:shadow-lg hover:shadow-red-900/20 group">
+                <i class="fas fa-sign-out-alt group-hover:animate-bounce-x"></i> ออกจากระบบ
             </button>
         </div>
     </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col overflow-hidden relative">
-        <!-- Topbar -->
-        <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6 z-10 no-print">
-            <div class="flex items-center gap-4">
-                <button class="md:hidden text-gray-600"><i class="fas fa-bars text-xl"></i></button>
-                <h2 class="text-xl font-semibold text-gray-800">Dashboard ภาพรวมการซ่อมบำรุง</h2>
-            </div>
-            <div class="flex items-center gap-3">
-                <div class="text-right hidden sm:block">
-                    <p class="text-sm font-bold text-gray-700" id="userName">Loading...</p>
-                    <p class="text-xs text-gray-500" id="userRole">...</p>
-                </div>
-                <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border-2 border-blue-200">
-                    M
-                </div>
-            </div>
-        </header>
-
-        <!-- Content -->
-        <div class="flex-1 overflow-auto p-6 bg-gray-50 no-print">
+    <!-- Main Content (Fluid Width) -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative w-full bg-slate-50">
+        
+        <!-- Scrollable Area -->
+        <div class="flex-1 overflow-y-auto no-scrollbar scroll-smooth">
             
-            <!-- 1. Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 fade-in">
-                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center">
-                    <div class="p-4 rounded-lg bg-blue-50 text-blue-600 mr-4"><i class="fas fa-clipboard-list text-2xl"></i></div>
-                    <div><p class="text-gray-500 text-sm">งานทั้งหมด</p><h3 class="text-2xl font-bold text-gray-800" id="statTotal">-</h3></div>
-                </div>
-                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center">
-                    <div class="p-4 rounded-lg bg-red-50 text-red-600 mr-4"><i class="fas fa-tools text-2xl"></i></div>
-                    <div><p class="text-gray-500 text-sm">กำลังซ่อม</p><h3 class="text-2xl font-bold text-gray-800" id="statWIP">-</h3></div>
-                </div>
-                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center">
-                    <div class="p-4 rounded-lg bg-green-50 text-green-600 mr-4"><i class="fas fa-check-circle text-2xl"></i></div>
-                    <div><p class="text-gray-500 text-sm">เสร็จสิ้น</p><h3 class="text-2xl font-bold text-gray-800" id="statDone">-</h3></div>
-                </div>
-                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center cursor-pointer hover:bg-purple-50 transition border-l-4 border-l-purple-500" onclick="scrollToVerify()">
-                    <div class="p-4 rounded-lg bg-purple-50 text-purple-600 mr-4"><i class="fas fa-stopwatch text-2xl"></i></div>
-                    <div><p class="text-gray-500 text-sm font-bold text-purple-700">รอตรวจงาน</p><h3 class="text-2xl font-bold text-gray-800" id="statVerify">-</h3></div>
-                </div>
-            </div>
+            <!-- 1. HERO HEADER (Full Width) -->
+            <div class="hero-gradient pt-8 pb-32 px-6 sm:px-10 relative overflow-hidden">
+                <!-- Decoration -->
+                <div class="absolute top-0 right-0 w-96 h-96 bg-white opacity-10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+                <div class="absolute bottom-0 left-0 w-64 h-64 bg-purple-500 opacity-20 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none mix-blend-overlay"></div>
 
-            <!-- 2. Charts Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 fade-in" style="animation-delay: 0.1s;">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 class="font-bold text-gray-700 mb-4 flex items-center"><i class="fas fa-chart-pie mr-2 text-blue-500"></i> สัดส่วนอาการเสีย</h3>
-                    <div class="h-64 flex justify-center relative"><canvas id="issueChart"></canvas></div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <h3 class="font-bold text-gray-700 mb-4 flex items-center"><i class="fas fa-trophy mr-2 text-yellow-500"></i> 5 อันดับเครื่องจักรเสียบ่อย</h3>
-                    <div class="h-64 relative"><canvas id="assetChart"></canvas></div>
-                </div>
-            </div>
-
-            <!-- 3. Table Section -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden fade-in" id="ticketTableSection">
-                <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                    <h3 class="font-bold text-lg text-gray-800">รายการแจ้งซ่อม (Work Orders)</h3>
-                    <button onclick="fetchData()" class="text-blue-600 hover:text-blue-800 text-sm font-bold bg-white px-3 py-1 rounded border border-blue-200 shadow-sm transition"><i class="fas fa-sync-alt mr-1"></i> Refresh</button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-white text-gray-600 uppercase text-xs font-semibold border-b border-gray-200">
-                            <tr>
-                                <th class="px-6 py-4">วันที่แจ้ง</th>
-                                <th class="px-6 py-4">เครื่องจักร</th>
-                                <th class="px-6 py-4">อาการเสีย</th>
-                                <th class="px-6 py-4 text-center">สถานะ</th>
-                                <th class="px-6 py-4">ผู้แจ้ง</th>
-                                <th class="px-6 py-4 text-right">จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ticketTableBody" class="divide-y divide-gray-100 text-sm">
-                            <tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">กำลังโหลด...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Verify Modal -->
-    <div id="verifyModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center backdrop-blur-sm transition-opacity no-print">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-0 transform scale-100 animate-zoom-in overflow-hidden max-h-[90vh] flex flex-col">
-            <div class="p-5 border-b bg-gray-50 flex justify-between items-center">
-                <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-tasks text-purple-600"></i> ตรวจสอบงานซ่อม</h3>
-                <button onclick="closeVerifyModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-            </div>
-            <div class="p-6 overflow-y-auto flex-1">
-                <input type="hidden" id="verifyTicketId">
-                <div class="mb-4 bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div class="flex justify-between mb-1">
-                        <span class="font-bold text-blue-800 text-lg" id="verifyAssetName">-</span>
-                        <span class="text-xs bg-white px-2 py-1 rounded border border-blue-200 text-blue-600 font-mono" id="verifyDate">-</span>
+                <!-- Topbar -->
+                <div class="flex justify-between items-center relative z-10 w-full mb-8">
+                    <div class="flex items-center gap-4">
+                        <button onclick="toggleSidebar()" class="md:hidden w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-sm transition border border-white/10">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <!-- User Badge -->
+                        <div class="flex items-center gap-3 bg-white/10 backdrop-blur-md py-1.5 px-2 pr-4 rounded-full border border-white/10">
+                            <div class="w-8 h-8 rounded-full bg-white text-blue-600 flex items-center justify-center font-bold text-sm">M</div>
+                            <div class="text-white">
+                                <p class="text-[10px] opacity-70 uppercase tracking-wide">Welcome back,</p>
+                                <p class="text-xs font-bold leading-none" id="userName">Manager</p>
+                            </div>
+                        </div>
                     </div>
-                    <p class="text-sm text-gray-700"><span class="font-bold">อาการ:</span> <span id="verifyIssue">-</span></p>
+                    <button onclick="fetchData()" class="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-xl text-sm font-bold shadow-lg transition flex items-center gap-2 active:scale-95">
+                        <i class="fas fa-sync-alt animate-spin-hover"></i> <span class="hidden sm:inline">รีเฟรชข้อมูล</span>
+                    </button>
                 </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">รายละเอียดการซ่อม (โดยช่าง):</label>
-                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-gray-800 min-h-[60px]" id="verifyRepairDetails">-</div>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">อะไหล่ที่ใช้:</label>
-                    <div id="verifyPartsList" class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm text-gray-600 min-h-[40px]">-</div>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">รูปภาพ/หลักฐาน หลังซ่อม:</label>
-                    <div class="grid grid-cols-3 gap-2" id="verifyMediaContainer">
-                        <div class="col-span-3 text-center py-4 text-gray-400 text-xs bg-gray-50 rounded border border-dashed">ไม่มีรูปภาพแนบมา</div>
-                    </div>
-                </div>
-            </div>
-            <div class="p-5 border-t bg-gray-50 flex gap-3">
-                <button onclick="handleVerify('REJECT')" class="flex-1 bg-white border border-red-200 text-red-600 py-2.5 rounded-lg font-bold hover:bg-red-50 transition shadow-sm"><i class="fas fa-times-circle mr-1"></i> ส่งกลับแก้ไข</button>
-                <button onclick="handleVerify('APPROVE')" class="flex-1 bg-green-600 text-white py-2.5 rounded-lg font-bold hover:bg-green-700 transition shadow-lg shadow-green-200"><i class="fas fa-check-circle mr-1"></i> อนุมัติ / ปิดงาน</button>
-            </div>
-        </div>
-    </div>
 
-    <!-- Print Preview Modal -->
-    <div id="printModal" class="fixed inset-0 bg-black/80 hidden z-[60] flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-gray-200 rounded-lg shadow-2xl w-full max-w-5xl h-[95vh] flex flex-col relative">
-            
-            <button onclick="document.getElementById('printModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl z-50 no-print bg-white rounded-full w-10 h-10 shadow flex items-center justify-center">&times;</button>
-            
-            <div class="bg-white p-4 border-b flex justify-between items-center rounded-t-lg no-print">
-                <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-print text-blue-600"></i> ตัวอย่างใบงาน (A4 Preview)</h3>
-                <div class="flex gap-2 print-btn-group">
-                    <button onclick="document.getElementById('printModal').classList.add('hidden')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-bold">ยกเลิก</button>
-                    <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold shadow transition flex items-center gap-2"><i class="fas fa-print"></i> สั่งพิมพ์</button>
+                <!-- Welcome Text -->
+                <div class="relative z-10 w-full">
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-2 drop-shadow-sm tracking-tight">ภาพรวมการซ่อมบำรุง 🚀</h2>
+                    <p class="text-blue-100 text-lg opacity-90 font-medium">ตรวจสอบสถานะงานและประสิทธิภาพรายวัน</p>
                 </div>
             </div>
 
-            <div class="flex-1 overflow-auto p-4 md:p-8 bg-gray-500 flex justify-center no-print-bg">
+            <!-- 2. CONTENT SECTION (Overlapping) -->
+            <div class="px-4 sm:px-8 -mt-24 pb-20 w-full relative z-20">
                 
-                <!-- PAPER START -->
-                <div id="printArea">
-                    
-                    <!-- Header -->
-                    <div class="flex justify-between items-center mb-6 pb-4 border-b-2 border-black">
-                        <div class="flex items-center gap-4">
-                            <div class="w-14 h-14 bg-gray-200 rounded flex items-center justify-center text-gray-400 font-bold text-xs border border-gray-400">LOGO</div>
-                            <div>
-                                <h1 class="text-xl font-bold text-black uppercase tracking-wide">บริษัท ไทยรุ่งกิจ ไวท์ดั๊ก จำกัด</h1>
-                                <p class="text-sm text-gray-600">Thairoongkij Whiteduck Co., Ltd.</p>
-                            </div>
+                <!-- Stats Cards Grid -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 fade-in-up">
+                    <!-- Total -->
+                    <div class="card-gradient-blue rounded-3xl p-5 text-white shadow-xl shadow-blue-200 hover-scale relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:scale-110 transition duration-500"><i class="fas fa-folder-open text-6xl"></i></div>
+                        <div class="glass-icon w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-clipboard-list"></i></div>
+                        <p class="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">งานทั้งหมด</p>
+                        <h3 class="text-3xl font-extrabold" id="statTotal">-</h3>
+                    </div>
+                    <!-- WIP -->
+                    <div class="card-gradient-orange rounded-3xl p-5 text-white shadow-xl shadow-orange-200 hover-scale relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:scale-110 transition duration-500"><i class="fas fa-cogs text-6xl"></i></div>
+                        <div class="glass-icon w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-tools"></i></div>
+                        <p class="text-orange-100 text-xs font-bold uppercase tracking-wider mb-1">กำลังซ่อม</p>
+                        <h3 class="text-3xl font-extrabold" id="statWIP">-</h3>
+                    </div>
+                    <!-- Verify (Action) -->
+                    <div class="card-gradient-purple rounded-3xl p-5 text-white shadow-xl shadow-purple-200 hover-scale cursor-pointer relative overflow-hidden group ring-4 ring-white/30" onclick="scrollToSection('ticketSection')">
+                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:scale-110 transition duration-500"><i class="fas fa-search text-6xl"></i></div>
+                        <div class="absolute top-4 right-4 w-3 h-3 bg-red-400 rounded-full animate-ping"></div>
+                        <div class="glass-icon w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-check-double"></i></div>
+                        <p class="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">รอตรวจสอบ</p>
+                        <h3 class="text-3xl font-extrabold" id="statVerify">-</h3>
+                    </div>
+                    <!-- Done -->
+                    <div class="card-gradient-green rounded-3xl p-5 text-white shadow-xl shadow-green-200 hover-scale relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:scale-110 transition duration-500"><i class="fas fa-trophy text-6xl"></i></div>
+                        <div class="glass-icon w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-thumbs-up"></i></div>
+                        <p class="text-green-100 text-xs font-bold uppercase tracking-wider mb-1">เสร็จสิ้น</p>
+                        <h3 class="text-3xl font-extrabold" id="statDone">-</h3>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10 fade-in-up" style="animation-delay: 0.1s;">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                        <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><span class="w-1.5 h-6 bg-blue-500 rounded-full"></span> สัดส่วนอาการเสีย</h3>
+                        <div class="h-64 relative"><canvas id="issueChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                        <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><span class="w-1.5 h-6 bg-orange-500 rounded-full"></span> 5 อันดับเครื่องจักรมีปัญหา</h3>
+                        <div class="h-64 relative"><canvas id="assetChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Ticket List Section -->
+                <div id="ticketSection" class="glass-panel overflow-hidden fade-in-up" style="animation-delay: 0.2s;">
+                    <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50/30">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><i class="fas fa-list-alt text-blue-500"></i> รายการแจ้งซ่อมล่าสุด</h3>
+                            <p class="text-gray-500 text-sm mt-1">อัปเดตข้อมูลแบบ Real-time</p>
                         </div>
-                        <div class="text-right">
-                            <h2 class="text-lg font-bold text-black border-2 border-black px-2 py-0.5 inline-block mb-1">ใบแจ้งซ่อม / ใบเบิกอะไหล่</h2>
-                            <p class="text-[10px] uppercase font-bold tracking-widest text-gray-500">Maintenance Work Order</p>
-                            <p class="text-xs mt-1">เลขที่: <span class="font-mono font-bold text-black text-sm" id="p_ticketId">WO-XXXX</span></p>
+                        <div class="flex gap-2">
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-100 px-3 py-1 rounded-lg">Last 20 items</span>
                         </div>
                     </div>
 
-                    <!-- 1. General Info -->
-                    <div class="doc-box">
-                        <div class="doc-title">
-                            <span>1. ข้อมูลการแจ้งซ่อม (Request Info)</span>
-                            <span class="text-xs font-normal text-gray-500">วันที่แจ้ง: <span id="p_date">-</span></span>
-                        </div>
-                        <div class="grid grid-cols-2 text-sm gap-y-1">
-                            <div class="doc-row">
-                                <div class="doc-col-label">ชื่อผู้แจ้ง</div>
-                                <div class="doc-col-value" id="p_requester">-</div>
-                            </div>
-                            <div class="doc-row">
-                                <div class="doc-col-label">แผนก/ส่วนงาน</div>
-                                <div class="doc-col-value" id="p_dept">ฝ่ายผลิต</div>
-                            </div>
-                            <div class="doc-row col-span-2">
-                                <div class="doc-col-label">ทรัพย์สิน/เครื่องจักร</div>
-                                <div class="doc-col-value font-bold" id="p_asset">-</div>
-                            </div>
-                            <div class="doc-row col-span-2" style="border-bottom: none;">
-                                <div class="doc-col-label">อาการเสีย/ปัญหา</div>
-                                <div class="doc-col-value text-red-700" id="p_issue">-</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 2. Repair Info -->
-                    <div class="doc-box">
-                        <div class="doc-title">
-                            <span>2. การดำเนินการซ่อม (Action Taken)</span>
-                        </div>
-                        <div class="text-sm">
-                            <div class="doc-row">
-                                <div class="doc-col-label">ช่างผู้ปฏิบัติงาน</div>
-                                <div class="doc-col-value" id="p_technician">-</div>
-                            </div>
-                            <div class="doc-row">
-                                <div class="doc-col-label">ระยะเวลา</div>
-                                <div class="doc-col-value">
-                                    เริ่ม: <span id="p_startDate" class="mr-4">-</span> 
-                                    เสร็จ: <span id="p_endDate">-</span>
-                                </div>
-                            </div>
-                            <div class="p-2 border-t border-gray-200">
-                                <span class="font-bold text-gray-700 block mb-1">รายละเอียดการแก้ไข:</span>
-                                <div id="p_repairDetail" class="pl-2 text-gray-800 min-h-[40px]">-</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 3. Spare Parts -->
-                    <div class="doc-box">
-                        <div class="doc-title">
-                            <span>3. รายการอะไหล่ที่ใช้ (Spare Parts)</span>
-                        </div>
-                        <table class="doc-table">
-                            <thead>
+                    <!-- Desktop Table -->
+                    <div class="hidden md:block overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-gray-50/50 text-gray-500 uppercase text-xs font-bold border-b border-gray-200">
                                 <tr>
-                                    <th style="width: 40px;">#</th>
-                                    <th>รายการ (Description)</th>
-                                    <th style="width: 60px;">จำนวน</th>
-                                    <th style="width: 60px;">หน่วย</th>
-                                    <th style="width: 100px;">หมายเหตุ</th>
+                                    <th class="px-6 py-5 pl-8">Job ID</th>
+                                    <th class="px-6 py-5">เวลาแจ้ง</th>
+                                    <th class="px-6 py-5">เครื่องจักร</th>
+                                    <th class="px-6 py-5">อาการ</th>
+                                    <th class="px-6 py-5 text-center">สถานะ</th>
+                                    <th class="px-6 py-5 text-right pr-8">จัดการ</th>
                                 </tr>
                             </thead>
-                            <tbody id="p_partsTableBody">
-                                <!-- JS -->
-                            </tbody>
+                            <tbody id="ticketTableBody" class="divide-y divide-gray-100 text-sm"></tbody>
                         </table>
                     </div>
 
-                    <!-- 4. Images (Grid Layout) -->
-                    <div class="doc-box">
-                        <div class="doc-title">
-                            <span>4. รูปภาพประกอบ (Images)</span>
-                        </div>
-                        <div class="flex gap-4 h-32 overflow-hidden px-2 pb-2" id="p_imageContainer">
-                            <!-- JS -->
-                        </div>
-                    </div>
-
-                    <!-- 5. Signatures (Fixed Bottom) -->
-                    <div class="mt-4 border border-black rounded p-4">
-                        <div class="grid grid-cols-3 gap-6 text-center">
-                            <div class="flex flex-col justify-end h-24">
-                                <div class="border-b border-dotted border-black mb-1 mx-2"></div>
-                                <p class="text-xs font-bold">ผู้แจ้งซ่อม</p>
-                                <p class="text-[9px]">วันที่ ...../...../.....</p>
-                            </div>
-                            <div class="flex flex-col justify-end h-24">
-                                <div class="border-b border-dotted border-black mb-1 mx-2"></div>
-                                <p class="text-xs font-bold">ช่างซ่อมบำรุง</p>
-                                <p class="text-[9px]">วันที่ ...../...../.....</p>
-                            </div>
-                            <div class="flex flex-col justify-end h-24">
-                                <div class="border-b border-dotted border-black mb-1 mx-2"></div>
-                                <p class="text-xs font-bold">ผู้อนุมัติ/ตรวจสอบ</p>
-                                <p class="text-[9px]">วันที่ ...../...../.....</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="text-[9px] text-slate-400 text-center mt-2">
-                        Generated by CMMS System | Printed on: <span id="p_printDate"></span>
-                    </div>
-
+                    <!-- Mobile Cards List -->
+                    <div class="md:hidden p-4 space-y-3" id="mobileTicketCards"></div>
                 </div>
-                <!-- PAPER END -->
 
             </div>
         </div>
-    </div>
+    </main>
+    
+    <!-- Verify Modal (Fullscreen on Mobile) -->
+    <div id="verifyModal" class="fixed inset-0 bg-gray-900/80 z-[60] hidden flex items-end sm:items-center justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-white w-full h-[95vh] sm:h-auto sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up sm:animate-none">
+            <div class="px-6 py-5 border-b bg-white flex justify-between items-center shrink-0">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">ตรวจสอบงาน</h3>
+                    <p class="text-xs text-gray-500">Approval Process</p>
+                </div>
+                <button onclick="closeVerifyModal()" class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1 bg-gray-50/50 space-y-5">
+                <input type="hidden" id="verifyTicketId">
+                
+                <!-- Header Card -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-blue-100 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-2 text-blue-600 font-bold mb-1"><i class="fas fa-robot"></i> <span id="verifyAssetName" class="text-lg text-gray-800">-</span></div>
+                        <div class="text-sm text-gray-500 mb-3 ml-6"><i class="far fa-clock mr-1"></i> <span id="verifyDate">-</span></div>
+                        <div class="bg-blue-50 text-blue-800 px-4 py-2.5 rounded-xl text-sm border border-blue-100 flex items-start gap-2">
+                            <i class="fas fa-info-circle mt-1"></i> <div><span class="font-bold">อาการ:</span> <span id="verifyIssue">-</span></div>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Image Preview (Hidden on print) -->
-    <div id="imagePreviewModal" class="fixed inset-0 bg-black/95 z-[60] hidden flex items-center justify-center cursor-pointer no-print" onclick="this.classList.add('hidden')">
-        <img id="previewImage" src="" class="max-w-[90%] max-h-[90%] rounded-lg shadow-2xl">
+                <!-- Repair Details -->
+                <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                    <label class="text-xs font-bold text-gray-400 uppercase mb-2 block flex items-center gap-2"><i class="fas fa-wrench"></i> รายงานการซ่อม</label>
+                    <div class="text-gray-700 text-sm leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-100" id="verifyRepairDetails">-</div>
+                </div>
+
+                <!-- Parts -->
+                <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                    <label class="text-xs font-bold text-gray-400 uppercase mb-2 block flex items-center gap-2"><i class="fas fa-box-open"></i> อะไหล่ที่ใช้</label>
+                    <div id="verifyPartsList" class="space-y-1">-</div>
+                </div>
+
+                <!-- Images -->
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase mb-2 block pl-1">รูปภาพประกอบ</label>
+                    <div class="grid grid-cols-3 gap-2" id="verifyMediaContainer"></div>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="p-5 bg-white border-t border-gray-100 flex gap-3 shrink-0 pb-safe">
+                <button onclick="handleVerify('REJECT')" class="flex-1 bg-white border-2 border-red-100 text-red-600 hover:bg-red-50 py-3.5 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm">
+                    <i class="fas fa-reply"></i> แก้ไข
+                </button>
+                <button onclick="handleVerify('APPROVE')" class="flex-[2] bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-green-200 transition flex items-center justify-center gap-2">
+                    <i class="fas fa-check-circle"></i> อนุมัติ / ปิดงาน
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Image Viewer -->
+    <div id="imageViewerModal" class="fixed inset-0 z-[70] bg-black/95 hidden flex items-center justify-center touch-none" onclick="document.getElementById('imageViewerModal').classList.add('hidden')">
+        <button class="absolute top-4 right-4 text-white/80 hover:text-white text-3xl p-2 z-10"><i class="fas fa-times"></i></button>
+        <img id="fullImage" class="max-w-full max-h-full object-contain p-2" src="" alt="Full size">
     </div>
 
     <script>
+        // --- EMBEDDED CONFIG & AUTH ---
         const SUPABASE_URL = 'https://nmezqexpvhdozpdzxxek.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tZXpxZXhwdmhkb3pwZHp4eGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5OTAwNTEsImV4cCI6MjA4MjU2NjA1MX0.N1OjCh1sp0xx0DGFjR6yX2hix5oIX7suzrnvQk8qPWU';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        const Auth = {
+            requireRole: (allowedRoles = []) => {
+                const session = localStorage.getItem('cmms_user_session');
+                if (!session) { window.location.href = 'index.html'; return null; }
+                const user = JSON.parse(session);
+                if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+                    alert('Access Denied'); window.location.href = 'index.html'; return null;
+                }
+                return user;
+            },
+            logout: () => { if(confirm('ออกจากระบบ?')) { localStorage.removeItem('cmms_user_session'); window.location.href = 'index.html'; } },
+        };
+
+        const Utils = {
+            formatDate: (d) => d ? dayjs(d).format('DD MMM, HH:mm') : '-',
+            safeRedirect: (url) => { try { window.location.href = url; } catch(e) { console.error(e); } }
+        };
+
+        // --- MAIN LOGIC ---
         let issueChartInstance = null;
         let assetChartInstance = null;
         let currentTickets = [];
 
-        function safeRedirect(url) {
-            try { window.location.href = url; } catch (e) { alert("Redirect Error: " + url); }
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
-            const sessionStr = localStorage.getItem('cmms_user_session');
-            if (!sessionStr) { safeRedirect('index.html'); return; }
-            const user = JSON.parse(sessionStr);
-            if (!['admin', 'manager'].includes(user.role)) { alert('Access Denied'); safeRedirect('index.html'); return; }
+            const user = Auth.requireRole(['admin', 'manager']);
+            if(!user) return;
             document.getElementById('userName').innerText = user.full_name || user.username;
-            document.getElementById('userRole').innerText = user.role.toUpperCase();
             fetchData();
         });
+        
+        function toggleSidebar() {
+            const sb = document.getElementById('mobileSidebar');
+            const ov = document.getElementById('sidebarOverlay');
+            sb.classList.toggle('closed');
+            if(sb.classList.contains('closed')) ov.classList.add('hidden'); else ov.classList.remove('hidden');
+        }
 
         async function fetchData() {
             try {
                 let { data: tickets, error } = await supabaseClient.from('tickets').select('*').order('incident_time', { ascending: false });
                 if (error) throw error;
-                if (!tickets) tickets = [];
+                tickets = tickets || [];
 
                 const assetIds = [...new Set(tickets.map(t => t.asset_id).filter(id => id))];
                 const userIds = [...new Set(tickets.map(t => t.requester_id).filter(id => id))];
@@ -427,26 +361,9 @@
 
                 let assetsMap = {}, profilesMap = {}, partsMap = {};
 
-                if (assetIds.length > 0) {
-                    const { data: assets } = await supabaseClient.from('assets').select('id, name').in('id', assetIds);
-                    if(assets) assets.forEach(a => assetsMap[a.id] = a.name);
-                }
-
-                if (userIds.length > 0) {
-                    const { data: profiles } = await supabaseClient.from('profiles').select('id, full_name, username').in('id', userIds);
-                    if(profiles) profiles.forEach(p => profilesMap[p.id] = p.full_name || p.username);
-                }
-
-                // Fetch Parts Requests
-                if (ticketIds.length > 0) {
-                    const { data: parts } = await supabaseClient.from('spare_parts_requests').select('*').in('ticket_id', ticketIds);
-                    if(parts) {
-                        parts.forEach(p => {
-                            if(!partsMap[p.ticket_id]) partsMap[p.ticket_id] = [];
-                            partsMap[p.ticket_id].push(p);
-                        });
-                    }
-                }
+                if (assetIds.length > 0) { const { data } = await supabaseClient.from('assets').select('id, name').in('id', assetIds); if(data) data.forEach(a => assetsMap[a.id] = a.name); }
+                if (userIds.length > 0) { const { data } = await supabaseClient.from('profiles').select('id, full_name, username').in('id', userIds); if(data) data.forEach(p => profilesMap[p.id] = p.full_name || p.username); }
+                if (ticketIds.length > 0) { const { data } = await supabaseClient.from('spare_parts_requests').select('*').in('ticket_id', ticketIds); if(data) data.forEach(p => { if(!partsMap[p.ticket_id]) partsMap[p.ticket_id] = []; partsMap[p.ticket_id].push(p); }); }
 
                 currentTickets = tickets.map(t => ({
                     ...t,
@@ -457,245 +374,168 @@
                 
                 updateStats(currentTickets);
                 renderCharts(currentTickets);
-                renderTable(currentTickets);
+                renderData(currentTickets);
 
-            } catch (err) { console.error(err); }
+            } catch (err) { console.error(err); alert('Failed to load data: ' + err.message); }
         }
 
         function updateStats(tickets) {
-            const total = tickets.length;
-            const open = tickets.filter(t => t.status === 'OPEN').length;
-            const wip = tickets.filter(t => t.status === 'IN_PROGRESS' || t.status === 'PENDING_APPROVAL').length;
-            const verify = tickets.filter(t => t.status === 'PENDING_INSPECTION').length;
-            const closed = tickets.filter(t => t.status === 'CLOSED').length;
-
-            document.getElementById('statTotal').innerText = total;
-            document.getElementById('statWIP').innerText = open + wip;
-            document.getElementById('statVerify').innerText = verify;
-            document.getElementById('statDone').innerText = closed;
+             const total = tickets.length;
+             const open = tickets.filter(t => t.status === 'OPEN').length;
+             const wip = tickets.filter(t => ['IN_PROGRESS', 'PENDING_APPROVAL'].includes(t.status)).length;
+             const verify = tickets.filter(t => t.status === 'PENDING_INSPECTION').length;
+             const closed = tickets.filter(t => t.status === 'CLOSED').length;
+             
+             document.getElementById('statTotal').innerText = total;
+             document.getElementById('statWIP').innerText = open + wip;
+             document.getElementById('statVerify').innerText = verify;
+             document.getElementById('statDone').innerText = closed;
         }
 
         function renderCharts(tickets) {
-            const issueCounts = {};
-            const assetCounts = {};
-            tickets.forEach(t => {
-                const issue = t.issue_text || 'อื่นๆ';
-                const asset = t.asset_name;
-                issueCounts[issue] = (issueCounts[issue] || 0) + 1;
-                assetCounts[asset] = (assetCounts[asset] || 0) + 1;
-            });
-            
-            const ctxIssue = document.getElementById('issueChart').getContext('2d');
-            if(issueChartInstance) issueChartInstance.destroy();
-            issueChartInstance = new Chart(ctxIssue, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(issueCounts),
-                    datasets: [{
-                        data: Object.values(issueCounts),
-                        backgroundColor: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#64748b'],
-                        borderWidth: 0
-                    }]
-                },
-                options: { maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
-            });
+             const issueCounts = {}; const assetCounts = {};
+             tickets.forEach(t => {
+                 const issue = t.issue_text || 'อื่นๆ'; issueCounts[issue] = (issueCounts[issue] || 0) + 1;
+                 const asset = t.asset_name; assetCounts[asset] = (assetCounts[asset] || 0) + 1;
+             });
 
-            const sortedAssets = Object.entries(assetCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-            const ctxAsset = document.getElementById('assetChart').getContext('2d');
-            if(assetChartInstance) assetChartInstance.destroy();
-            assetChartInstance = new Chart(ctxAsset, {
-                type: 'bar',
-                data: {
-                    labels: sortedAssets.map(i => i[0]),
-                    datasets: [{
-                        label: 'จำนวนครั้ง',
-                        data: sortedAssets.map(i => i[1]),
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 5
-                    }]
-                },
-                options: {
-                    maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
-                    plugins: { legend: { display: false } }
-                }
-            });
+             const ctxIssue = document.getElementById('issueChart').getContext('2d');
+             if(issueChartInstance) issueChartInstance.destroy();
+             issueChartInstance = new Chart(ctxIssue, { type: 'doughnut', data: { labels: Object.keys(issueCounts), datasets: [{ data: Object.values(issueCounts), backgroundColor: ['#3b82f6', '#f97316', '#a855f7', '#22c55e', '#6366f1'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11, family: 'Sarabun' } } } } } });
+
+             const ctxAsset = document.getElementById('assetChart').getContext('2d');
+             if(assetChartInstance) assetChartInstance.destroy();
+             const sorted = Object.entries(assetCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+             assetChartInstance = new Chart(ctxAsset, { type: 'bar', data: { labels: sorted.map(i=>i[0]), datasets: [{ label: 'จำนวนครั้ง', data: sorted.map(i=>i[1]), backgroundColor: '#f97316', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } } } });
+        }
+
+        function renderData(tickets) {
+            const list = tickets.slice(0, 20);
+            renderTable(list);
+            renderMobileCards(list);
         }
 
         function renderTable(tickets) {
             const tbody = document.getElementById('ticketTableBody');
             tbody.innerHTML = '';
-
-            if (tickets.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">ยังไม่มีข้อมูล</td></tr>`;
-                return;
-            }
-
-            tickets.slice(0, 20).forEach(t => {
-                let statusBadge = `<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold">${t.status}</span>`;
-                let actionBtn = '';
-
-                if (t.status === 'PENDING_INSPECTION') {
-                    statusBadge = '<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold animate-pulse">รอตรวจ</span>'; 
-                    actionBtn = `<button onclick="openVerifyModal('${t.id}')" class="bg-purple-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-purple-700 transition shadow-sm hover:shadow-md">ตรวจสอบงาน</button>`;
-                } else if (t.status === 'CLOSED') {
-                    statusBadge = '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">เสร็จสิ้น</span>';
-                    actionBtn = `<button onclick="openPrintModal('${t.id}')" class="bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded text-xs font-bold hover:bg-gray-50 flex items-center ml-auto gap-1 shadow-sm"><i class="fas fa-print"></i> พิมพ์</button>`;
-                }
-
-                const dateStr = t.incident_time ? dayjs(t.incident_time).format('DD/MM/YY HH:mm') : '-';
-
-                const row = `
-                    <tr class="bg-white border-b hover:bg-gray-50 transition">
-                        <td class="px-6 py-4 text-gray-500 font-mono text-xs">${dateStr}</td>
-                        <td class="px-6 py-4 font-bold text-gray-800">${t.asset_name}</td>
-                        <td class="px-6 py-4 text-gray-700">${t.issue_text || '-'}</td>
-                        <td class="px-6 py-4 text-center">${statusBadge}</td>
-                        <td class="px-6 py-4 text-gray-500 text-sm">${t.requester_name}</td>
-                        <td class="px-6 py-4 text-right">${actionBtn}</td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
+            tickets.forEach(t => {
+                const btn = getActionBtn(t, false);
+                const badge = getStatusBadge(t.status);
+                tbody.innerHTML += `
+                    <tr class="bg-white border-b hover:bg-indigo-50/30 transition-colors group">
+                        <td class="px-6 py-4 pl-8 text-xs font-mono text-blue-600 font-bold group-hover:text-blue-700">#${t.id.substring(0,4)}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${Utils.formatDate(t.incident_time)}</td>
+                        <td class="px-6 py-4 font-bold text-gray-700">${t.asset_name}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${t.issue_text}</td>
+                        <td class="px-6 py-4 text-center">${badge}</td>
+                        <td class="px-6 py-4 pr-8 text-right">${btn}</td>
+                    </tr>`;
             });
         }
 
-        async function openPrintModal(ticketId) {
-            const ticket = currentTickets.find(t => t.id === ticketId);
-            if(!ticket) return;
-
-            // Fill Data
-            document.getElementById('p_ticketId').innerText = ticket.id.substring(0,8).toUpperCase();
-            document.getElementById('p_date').innerText = dayjs(ticket.incident_time).format('DD/MM/YYYY');
-            document.getElementById('p_requester').innerText = ticket.requester_name;
-            document.getElementById('p_asset').innerText = ticket.asset_name;
-            document.getElementById('p_issue').innerText = ticket.issue_text;
+        function renderMobileCards(tickets) {
+            const container = document.getElementById('mobileTicketCards');
+            container.innerHTML = '';
+            if(tickets.length === 0) { container.innerHTML = '<div class="text-center text-gray-400 py-10">ไม่พบรายการ</div>'; return; }
             
-            document.getElementById('p_technician').innerText = 'Technician Team'; // Mock, needs fetch if strict
-            
-            const start = ticket.started_at ? dayjs(ticket.started_at).format('DD/MM/YY HH:mm') : '-';
-            const end = ticket.finished_at ? dayjs(ticket.finished_at).format('DD/MM/YY HH:mm') : '-';
-            document.getElementById('p_startDate').innerText = start;
-            document.getElementById('p_endDate').innerText = end;
-            
-            document.getElementById('p_repairDetail').innerText = ticket.repair_details || '-';
-            document.getElementById('p_printDate').innerText = dayjs().format('DD/MM/YYYY HH:mm');
-
-            // Parts Table
-            const pBody = document.getElementById('p_partsTableBody');
-            pBody.innerHTML = '';
-            if(ticket.parts_data && ticket.parts_data.length > 0) {
-                ticket.parts_data.forEach((p, idx) => {
-                    pBody.innerHTML += `
-                        <tr>
-                            <td style="text-align:center;">${idx+1}</td>
-                            <td>${p.part_name}</td>
-                            <td style="text-align:center;">${p.quantity}</td>
-                            <td style="text-align:center;">หน่วย</td>
-                            <td>-</td>
-                        </tr>
-                    `;
-                });
-            } else {
-                pBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-400 italic">ไม่มีการเบิกอะไหล่</td></tr>`;
-            }
-
-            // Images
-            const imgContainer = document.getElementById('p_imageContainer');
-            imgContainer.innerHTML = '<div class="w-full text-center text-xs pt-4">Loading images...</div>';
-            
-            const { data: media } = await supabaseClient.from('media').select('*').eq('ticket_id', ticketId).eq('type', 'IMAGE').limit(2);
-            imgContainer.innerHTML = '';
-            
-            if(media && media.length > 0) {
-                media.forEach(m => {
-                    const div = document.createElement('div');
-                    div.className = 'flex-1 bg-white border border-slate-300 rounded overflow-hidden p-1 flex items-center justify-center h-full';
-                    div.innerHTML = `<img src="${m.url}" style="max-height:100%; max-width:100%; object-fit:contain;">`;
-                    imgContainer.appendChild(div);
-                });
-                // Fill blank if only 1 image
-                if (media.length < 2) {
-                     imgContainer.innerHTML += `<div class="flex-1 bg-slate-50 border border-dashed border-slate-300 rounded flex items-center justify-center text-slate-300 text-[10px]">No Image</div>`;
-                }
-            } else {
-                imgContainer.innerHTML = `<div class="w-full h-full bg-slate-50 border border-dashed border-slate-300 rounded flex items-center justify-center text-slate-400 text-xs">ไม่มีรูปภาพประกอบ</div>`;
-            }
-
-            document.getElementById('printModal').classList.remove('hidden');
+            tickets.forEach(t => {
+                const btn = getActionBtn(t, true); 
+                const badge = getStatusBadge(t.status);
+                const isVerify = t.status === 'PENDING_INSPECTION';
+                
+                container.innerHTML += `
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 ${isVerify ? 'ring-2 ring-purple-100' : ''} active:scale-98 transition-transform">
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="text-xs font-mono bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-bold">#${t.id.substring(0,4)}</span>
+                            ${badge}
+                        </div>
+                        <div class="mb-4">
+                            <h4 class="font-bold text-gray-800 text-lg mb-1 leading-snug">${t.issue_text}</h4>
+                            <div class="flex items-center gap-1.5 text-sm text-indigo-600 font-bold"><i class="fas fa-industry"></i> ${t.asset_name}</div>
+                            <div class="text-xs text-gray-400 mt-2 flex items-center gap-1"><i class="far fa-clock"></i> ${Utils.formatDate(t.incident_time)}</div>
+                        </div>
+                        <div class="flex items-center justify-between pt-3 border-t border-gray-50">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold border border-gray-200">${t.requester_name.charAt(0)}</div>
+                                <span class="text-xs text-gray-500 font-medium">${t.requester_name}</span>
+                            </div>
+                            ${btn}
+                        </div>
+                    </div>
+                `;
+            });
         }
 
-        // --- VERIFY MODAL LOGIC (Duplicate code kept for standalone functionality) ---
-        async function openVerifyModal(ticketId) {
-            const ticket = currentTickets.find(t => t.id === ticketId);
-            if (!ticket) return;
+        function getStatusBadge(status) {
+            if(status === 'PENDING_INSPECTION') return '<span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1 mx-auto w-max"><i class="fas fa-circle text-[6px]"></i> รอตรวจ</span>';
+            if(status === 'CLOSED') return '<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1 mx-auto w-max"><i class="fas fa-check text-[8px]"></i> เสร็จสิ้น</span>';
+            return `<span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[10px] font-bold">${status}</span>`;
+        }
 
-            document.getElementById('verifyTicketId').value = ticketId;
+        function getActionBtn(t, isMobile) {
+            if(t.status === 'PENDING_INSPECTION') {
+                return `<button onclick="openVerifyModal('${t.id}')" class="bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'px-5 py-2.5 w-full' : 'px-4 py-2'} rounded-xl font-bold shadow-lg shadow-purple-200 transition flex items-center justify-center gap-2 text-xs hover-scale"><i class="fas fa-search-plus"></i> ตรวจสอบ</button>`;
+            }
+            if(t.status === 'CLOSED') return isMobile ? '<span class="text-xs text-green-600 font-bold flex items-center gap-1"><i class="fas fa-check-circle"></i> เรียบร้อย</span>' : '<span class="text-green-500 text-lg"><i class="fas fa-check-circle"></i></span>';
+            return '';
+        }
+
+        async function openVerifyModal(id) {
+            const ticket = currentTickets.find(t => t.id === id);
+            if(!ticket) return;
+            document.getElementById('verifyTicketId').value = id;
             document.getElementById('verifyAssetName').innerText = ticket.asset_name;
-            document.getElementById('verifyDate').innerText = dayjs(ticket.incident_time).format('DD/MM/YYYY HH:mm');
+            document.getElementById('verifyDate').innerText = Utils.formatDate(ticket.incident_time);
             document.getElementById('verifyIssue').innerText = ticket.issue_text;
             document.getElementById('verifyRepairDetails').innerText = ticket.repair_details || '- ไม่มีรายละเอียด -';
-
-            // Show Parts
-            const partsListEl = document.getElementById('verifyPartsList');
+            
+            const pList = document.getElementById('verifyPartsList');
             if(ticket.parts_data && ticket.parts_data.length > 0) {
-                partsListEl.innerHTML = `<ul class="list-disc pl-4 text-sm">${ticket.parts_data.map(p => `<li>${p.part_name} (x${p.quantity})</li>`).join('')}</ul>`;
+                pList.innerHTML = `<ul class="space-y-2">${ticket.parts_data.map(p => `<li class="flex justify-between items-center text-gray-600 bg-gray-50 px-3 py-2 rounded-lg border border-gray-100"><span class="flex items-center gap-2"><i class="fas fa-cog text-gray-400 text-xs"></i> ${p.part_name}</span><span class="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">x${p.quantity}</span></li>`).join('')}</ul>`;
             } else {
-                partsListEl.innerText = '- ไม่ใช้อะไหล่ -';
+                pList.innerHTML = '<span class="text-gray-400 italic text-xs bg-gray-50 px-3 py-2 rounded-lg block border border-dashed border-gray-200 text-center">- ไม่มีการเบิกอะไหล่ -</span>';
             }
-
-            // Fetch Media
-            const container = document.getElementById('verifyMediaContainer');
-            container.innerHTML = '<div class="col-span-3 text-center py-4 text-gray-400"><i class="fas fa-spinner fa-spin"></i> กำลังโหลด...</div>';
+            
+            const mContainer = document.getElementById('verifyMediaContainer');
+            mContainer.innerHTML = '<div class="col-span-3 text-center py-4 text-gray-400 text-xs">Loading...</div>';
             
             try {
-                const { data: media } = await supabaseClient.from('media').select('*').eq('ticket_id', ticketId);
-                container.innerHTML = '';
-                if (media && media.length > 0) {
+                const { data: media } = await supabaseClient.from('media').select('*').eq('ticket_id', id);
+                mContainer.innerHTML = '';
+                let hasImage = false;
+                if(media && media.length > 0) {
+                    hasImage = true;
                     media.forEach(m => {
-                        const div = document.createElement('div');
-                        div.className = 'relative aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:opacity-90 transition';
-                        div.onclick = () => showImagePreview(m.url);
-                        if (m.type === 'IMAGE') div.innerHTML = `<img src="${m.url}" class="w-full h-full object-cover">`;
-                        else div.innerHTML = `<video src="${m.url}" class="w-full h-full object-cover"></video>`;
-                        container.appendChild(div);
+                        mContainer.innerHTML += `<div class="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-pointer hover:opacity-90 transition shadow-sm relative group" onclick="viewImage('${m.url}')"><img src="${m.url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition"></div></div>`;
                     });
-                } else {
-                    container.innerHTML = '<div class="col-span-3 text-center py-4 text-gray-400 text-xs bg-gray-50 rounded border border-dashed">ไม่มีรูปภาพ</div>';
+                } 
+                if(!hasImage && ticket.photo_url) {
+                    mContainer.innerHTML = `<div class="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-pointer hover:opacity-90 transition shadow-sm relative group" onclick="viewImage('${ticket.photo_url}')"><img src="${ticket.photo_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition"></div></div>`;
+                } else if (!hasImage) {
+                    mContainer.innerHTML = '<div class="col-span-3 text-center py-6 text-gray-400 text-xs italic border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 flex flex-col items-center gap-2"><i class="fas fa-image text-xl opacity-50"></i><span>- ไม่มีรูปภาพ -</span></div>';
                 }
-            } catch (e) { container.innerHTML = 'Error loading media'; }
-
+            } catch(e) { mContainer.innerHTML = 'Error'; }
+            
             document.getElementById('verifyModal').classList.remove('hidden');
         }
 
         function closeVerifyModal() { document.getElementById('verifyModal').classList.add('hidden'); }
+        function viewImage(url) { document.getElementById('fullImage').src = url; document.getElementById('imageViewerModal').classList.remove('hidden'); }
 
         async function handleVerify(action) {
-            const ticketId = document.getElementById('verifyTicketId').value;
-            const newStatus = action === 'APPROVE' ? 'CLOSED' : 'IN_PROGRESS';
-            if (action === 'REJECT' && !confirm("ส่งงานกลับไปให้ช่างแก้ไข?")) return;
-            if (action === 'APPROVE' && !confirm("ยืนยันปิดงานซ่อมนี้?")) return;
-
-            try {
-                const { error } = await supabaseClient.from('tickets').update({ status: newStatus }).eq('id', ticketId);
-                if (error) throw error;
-                alert(action === 'APPROVE' ? "✅ อนุมัติปิดงานเรียบร้อย" : "↩️ ส่งงานกลับไปแก้ไขเรียบร้อย");
-                closeVerifyModal(); fetchData();
-            } catch (e) { alert("Error: " + e.message); }
+             const id = document.getElementById('verifyTicketId').value;
+             const status = action === 'APPROVE' ? 'CLOSED' : 'IN_PROGRESS';
+             if(!confirm(action === 'APPROVE' ? 'ยืนยันอนุมัติปิดงาน?' : 'ยืนยันส่งกลับแก้ไข?')) return;
+             
+             try {
+                 const { error } = await supabaseClient.from('tickets').update({ status }).eq('id', id);
+                 if(error) throw error;
+                 alert(action === 'APPROVE' ? '✅ อนุมัติเรียบร้อย' : '↩️ ส่งกลับแล้ว');
+                 closeVerifyModal(); fetchData();
+             } catch(err) { alert('Error: ' + err.message); }
         }
-
-        function showImagePreview(url) {
-            document.getElementById('previewImage').src = url;
-            document.getElementById('imagePreviewModal').classList.remove('hidden');
-        }
-
-        function scrollToVerify() {
-            document.getElementById('ticketTableSection').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function logout() {
-            localStorage.removeItem('cmms_user_session');
-            location.reload();
-        }
+        
+        function scrollToSection(id) { document.getElementById(id).scrollIntoView({behavior:'smooth'}); }
     </script>
 </body>
 </html>

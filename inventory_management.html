@@ -2,8 +2,8 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบคลังอะไหล่ - WD Maintenance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stock Management - WD Maintenance</title>
     
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,374 +11,479 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
-        body { font-family: 'Sarabun', sans-serif; }
-        .fade-in { animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700;800&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; }
         
-        /* Sidebar Active State */
-        .nav-item.active { background-color: rgba(255, 255, 255, 0.1); border-left: 4px solid #f97316; color: white; }
-        .nav-item { border-left: 4px solid transparent; }
-
-        /* Category Chips */
-        .cat-chip { transition: all 0.2s; white-space: nowrap; cursor: pointer; }
-        .cat-chip.active { background-color: #f97316; color: white; border-color: #f97316; box-shadow: 0 2px 4px rgba(249, 115, 22, 0.3); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Sidebar Transition Logic (Fixed) */
+        #mobileSidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        @media (max-width: 768px) {
+            #mobileSidebar.closed { transform: translateX(-100%); }
+        }
+
+        #sidebarOverlay { transition: opacity 0.3s ease; }
+        #sidebarOverlay.hidden { opacity: 0; pointer-events: none; }
+
+        /* Sidebar Gradient */
+        .sidebar-gradient { background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); }
+
+        /* Menu Item Styling */
+        .menu-btn { transition: all 0.2s; position: relative; overflow: hidden; }
+        .menu-btn:hover { background-color: rgba(255,255,255,0.1); transform: translateX(5px); }
+        .menu-btn.active { background: linear-gradient(90deg, #f97316 0%, #ea580c 100%); color: white; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3); border: none; }
+        .menu-btn.active i { color: white !important; }
+
+        /* Content Gradients */
+        .hero-gradient { background: linear-gradient(135deg, #f97316 0%, #db2777 100%); } /* Orange to Pink */
+        
+        .card-stock-ok { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .card-stock-low { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .card-value { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        
+        .glass-panel { background: white; border-radius: 1rem; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); }
+        .hover-lift { transition: transform 0.2s, box-shadow 0.2s; }
+        .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15); }
+
+        /* Chip Styles */
+        .cat-chip { transition: all 0.2s; }
+        .cat-chip.active { background-color: #f97316; color: white; border-color: #f97316; box-shadow: 0 4px 10px rgba(249, 115, 22, 0.4); }
+        
+        tr.hover-row:hover td { background-color: #fff7ed; }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body class="h-screen flex overflow-hidden bg-gray-100 text-gray-800">
 
-    <!-- Sidebar -->
-    <aside class="w-64 bg-slate-900 text-gray-300 flex-shrink-0 hidden md:flex flex-col shadow-xl z-20">
-        <div class="p-6 flex items-center border-b border-slate-700">
-            <i class="fas fa-boxes text-orange-500 text-2xl mr-3"></i>
-            <h1 class="text-xl font-bold tracking-wider text-white">INVENTORY</h1>
+    <!-- Sidebar Overlay (Mobile Only) -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm md:hidden" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar (Fixed Width 280px) -->
+    <aside id="mobileSidebar" class="fixed inset-y-0 left-0 w-[280px] sidebar-gradient text-slate-300 z-50 shadow-2xl transform closed md:translate-x-0 md:static md:flex flex-col transition-transform duration-300 border-r border-slate-800 font-sans shrink-0">
+        
+        <!-- Logo Area -->
+        <div class="h-20 flex items-center px-6 border-b border-slate-800/50 bg-slate-900/50 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-500 to-pink-600 flex items-center justify-center text-white shadow-lg border border-white/10">
+                    <i class="fas fa-cubes text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight text-white leading-none">WD Maint.</h1>
+                    <p class="text-[10px] font-bold text-orange-400 uppercase tracking-widest mt-1">Inventory</p>
+                </div>
+            </div>
+            <button onclick="toggleSidebar()" class="md:hidden ml-auto text-slate-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
         </div>
         
-        <nav class="flex-1 overflow-y-auto py-4 space-y-1">
-            <a href="inventory_management.html" class="nav-item active flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition">
-                <i class="fas fa-cubes w-6"></i> <span>คลังอะไหล่ (Stock)</span>
-            </a>
-            <a href="javascript:safeRedirect('manager_dashboard_v2.html')" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition">
-                <i class="fas fa-chart-line w-6"></i> <span>กลับ Dashboard</span>
-            </a>
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-6">
+            
+            <!-- Group 1: General -->
+            <div>
+                <div class="px-2 mb-3 text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                    <span class="w-8 h-[1px] bg-slate-700"></span> Dashboards
+                </div>
+                <div class="space-y-1">
+                    <a href="manager_dashboard.html" class="menu-btn flex items-center px-4 py-3 rounded-xl font-medium text-slate-300 hover:text-white">
+                        <i class="fas fa-chart-pie w-6 text-center text-lg text-blue-400 mr-2"></i> <span>ภาพรวมระบบ</span>
+                    </a>
+                    <!-- Active Menu -->
+                    <a href="#" class="menu-btn active flex items-center px-4 py-3 rounded-xl font-medium text-white shadow-lg shadow-orange-500/20">
+                        <i class="fas fa-boxes w-6 text-center text-lg mr-2"></i> <span>คลังอะไหล่</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Group 2: Config -->
+            <div>
+                <div class="px-2 mb-3 text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                    <span class="w-8 h-[1px] bg-slate-700"></span> System
+                </div>
+                <div class="space-y-1">
+                    <a href="admin_dashboard.html" class="menu-btn flex items-center px-4 py-3 rounded-xl font-medium text-slate-300 hover:text-white">
+                        <i class="fas fa-cogs w-6 text-center text-lg text-slate-400 mr-2"></i> <span>ตั้งค่าระบบ</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Quick Action -->
+            <div class="mt-4 pt-4 border-t border-slate-800">
+                <button onclick="openModal()" class="w-full flex items-center justify-center px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition font-bold border border-slate-700 group">
+                    <i class="fas fa-plus-circle text-green-500 mr-2 group-hover:scale-110 transition"></i> รับของเข้าด่วน
+                </button>
+            </div>
+
         </nav>
 
-        <div class="p-4 border-t border-slate-700">
-            <div class="text-xs text-gray-500 text-center mb-2">Logged in as</div>
-            <div class="font-bold text-white text-center truncate" id="userName">-</div>
-            <button onclick="logout()" class="w-full mt-3 bg-red-600 hover:bg-red-700 text-white py-2 rounded text-sm transition">
-                ออกจากระบบ
+        <!-- Footer -->
+        <div class="p-4 border-t border-slate-800 bg-slate-900/80 shrink-0">
+            <button onclick="Auth.logout()" class="w-full bg-red-500/10 hover:bg-red-600 hover:text-white text-red-400 py-3.5 rounded-xl transition flex items-center justify-center gap-2 font-bold text-sm border border-red-500/20 hover:border-red-500 hover:shadow-lg hover:shadow-red-900/20 group">
+                <i class="fas fa-sign-out-alt group-hover:animate-bounce-x"></i> ออกจากระบบ
             </button>
         </div>
     </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col overflow-hidden relative">
-        <!-- Topbar -->
-        <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6 z-10 shrink-0">
-            <div class="flex items-center gap-4">
-                <button class="md:hidden text-gray-600"><i class="fas fa-bars text-xl"></i></button>
-                <h2 class="text-xl font-semibold text-gray-800">จัดการสต็อกอะไหล่</h2>
-            </div>
-            <div>
-                <button onclick="openModal()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg shadow flex items-center gap-2 transition font-bold text-sm">
-                    <i class="fas fa-plus"></i> เพิ่มอะไหล่ใหม่
-                </button>
-            </div>
-        </header>
+    <!-- Main Content (Fluid Width) -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative w-full bg-slate-50">
+        
+        <!-- Scrollable Area -->
+        <div class="flex-1 overflow-y-auto no-scrollbar scroll-smooth">
+            
+            <!-- 1. HERO HEADER (Full Width) -->
+            <div class="hero-gradient pt-8 pb-24 px-6 sm:px-10 relative overflow-hidden">
+                <!-- Decoration -->
+                <div class="absolute top-0 right-0 w-96 h-96 bg-white opacity-10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+                <div class="absolute bottom-0 left-0 w-64 h-64 bg-yellow-400 opacity-20 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none mix-blend-overlay"></div>
 
-        <!-- Content Area -->
-        <div class="flex-1 overflow-auto p-6 bg-gray-50 relative">
-
-            <!-- Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 fade-in">
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center">
-                    <div class="p-3 rounded-lg bg-blue-100 text-blue-600 mr-4"><i class="fas fa-list text-2xl"></i></div>
-                    <div><p class="text-gray-500 text-sm">รายการทั้งหมด</p><h3 class="text-2xl font-bold text-gray-800" id="statTotal">0</h3></div>
-                </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center">
-                    <div class="p-3 rounded-lg bg-red-100 text-red-600 mr-4"><i class="fas fa-exclamation-triangle text-2xl"></i></div>
-                    <div><p class="text-gray-500 text-sm">สินค้าต่ำกว่า Min</p><h3 class="text-2xl font-bold text-red-600" id="statLow">0</h3></div>
-                </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center">
-                    <div class="p-3 rounded-lg bg-green-100 text-green-600 mr-4"><i class="fas fa-coins text-2xl"></i></div>
-                    <div><p class="text-gray-500 text-sm">มูลค่ารวมในคลัง</p><h3 class="text-2xl font-bold text-green-600" id="statValue">0 ฿</h3></div>
-                </div>
-            </div>
-
-            <!-- Table Container -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden fade-in" style="animation-delay: 0.1s;">
-                
-                <!-- Controls: Search & Categories -->
-                <div class="p-4 border-b border-gray-100 space-y-3 bg-gray-50/50">
-                    <!-- Search -->
-                    <div class="flex justify-between items-center">
-                        <div class="relative w-full max-w-md">
-                            <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
-                            <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="ค้นหารหัส หรือ ชื่ออะไหล่..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300 w-full text-sm bg-white">
+                <!-- Topbar -->
+                <div class="flex justify-between items-center relative z-10 w-full mb-6">
+                    <div class="flex items-center gap-4">
+                        <button onclick="toggleSidebar()" class="md:hidden w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-sm transition border border-white/10">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold text-white drop-shadow-md tracking-tight flex items-center gap-2">
+                                จัดการสต็อก <span class="text-orange-200 text-lg font-normal opacity-80">| Inventory</span>
+                            </h2>
+                            <p class="text-orange-100 text-sm mt-1 opacity-90 font-medium">ตรวจสอบและจัดการอะไหล่คงเหลือในคลัง</p>
                         </div>
-                        <div class="text-xs text-gray-400 hidden sm:block">แสดงรายการล่าสุด</div>
                     </div>
-
-                    <!-- Category Chips -->
-                    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1" id="categoryContainer">
-                        <!-- JS Will Inject Chips Here -->
-                    </div>
+                    <button onclick="openModal()" class="bg-white text-orange-600 hover:bg-orange-50 px-6 py-3 rounded-xl text-sm font-bold shadow-xl transition hover:scale-105 flex items-center gap-2 active:scale-95 group border border-white/50">
+                        <div class="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition"><i class="fas fa-plus text-xs"></i></div>
+                        <span class="hidden sm:inline">เพิ่มอะไหล่ใหม่</span>
+                    </button>
                 </div>
 
-                <!-- Table -->
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-gray-50 text-gray-600 uppercase text-xs font-semibold tracking-wider sticky top-0 z-10">
-                            <tr>
-                                <th class="px-6 py-4">รหัส (Part No.)</th>
-                                <th class="px-6 py-4">ชื่ออะไหล่</th>
-                                <th class="px-6 py-4">หมวดหมู่</th>
-                                <th class="px-6 py-4 text-center">คงเหลือ</th>
-                                <th class="px-6 py-4 text-center">Min / Max</th>
-                                <th class="px-6 py-4 text-center">หน่วย</th>
-                                <th class="px-6 py-4 text-right">ราคา/หน่วย</th>
-                                <th class="px-6 py-4 text-center">จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="partsTableBody" class="divide-y divide-gray-100 text-sm text-gray-700">
-                            <tr><td colspan="8" class="text-center py-10 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดข้อมูล...</td></tr>
-                        </tbody>
-                    </table>
+                <!-- Search Bar (Full Width Center) -->
+                <div class="relative z-10 max-w-4xl mx-auto mt-6">
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-orange-300 text-lg group-focus-within:text-orange-500 transition"></i>
+                        </div>
+                        <input type="text" id="searchInput" onkeyup="renderTable()" 
+                            class="block w-full pl-12 pr-6 py-4 rounded-2xl border-0 text-gray-900 shadow-2xl ring-1 ring-white/20 placeholder:text-gray-400 focus:ring-2 focus:ring-white/60 bg-white/95 backdrop-blur-md transition text-base" 
+                            placeholder="ค้นหารหัส, ชื่ออะไหล่ หรือหมวดหมู่...">
+                    </div>
                 </div>
             </div>
 
+            <!-- 2. DATA CONTENT (Full Width) -->
+            <div class="px-4 sm:px-8 -mt-16 pb-12 w-full relative z-20">
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 max-w-7xl mx-auto">
+                    <!-- Value -->
+                    <div class="card-value rounded-2xl p-5 text-white shadow-xl hover-lift relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:scale-110 transition"><i class="fas fa-coins text-7xl"></i></div>
+                        <div class="relative z-10">
+                            <p class="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">มูลค่ารวม</p>
+                            <h3 class="text-3xl font-extrabold" id="statValue">-</h3>
+                            <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded backdrop-blur-sm mt-2 inline-block">บาท (THB)</span>
+                        </div>
+                    </div>
+                    <!-- Items -->
+                    <div class="card-stock-ok rounded-2xl p-5 text-white shadow-xl hover-lift relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:scale-110 transition"><i class="fas fa-box-open text-7xl"></i></div>
+                        <div class="relative z-10">
+                            <p class="text-green-100 text-xs font-bold uppercase tracking-wider mb-1">รายการทั้งหมด</p>
+                            <h3 class="text-3xl font-extrabold" id="statTotal">-</h3>
+                            <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded backdrop-blur-sm mt-2 inline-block">Items</span>
+                        </div>
+                    </div>
+                    <!-- Low Stock -->
+                    <div class="card-stock-low rounded-2xl p-5 text-white shadow-xl hover-lift relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:scale-110 transition"><i class="fas fa-exclamation-triangle text-7xl"></i></div>
+                        <div class="absolute top-4 right-4 w-3 h-3 bg-white rounded-full animate-ping opacity-75"></div>
+                        <div class="relative z-10">
+                            <p class="text-yellow-100 text-xs font-bold uppercase tracking-wider mb-1">ต้องสั่งซื้อเพิ่ม</p>
+                            <h3 class="text-3xl font-extrabold" id="statLow">-</h3>
+                            <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded backdrop-blur-sm mt-2 inline-block">Alert</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Filters -->
+                <div class="flex gap-2 overflow-x-auto no-scrollbar mb-6 pb-2 pl-1 max-w-7xl mx-auto" id="categoryContainer">
+                    <!-- JS Injected Chips -->
+                </div>
+
+                <!-- 3. INVENTORY LIST (Full Width) -->
+                <div class="glass-panel overflow-hidden min-h-[500px] border border-gray-200/60 shadow-xl bg-white flex flex-col h-full w-full">
+                    <!-- Desktop Table -->
+                    <div class="hidden md:block overflow-x-auto w-full">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-gray-50/80 text-gray-500 uppercase text-xs font-bold border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-5 pl-8">Item Info</th>
+                                    <th class="px-6 py-5">หมวดหมู่</th>
+                                    <th class="px-6 py-5 text-center">คงเหลือ</th>
+                                    <th class="px-6 py-5 text-right">ราคา/หน่วย</th>
+                                    <th class="px-6 py-5 text-center">สถานะ</th>
+                                    <th class="px-6 py-5 text-right pr-8">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="partsTableBody" class="divide-y divide-gray-100 text-sm"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Mobile Cards List -->
+                    <div class="md:hidden p-4 space-y-3" id="mobilePartCards"></div>
+                </div>
+
+            </div>
         </div>
     </main>
 
-    <!-- Part Modal (Add/Edit) with Min/Max -->
-    <div id="partModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center backdrop-blur-sm transition-opacity">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform scale-100 overflow-y-auto max-h-[90vh]">
-            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-box text-orange-500"></i> <span id="modalTitle">เพิ่มอะไหล่</span></h3>
-            <input type="hidden" id="partId">
-            <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">รหัสอะไหล่</label>
-                        <input type="text" id="partNo" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 outline-none" placeholder="เช่น BR-6204">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">หมวดหมู่</label>
-                        <select id="partCategory" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 outline-none bg-white">
-                            <option value="ทั่วไป">ทั่วไป</option>
-                            <option value="ไฟฟ้า">ไฟฟ้า</option>
-                            <option value="ประปา">ประปา</option>
-                            <option value="เครื่องมือ">เครื่องมือ</option>
-                            <option value="เครื่องปรับอากาศ">เครื่องปรับอากาศ</option>
-                            <option value="ก่อสร้าง">ก่อสร้าง</option>
-                            <option value="IT">IT/คอมพิวเตอร์</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">ชื่ออะไหล่ <span class="text-red-500">*</span></label>
-                    <input type="text" id="partName" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 outline-none" placeholder="ระบุชื่ออะไหล่">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">จำนวนตั้งต้น</label>
-                        <input type="number" id="partStock" class="w-full border rounded-lg px-3 py-2 outline-none text-center font-mono" value="0" min="0">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">หน่วยนับ</label>
-                        <input type="text" id="partUnit" class="w-full border rounded-lg px-3 py-2 outline-none" placeholder="ชิ้น, อัน">
-                    </div>
-                </div>
-                
-                <!-- Min / Max Settings -->
-                <div class="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                    <div>
-                        <label class="block text-xs font-bold text-red-600 mb-1">จุดสั่งซื้อ (Min)</label>
-                        <input type="number" id="partMin" class="w-full border rounded-lg px-3 py-2 outline-none text-center font-mono focus:border-red-400" value="0" min="0" placeholder="ต่ำสุด">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-green-600 mb-1">เก็บสูงสุด (Max)</label>
-                        <input type="number" id="partMax" class="w-full border rounded-lg px-3 py-2 outline-none text-center font-mono focus:border-green-400" value="0" min="0" placeholder="สูงสุด">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">ราคาต่อหน่วย (บาท)</label>
-                    <input type="number" id="partPrice" class="w-full border rounded-lg px-3 py-2 outline-none text-right font-mono" placeholder="0.00" step="0.01">
-                </div>
+    <!-- Part Modal (Add/Edit) -->
+    <div id="partModal" class="fixed inset-0 bg-slate-900/80 z-[60] hidden flex items-center justify-center backdrop-blur-sm p-4 transition-opacity">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform scale-100 transition-transform border border-white/10">
+            <div class="bg-gradient-to-r from-orange-500 to-pink-600 p-6 text-white flex justify-between items-center shadow-md">
+                <h3 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-box"></i> <span id="modalTitle">เพิ่มอะไหล่</span></h3>
+                <button onclick="document.getElementById('partModal').classList.add('hidden')" class="text-white/80 hover:text-white text-xl w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition"><i class="fas fa-times"></i></button>
             </div>
-            <div class="mt-6 flex gap-3">
-                <button onclick="document.getElementById('partModal').classList.add('hidden')" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-medium transition">ยกเลิก</button>
-                <button onclick="savePart()" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-lg font-bold shadow-lg shadow-orange-200 transition">บันทึก</button>
+            <div class="p-6 space-y-4 bg-white">
+                <input type="hidden" id="partId">
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="col-span-1">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">รหัส</label>
+                        <input type="text" id="partNo" class="w-full border-gray-200 bg-gray-50 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm font-mono outline-none transition" placeholder="A-001">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">ชื่ออะไหล่ <span class="text-red-500">*</span></label>
+                        <input type="text" id="partName" class="w-full border-gray-200 bg-gray-50 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm font-bold outline-none transition" placeholder="เช่น สายพาน V-Belt" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">หมวดหมู่</label>
+                    <select id="partCategory" class="w-full border-gray-200 bg-gray-50 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm outline-none transition">
+                        <option value="ทั่วไป">🛠️ ทั่วไป</option>
+                        <option value="ไฟฟ้า">⚡ ไฟฟ้า</option>
+                        <option value="ประปา">💧 ประปา</option>
+                        <option value="เครื่องมือ">🔧 เครื่องมือ</option>
+                        <option value="เครื่องจักร">⚙️ เครื่องจักร</option>
+                        <option value="IT">💻 ไอที</option>
+                        <option value="ความปลอดภัย">🦺 ความปลอดภัย</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">คงเหลือ</label>
+                        <input type="number" id="partStock" class="w-full border-gray-200 rounded-lg text-center font-bold text-lg text-blue-600 focus:ring-blue-500 outline-none" value="0">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">หน่วยนับ</label>
+                        <input type="text" id="partUnit" class="w-full border-gray-200 rounded-lg text-center text-sm outline-none" placeholder="ชิ้น">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-red-500 uppercase mb-1">Min Alert</label>
+                        <input type="number" id="partMin" class="w-full border-red-100 bg-red-50 rounded-lg text-center text-sm font-bold text-red-600 outline-none" value="0">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">ราคา/หน่วย</label>
+                        <input type="number" id="partPrice" class="w-full border-gray-200 bg-gray-50 rounded-lg text-right text-sm outline-none" placeholder="0.00">
+                    </div>
+                </div>
+                <button onclick="savePart()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl font-bold shadow-lg transition transform active:scale-95 mt-2 flex items-center justify-center gap-2">
+                    <i class="fas fa-save"></i> บันทึกข้อมูล
+                </button>
             </div>
         </div>
     </div>
 
     <!-- Adjust Stock Modal -->
-    <div id="adjustModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 text-center">
-            <h3 class="text-lg font-bold text-gray-800 mb-1">ปรับปรุงสต็อก</h3>
-            <p id="adjustName" class="text-sm text-gray-500 mb-4">-</p>
-            <input type="hidden" id="adjustId">
-            <input type="hidden" id="adjustType" value="add">
-
-            <div class="flex gap-2 mb-4 bg-gray-100 p-1 rounded-lg">
-                <button onclick="setAdjustType('add')" id="btnAdjAdd" class="flex-1 py-2 rounded-md text-sm font-bold transition bg-green-100 text-green-700 shadow-sm">รับเข้า (+)</button>
-                <button onclick="setAdjustType('remove')" id="btnAdjRemove" class="flex-1 py-2 rounded-md text-sm font-bold transition text-gray-500 hover:bg-gray-200">เบิกออก (-)</button>
+    <div id="adjustModal" class="fixed inset-0 bg-slate-900/80 z-[60] hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center transform scale-100 transition-all border border-white/20">
+            <div class="w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner border border-blue-100">
+                <i class="fas fa-exchange-alt"></i>
             </div>
-
-            <div class="mb-6 relative">
-                <input type="number" id="adjustQty" class="w-full text-center text-4xl font-bold border-2 border-gray-200 rounded-xl py-4 focus:outline-none focus:border-blue-500 text-gray-700" value="1" min="1">
-                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">UNIT</span>
+            <h3 class="text-xl font-extrabold text-gray-800 mb-1">ปรับปรุงสต็อก</h3>
+            <p id="adjustName" class="text-sm text-gray-500 mb-6 bg-gray-50 inline-block px-3 py-1 rounded-full border border-gray-100 font-mono">-</p>
+            <input type="hidden" id="adjustId"><input type="hidden" id="adjustType" value="add">
+            
+            <div class="flex gap-2 mb-5 p-1 bg-gray-100 rounded-xl">
+                <button onclick="setAdjustType('add')" id="btnAdjAdd" class="flex-1 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 bg-white shadow text-green-600">
+                    <i class="fas fa-plus-circle"></i> รับเข้า
+                </button>
+                <button onclick="setAdjustType('remove')" id="btnAdjRemove" class="flex-1 py-3 rounded-lg text-sm font-bold transition text-gray-500 hover:text-gray-700 flex items-center justify-center gap-2">
+                    <i class="fas fa-minus-circle"></i> เบิกออก
+                </button>
             </div>
-
-            <button onclick="submitAdjust()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-bold shadow-lg transition">ยืนยัน</button>
-            <button onclick="document.getElementById('adjustModal').classList.add('hidden')" class="mt-3 text-sm text-gray-400 hover:text-gray-600 underline">ปิดหน้าต่าง</button>
+            
+            <div class="mb-6 relative w-32 mx-auto">
+                <input type="number" id="adjustQty" class="w-full text-center text-4xl font-extrabold border-0 border-b-2 border-gray-200 focus:border-blue-500 focus:ring-0 py-2 bg-transparent outline-none" value="1" min="1">
+                <div class="text-xs text-gray-400 mt-1 uppercase font-bold tracking-wide">จำนวน</div>
+            </div>
+            
+            <button onclick="submitAdjust()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-lg transition active:scale-95">ยืนยัน</button>
+            <button onclick="document.getElementById('adjustModal').classList.add('hidden')" class="mt-4 text-sm text-gray-400 hover:text-gray-600 font-medium">ยกเลิก</button>
         </div>
     </div>
 
     <script>
+        // --- EMBEDDED CONFIG & AUTH ---
         const SUPABASE_URL = 'https://nmezqexpvhdozpdzxxek.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tZXpxZXhwdmhkb3pwZHp4eGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5OTAwNTEsImV4cCI6MjA4MjU2NjA1MX0.N1OjCh1sp0xx0DGFjR6yX2hix5oIX7suzrnvQk8qPWU';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        const Auth = {
+            requireRole: (allowedRoles = []) => {
+                const session = localStorage.getItem('cmms_user_session');
+                if (!session) { window.location.href = 'index.html'; return null; }
+                const user = JSON.parse(session);
+                if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+                    alert('Access Denied'); window.location.href = 'index.html'; return null;
+                }
+                return user;
+            },
+            logout: () => { if(confirm('ออกจากระบบ?')) { localStorage.removeItem('cmms_user_session'); window.location.href = 'index.html'; } },
+        };
+
+        const Utils = { safeRedirect: (url) => { try { window.location.href = url; } catch(e) { console.error(e); } } };
+
+        // --- MAIN LOGIC ---
         let partsList = [];
         let currentCategory = 'ALL';
 
-        function safeRedirect(url) {
-            try { window.location.href = url; } 
-            catch(e) { document.body.innerHTML = `<div class="p-8 text-center"><h1 class="text-xl font-bold mb-4">Redirecting...</h1><a href="${url}" class="bg-blue-600 text-white px-6 py-2 rounded-lg">ไปต่อ</a></div>`; }
-        }
-
         document.addEventListener('DOMContentLoaded', async () => {
-            const session = localStorage.getItem('cmms_user_session');
-            if(!session) { safeRedirect('index.html'); return; }
-            const user = JSON.parse(session);
-            if(!['admin','manager'].includes(user.role)) { alert('Access Denied'); safeRedirect('index.html'); return; }
-            
-            document.getElementById('userName').innerText = user.full_name || user.username;
+            const user = Auth.requireRole(['admin','manager']);
+            if(!user) return;
             fetchParts();
         });
+        
+        function toggleSidebar() {
+            const sb = document.getElementById('mobileSidebar');
+            const ov = document.getElementById('sidebarOverlay');
+            sb.classList.toggle('closed');
+            if(sb.classList.contains('closed')) ov.classList.add('hidden'); else ov.classList.remove('hidden');
+        }
 
         async function fetchParts() {
             try {
                 const { data, error } = await supabaseClient.from('spare_parts').select('*').order('name');
                 if(error) throw error;
-                
-                partsList = data.map(p => ({
-                    ...p,
-                    category: p.category || 'ทั่วไป',
-                    min_stock: p.min_stock || 0, // Default to 0 if not set
-                    max_stock: p.max_stock || 0
-                }));
-
-                renderCategoryTabs();
-                renderTable();
-                updateStats();
-            } catch(e) {
-                console.error(e);
-                document.getElementById('partsTableBody').innerHTML = `<tr><td colspan="8" class="text-center py-8 text-red-400">โหลดข้อมูลไม่สำเร็จ: ${e.message}</td></tr>`;
-            }
+                partsList = data.map(p => ({ ...p, category: p.category || 'ทั่วไป', min_stock: p.min_stock || 0, max_stock: p.max_stock || 0 }));
+                renderCategoryTabs(); renderTable(); updateStats();
+            } catch(e) { console.error(e); }
         }
 
         function renderCategoryTabs() {
             const container = document.getElementById('categoryContainer');
             const categories = ['ALL', ...new Set(partsList.map(p => p.category))].sort();
-            
             container.innerHTML = '';
             categories.forEach(cat => {
-                const btn = document.createElement('div');
-                const isAll = cat === 'ALL';
-                const label = isAll ? 'ทั้งหมด' : cat;
-                const activeClass = (cat === currentCategory) ? 'active bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50';
-                
-                btn.className = `cat-chip px-4 py-1.5 rounded-full border text-xs font-bold ${activeClass}`;
-                btn.innerHTML = `${getCategoryIcon(cat)} ${label}`;
-                btn.onclick = () => {
-                    currentCategory = cat;
-                    renderCategoryTabs(); 
-                    renderTable();
-                };
+                const btn = document.createElement('button');
+                const isActive = (cat === currentCategory);
+                btn.className = `cat-chip px-5 py-2 rounded-full text-xs font-bold border transition whitespace-nowrap shadow-sm hover-lift ${isActive ? 'active' : 'bg-white text-gray-500 border-gray-200 hover:bg-orange-50 hover:text-orange-500'}`;
+                btn.innerHTML = getCategoryIcon(cat) + ' ' + (cat === 'ALL' ? 'ทั้งหมด' : cat);
+                btn.onclick = () => { currentCategory = cat; renderCategoryTabs(); renderTable(); };
                 container.appendChild(btn);
             });
         }
-
+        
         function getCategoryIcon(cat) {
-            if (cat === 'ALL') return '';
-            const c = cat.toLowerCase();
-            if (c.includes('ไฟ')) return '⚡';
-            if (c.includes('น้ำ') || c.includes('ประปา')) return '💧';
-            if (c.includes('เครื่องมือ')) return '🛠️';
-            if (c.includes('แอร์') || c.includes('ปรับอากาศ')) return '❄️';
-            if (c.includes('it') || c.includes('คอม')) return '💻';
-            if (c.includes('ก่อสร้าง')) return '🧱';
-            return '📦';
+            if(cat==='ไฟฟ้า') return '<i class="fas fa-bolt"></i>';
+            if(cat==='ประปา') return '<i class="fas fa-tint"></i>';
+            if(cat==='เครื่องมือ') return '<i class="fas fa-wrench"></i>';
+            if(cat==='เครื่องจักร') return '<i class="fas fa-cogs"></i>';
+            if(cat==='IT') return '<i class="fas fa-laptop"></i>';
+            if(cat==='ความปลอดภัย') return '<i class="fas fa-hard-hat"></i>';
+            if(cat==='ALL') return '<i class="fas fa-layer-group"></i>';
+            return '<i class="fas fa-box"></i>';
         }
 
         function renderTable() {
             const term = document.getElementById('searchInput').value.toLowerCase();
             let filtered = partsList.filter(p => p.name.toLowerCase().includes(term) || (p.part_no && p.part_no.toLowerCase().includes(term)));
-            
-            if (currentCategory !== 'ALL') {
-                filtered = filtered.filter(p => p.category === currentCategory);
-            }
+            if (currentCategory !== 'ALL') filtered = filtered.filter(p => p.category === currentCategory);
 
+            // Desktop Table
             const tbody = document.getElementById('partsTableBody');
             tbody.innerHTML = '';
+            
+            // Mobile Cards Container
+            const mobileContainer = document.getElementById('mobilePartCards');
+            mobileContainer.innerHTML = '';
 
-            if(filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-gray-400">ไม่พบรายการอะไหล่</td></tr>`;
-                return;
+            if(filtered.length === 0) { 
+                const emptyHTML = `<tr><td colspan="6" class="text-center py-12 text-gray-400"><i class="fas fa-search text-3xl mb-2 opacity-50"></i><br>ไม่พบรายการที่ค้นหา</td></tr>`;
+                tbody.innerHTML = emptyHTML;
+                mobileContainer.innerHTML = '<div class="text-center py-12 text-gray-400"><i class="fas fa-search text-3xl mb-2 opacity-50"></i><br>ไม่พบรายการ</div>';
+                return; 
             }
 
             filtered.forEach(p => {
-                // Stock Logic
-                let stockClass = 'text-gray-800 font-bold';
-                let stockStatus = '';
+                const isLow = p.stock <= p.min_stock && p.min_stock > 0;
+                const stockColor = isLow ? 'bg-red-100 text-red-600' : (p.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500');
+                const icon = getCategoryIcon(p.category);
                 
-                if (p.stock <= p.min_stock && p.min_stock > 0) {
-                    stockClass = 'text-red-600 bg-red-100 px-2 py-1 rounded font-bold animate-pulse';
-                    stockStatus = '<div class="text-[10px] text-red-500 mt-1">ต่ำกว่าเกณฑ์</div>';
-                } else if (p.stock > p.max_stock && p.max_stock > 0) {
-                    stockClass = 'text-yellow-600 bg-yellow-100 px-2 py-1 rounded font-bold';
-                    stockStatus = '<div class="text-[10px] text-yellow-500 mt-1">ล้นสต็อก</div>';
-                } else if (p.stock === 0) {
-                    stockClass = 'text-gray-400 bg-gray-100 px-2 py-1 rounded font-bold';
-                    stockStatus = '<div class="text-[10px] text-gray-400 mt-1">หมด</div>';
-                } else {
-                    stockClass = 'text-green-600 bg-green-50 px-2 py-1 rounded font-bold';
-                }
-                
-                const minMaxDisplay = (p.min_stock > 0 || p.max_stock > 0) 
-                    ? `<span class="text-xs text-gray-500">${p.min_stock} / ${p.max_stock}</span>` 
-                    : '<span class="text-xs text-gray-300">-</span>';
-
+                // Desktop Row
                 tbody.innerHTML += `
-                    <tr class="hover:bg-blue-50 border-b last:border-0 transition bg-white">
-                        <td class="px-6 py-4 font-mono text-gray-600 text-sm">${p.part_no || '-'}</td>
-                        <td class="px-6 py-4 font-medium text-gray-800">
-                            ${p.name}
+                    <tr class="bg-white border-b hover-row transition-colors group">
+                        <td class="px-6 py-4 pl-8">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-orange-50 group-hover:text-orange-500 transition text-lg border border-gray-100">${icon}</div>
+                                <div>
+                                    <div class="font-bold text-gray-800">${p.name}</div>
+                                    <div class="text-xs font-mono text-gray-400">${p.part_no || '-'}</div>
+                                </div>
+                            </div>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-500">
-                            <span class="bg-gray-100 px-2 py-1 rounded-md text-xs border border-gray-200">
-                                ${getCategoryIcon(p.category)} ${p.category}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <span class="${stockClass}">${p.stock}</span>
-                            ${stockStatus}
-                        </td>
-                        <td class="px-6 py-4 text-center">${minMaxDisplay}</td>
-                        <td class="px-6 py-4 text-center text-gray-500 text-sm">${p.unit}</td>
-                        <td class="px-6 py-4 text-right text-gray-600 font-mono">${(p.price||0).toLocaleString()}</td>
-                        <td class="px-6 py-4 text-center">
-                            <div class="flex items-center justify-center gap-2">
-                                <button onclick="openAdjustModal('${p.id}')" class="bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1 rounded text-xs font-bold transition shadow-sm" title="ปรับสต็อก"><i class="fas fa-exchange-alt mr-1"></i></button>
-                                <button onclick="openModal('${p.id}')" class="w-8 h-8 rounded-full hover:bg-gray-200 text-gray-500 transition"><i class="fas fa-edit"></i></button>
-                                <button onclick="deletePart('${p.id}')" class="w-8 h-8 rounded-full hover:bg-red-100 text-red-400 hover:text-red-600 transition"><i class="fas fa-trash"></i></button>
+                        <td class="px-6 py-4"><span class="bg-gray-50 text-gray-500 px-2 py-1 rounded text-xs border border-gray-100 font-medium">${p.category}</span></td>
+                        <td class="px-6 py-4 text-center"><span class="${stockColor} px-3 py-1 rounded-full text-xs font-bold shadow-sm">${p.stock}</span></td>
+                        <td class="px-6 py-4 text-right font-mono text-gray-600">${(p.price||0).toLocaleString()}</td>
+                        <td class="px-6 py-4 text-center">${isLow ? '<span class="text-xs text-red-500 font-bold flex items-center justify-center gap-1 animate-pulse"><i class="fas fa-bell"></i> เติมของ</span>' : '<span class="text-xs text-green-500 font-medium"><i class="fas fa-check"></i> ปกติ</span>'}</td>
+                        <td class="px-6 py-4 text-right pr-8">
+                            <div class="flex justify-end gap-2 opacity-60 group-hover:opacity-100 transition">
+                                <button onclick="openAdjustModal('${p.id}')" class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition flex items-center justify-center shadow-sm" title="ปรับสต็อก"><i class="fas fa-exchange-alt text-xs"></i></button>
+                                <button onclick="openModal('${p.id}')" class="w-8 h-8 rounded-full bg-gray-50 text-gray-500 hover:bg-orange-500 hover:text-white transition flex items-center justify-center shadow-sm" title="แก้ไข"><i class="fas fa-pen text-xs"></i></button>
+                                <button onclick="deletePart('${p.id}')" class="w-8 h-8 rounded-full bg-gray-50 text-gray-400 hover:bg-red-500 hover:text-white transition flex items-center justify-center" title="ลบ"><i class="fas fa-trash text-xs"></i></button>
                             </div>
                         </td>
                     </tr>`;
+
+                // Mobile Card
+                mobileContainer.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden hover-lift active:scale-98 transition">
+                        <div class="absolute right-0 top-0 w-16 h-16 bg-gradient-to-bl from-gray-50 to-transparent rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
+                        <div class="flex justify-between items-start mb-3 relative z-10">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center text-xl shadow-inner border border-orange-100">${icon}</div>
+                                <div>
+                                    <h4 class="font-bold text-gray-800 leading-tight line-clamp-1">${p.name}</h4>
+                                    <div class="text-xs font-mono text-gray-400 mt-0.5">${p.part_no || 'No Code'}</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xl font-bold ${isLow ? 'text-red-600' : 'text-green-600'}">${p.stock}</div>
+                                <div class="text-[10px] text-gray-400">${p.unit || 'unit'}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-3 border-t border-gray-50 relative z-10">
+                            <div class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded border border-gray-200">${p.category}</div>
+                            <div class="flex gap-2">
+                                <button onclick="openAdjustModal('${p.id}')" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold shadow-md shadow-blue-200 active:scale-95 transition">ปรับสต็อก</button>
+                                <button onclick="openModal('${p.id}')" class="w-7 h-7 flex items-center justify-center bg-gray-100 text-gray-500 rounded-lg border border-gray-200"><i class="fas fa-pen text-xs"></i></button>
+                            </div>
+                        </div>
+                    </div>`;
             });
         }
 
         function updateStats() {
-            const total = partsList.length;
-            // Count items below min (only if min > 0)
-            const low = partsList.filter(p => p.min_stock > 0 && p.stock <= p.min_stock).length;
-            const val = partsList.reduce((s, p) => s + ((p.stock||0) * (p.price||0)), 0);
-            document.getElementById('statTotal').innerText = total;
-            document.getElementById('statLow').innerText = low;
-            document.getElementById('statValue').innerText = val.toLocaleString() + ' ฿';
+            document.getElementById('statTotal').innerText = partsList.length;
+            document.getElementById('statLow').innerText = partsList.filter(p => p.min_stock > 0 && p.stock <= p.min_stock).length;
+            document.getElementById('statValue').innerText = partsList.reduce((s, p) => s + ((p.stock||0) * (p.price||0)), 0).toLocaleString();
         }
 
-        // --- CRUD ---
+        // --- CRUD & ADJUST ---
         function openModal(id=null) {
             document.getElementById('partModal').classList.remove('hidden');
             if(id) {
                 const p = partsList.find(x => x.id === id);
-                document.getElementById('modalTitle').innerText = "แก้ไขข้อมูลอะไหล่";
+                document.getElementById('modalTitle').innerText = "แก้ไขข้อมูล";
                 document.getElementById('partId').value = p.id;
                 document.getElementById('partNo').value = p.part_no;
                 document.getElementById('partName').value = p.name;
@@ -386,9 +491,7 @@
                 document.getElementById('partStock').value = p.stock;
                 document.getElementById('partUnit').value = p.unit;
                 document.getElementById('partPrice').value = p.price;
-                // Min/Max
                 document.getElementById('partMin').value = p.min_stock || 0;
-                document.getElementById('partMax').value = p.max_stock || 0;
             } else {
                 document.getElementById('modalTitle').innerText = "เพิ่มอะไหล่ใหม่";
                 document.getElementById('partId').value = '';
@@ -399,7 +502,6 @@
                 document.getElementById('partUnit').value = '';
                 document.getElementById('partPrice').value = '';
                 document.getElementById('partMin').value = '0';
-                document.getElementById('partMax').value = '0';
             }
         }
 
@@ -412,38 +514,18 @@
                 stock: parseInt(document.getElementById('partStock').value)||0,
                 unit: document.getElementById('partUnit').value,
                 price: parseFloat(document.getElementById('partPrice').value)||0,
-                // New Fields
                 min_stock: parseInt(document.getElementById('partMin').value)||0,
-                max_stock: parseInt(document.getElementById('partMax').value)||0
             };
-            
             if(!data.name) return alert('กรุณาระบุชื่ออะไหล่');
-
             try {
                 if(id) await supabaseClient.from('spare_parts').update(data).eq('id', id);
                 else await supabaseClient.from('spare_parts').insert([data]);
-                
-                document.getElementById('partModal').classList.add('hidden');
-                fetchParts();
-            } catch(e) { 
-                console.error(e);
-                // Alert user if columns are missing
-                if (e.message && (e.message.includes('min_stock') || e.message.includes('max_stock'))) {
-                    alert('บันทึกไม่สำเร็จ: กรุณาเพิ่มคอลัมน์ "min_stock" (int) และ "max_stock" (int) ในฐานข้อมูล Supabase ก่อนครับ');
-                } else {
-                    alert(e.message); 
-                }
-            }
+                document.getElementById('partModal').classList.add('hidden'); fetchParts();
+            } catch(e) { alert(e.message); }
         }
 
-        async function deletePart(id) {
-            if(confirm('ยืนยันลบรายการนี้?')) {
-                await supabaseClient.from('spare_parts').delete().eq('id', id);
-                fetchParts();
-            }
-        }
+        async function deletePart(id) { if(confirm('ยืนยันลบรายการนี้?')) { await supabaseClient.from('spare_parts').delete().eq('id', id); fetchParts(); } }
 
-        // --- ADJUST ---
         function openAdjustModal(id) {
             const p = partsList.find(x => x.id === id);
             document.getElementById('adjustModal').classList.remove('hidden');
@@ -455,14 +537,13 @@
 
         function setAdjustType(type) {
             document.getElementById('adjustType').value = type;
-            const add = document.getElementById('btnAdjAdd');
-            const rem = document.getElementById('btnAdjRemove');
-            if(type==='add') {
-                add.className = "flex-1 py-2 rounded-md text-sm font-bold transition bg-green-100 text-green-700 shadow-sm";
-                rem.className = "flex-1 py-2 rounded-md text-sm font-bold transition text-gray-500 hover:bg-gray-200";
-            } else {
-                add.className = "flex-1 py-2 rounded-md text-sm font-bold transition text-gray-500 hover:bg-gray-200";
-                rem.className = "flex-1 py-2 rounded-md text-sm font-bold transition bg-red-100 text-red-700 shadow-sm";
+            const add = document.getElementById('btnAdjAdd'); const rem = document.getElementById('btnAdjRemove');
+            if(type==='add') { 
+                add.className = "flex-1 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 bg-green-50 text-green-700 ring-2 ring-green-200 shadow-sm"; 
+                rem.className = "flex-1 py-3 rounded-lg text-sm font-bold transition text-gray-400 hover:text-gray-600 flex items-center justify-center gap-2"; 
+            } else { 
+                add.className = "flex-1 py-3 rounded-lg text-sm font-bold transition text-gray-400 hover:text-gray-600 flex items-center justify-center gap-2"; 
+                rem.className = "flex-1 py-3 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 bg-red-50 text-red-700 ring-2 ring-red-200 shadow-sm"; 
             }
         }
 
@@ -470,20 +551,13 @@
             const id = document.getElementById('adjustId').value;
             const type = document.getElementById('adjustType').value;
             const qty = parseInt(document.getElementById('adjustQty').value);
-            
-            if(qty <= 0) return alert('จำนวนต้องมากกว่า 0');
-            
+            if(qty <= 0) return alert('จำนวนต้อง > 0');
             const p = partsList.find(x => x.id === id);
             let newStock = type === 'add' ? p.stock + qty : p.stock - qty;
-            
-            if(newStock < 0) return alert('สต็อกไม่พอให้ตัด');
-            
+            if(newStock < 0) return alert('สต็อกไม่พอ');
             await supabaseClient.from('spare_parts').update({ stock: newStock }).eq('id', id);
-            document.getElementById('adjustModal').classList.add('hidden');
-            fetchParts();
+            document.getElementById('adjustModal').classList.add('hidden'); fetchParts();
         }
-
-        function logout() { localStorage.removeItem('cmms_user_session'); safeRedirect('index.html'); }
     </script>
 </body>
 </html>

@@ -2,28 +2,51 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - WD Maintenance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin System - WD Maintenance</title>
     
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
-        body { font-family: 'Sarabun', sans-serif; }
-        .fade-in { animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700;800&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; }
         
-        .nav-item.active { background-color: rgba(255, 255, 255, 0.1); border-left: 4px solid #10b981; color: white; }
-        .nav-item { border-left: 4px solid transparent; }
-        
-        @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .animate-zoom-in { animation: zoomIn 0.2s ease-out; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+        /* Sidebar Transition Logic */
+        #mobileSidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* Apply close transform ONLY on mobile screens */
+        @media (max-width: 768px) {
+            #mobileSidebar.closed { transform: translateX(-100%); }
+        }
+
+        #sidebarOverlay { transition: opacity 0.3s ease; }
+        #sidebarOverlay.hidden { opacity: 0; pointer-events: none; }
+
+        /* Admin Theme Gradients */
+        .hero-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); } 
+        .sidebar-gradient { background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); }
+        
+        /* Menu Item Styling */
+        .menu-btn { transition: all 0.2s; position: relative; overflow: hidden; }
+        .menu-btn:hover { background-color: rgba(255,255,255,0.1); transform: translateX(5px); }
+        .menu-btn.active { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); border: none; }
+        .menu-btn.active i { color: white !important; }
+
+        .glass-panel { background: white; border-radius: 1rem; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); }
+        
+        /* Icon Grid */
+        .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 10px; max-height: 200px; overflow-y: auto; padding: 10px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .icon-option { height: 50px; display: flex; align-items: center; justify-content: center; background: white; border: 2px solid transparent; border-radius: 10px; cursor: pointer; transition: all 0.2s; color: #64748b; font-size: 1.25rem; }
+        .icon-option:hover { border-color: #cbd5e1; color: #0f172a; transform: scale(1.05); }
+        .icon-option.selected { border-color: #3b82f6; background-color: #eff6ff; color: #3b82f6; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2); }
+        
         @media print {
             body * { visibility: hidden; }
             #qrModal, #qrModal * { visibility: visible; }
@@ -32,303 +55,330 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body class="h-screen flex overflow-hidden bg-gray-100 text-gray-800">
 
-    <!-- Sidebar -->
-    <aside class="w-64 bg-slate-900 text-gray-300 flex-shrink-0 hidden md:flex flex-col shadow-xl z-20 no-print">
-        <div class="p-6 flex items-center border-b border-slate-700">
-            <i class="fas fa-user-shield text-green-500 text-2xl mr-3"></i>
-            <h1 class="text-xl font-bold tracking-wider text-white">ADMIN</h1>
+    <!-- Sidebar Overlay (Mobile Only) -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm md:hidden" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar (Fixed Left) -->
+    <aside id="mobileSidebar" class="fixed inset-y-0 left-0 w-[280px] sidebar-gradient text-slate-300 z-50 shadow-2xl transform closed md:translate-x-0 md:static md:flex flex-col transition-transform duration-300 border-r border-slate-800 font-sans shrink-0">
+        
+        <!-- Logo Area -->
+        <div class="h-20 flex items-center px-6 border-b border-slate-800/50 bg-slate-900/50 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg border border-white/10">
+                    <i class="fas fa-shield-alt text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight text-white leading-none">WD Maint.</h1>
+                    <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mt-1">System Admin</p>
+                </div>
+            </div>
+            <button onclick="toggleSidebar()" class="md:hidden ml-auto text-slate-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
         </div>
         
-        <nav class="flex-1 overflow-y-auto py-4 space-y-1">
-            <!-- Fixed Link -->
-            <a href="javascript:safeRedirect('manager_dashboard_v8.html')" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition">
-                <i class="fas fa-chart-pie w-6"></i> <span>Executive Dashboard</span>
-            </a>
-            <a href="#" id="nav-users" class="nav-item active flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition" onclick="switchTab('USERS')">
-                <i class="fas fa-users w-6"></i> <span>จัดการผู้ใช้งาน (Users)</span>
-            </a>
-            <a href="#" id="nav-assets" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition" onclick="switchTab('ASSETS')">
-                <i class="fas fa-industry w-6"></i> <span>จัดการเครื่องจักร (Assets)</span>
-            </a>
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-6">
+            
+            <!-- Group 1: General -->
+            <div>
+                <div class="px-2 mb-3 text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                    <span class="w-8 h-[1px] bg-slate-700"></span> Dashboards
+                </div>
+                <div class="space-y-1">
+                    <a href="manager_dashboard.html" class="menu-btn flex items-center px-4 py-3 rounded-xl font-medium text-slate-300 hover:text-white">
+                        <i class="fas fa-chart-pie w-6 text-center text-lg text-blue-400 mr-2"></i> <span>ภาพรวมระบบ</span>
+                    </a>
+                    <a href="inventory_management.html" class="menu-btn flex items-center px-4 py-3 rounded-xl font-medium text-slate-300 hover:text-white">
+                        <i class="fas fa-boxes w-6 text-center text-lg text-orange-400 mr-2"></i> <span>คลังอะไหล่</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Group 2: Config (Active) -->
+            <div>
+                <div class="px-2 mb-3 text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                    <span class="w-8 h-[1px] bg-slate-700"></span> Configuration
+                </div>
+                <div class="space-y-2 bg-slate-800/30 p-2 rounded-2xl border border-slate-700/50">
+                    <button onclick="switchTab('USERS')" id="nav-users" class="menu-btn w-full flex items-center px-4 py-3 rounded-xl text-left text-slate-300 hover:text-white">
+                        <i class="fas fa-users w-6 text-center text-lg mr-2"></i> <span>ผู้ใช้งาน (Users)</span>
+                    </button>
+                    <button onclick="switchTab('ASSETS')" id="nav-assets" class="menu-btn w-full flex items-center px-4 py-3 rounded-xl text-left text-slate-300 hover:text-white">
+                        <i class="fas fa-industry w-6 text-center text-lg mr-2"></i> <span>เครื่องจักร (Assets)</span>
+                    </button>
+                    <button onclick="switchTab('ISSUES')" id="nav-issues" class="menu-btn w-full flex items-center px-4 py-3 rounded-xl text-left text-slate-300 hover:text-white">
+                        <i class="fas fa-exclamation-circle w-6 text-center text-lg mr-2"></i> <span>อาการเสีย (Issues)</span>
+                    </button>
+                </div>
+            </div>
+
         </nav>
 
-        <div class="p-4 border-t border-slate-700">
-            <div class="text-xs text-gray-500 text-center mb-2">Logged in as</div>
-            <div class="font-bold text-white text-center truncate" id="userName">-</div>
-            <button onclick="logout()" class="w-full mt-3 bg-red-600 hover:bg-red-700 text-white py-2 rounded text-sm transition shadow-lg">
-                ออกจากระบบ
+        <!-- Footer -->
+        <div class="p-4 border-t border-slate-800 bg-slate-900/80 shrink-0">
+            <button onclick="Auth.logout()" class="w-full bg-red-500/10 hover:bg-red-600 hover:text-white text-red-400 py-3.5 rounded-xl transition flex items-center justify-center gap-2 font-bold text-sm border border-red-500/20 hover:border-red-500 hover:shadow-lg hover:shadow-red-900/20 group">
+                <i class="fas fa-sign-out-alt group-hover:animate-bounce-x"></i> ออกจากระบบ
             </button>
         </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col overflow-hidden relative">
-        <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6 z-10 shrink-0 no-print">
-            <div class="flex items-center gap-4">
-                <button class="md:hidden text-gray-600"><i class="fas fa-bars text-xl"></i></button>
-                <h2 class="text-xl font-semibold text-gray-800" id="pageTitle">จัดการผู้ใช้งาน</h2>
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative w-full bg-slate-50">
+        
+        <!-- Scrollable Area -->
+        <div class="flex-1 overflow-y-auto no-scrollbar scroll-smooth">
+            
+            <!-- 1. HERO HEADER -->
+            <div class="hero-gradient pt-8 pb-24 px-6 sm:px-10 relative overflow-hidden">
+                <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 24px 24px;"></div>
+                <div class="absolute right-0 top-0 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-3xl -mr-40 -mt-40 pointer-events-none"></div>
+                
+                <!-- Topbar -->
+                <div class="flex justify-between items-center relative z-10 w-full mb-6">
+                    <div class="flex items-center gap-4">
+                        <button onclick="toggleSidebar()" class="md:hidden w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-sm transition border border-white/10">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+                                <span id="pageTitleDisplay">System Config</span> 
+                            </h2>
+                            <p class="text-slate-400 text-sm mt-1 font-medium flex items-center gap-2"><i class="fas fa-database text-blue-400"></i> ศูนย์กลางจัดการข้อมูล</p>
+                        </div>
+                    </div>
+                    <button onclick="openModal()" class="bg-white text-blue-900 hover:bg-blue-50 px-6 py-3 rounded-xl text-sm font-bold shadow-xl transition hover:scale-105 flex items-center gap-2 active:scale-95 group">
+                        <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition"><i class="fas fa-plus text-xs"></i></div>
+                        <span class="hidden sm:inline" id="addBtnText">เพิ่มรายการใหม่</span>
+                    </button>
+                </div>
             </div>
-            <div>
-                <button onclick="openModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow flex items-center gap-2 transition font-bold text-sm">
-                    <i class="fas fa-plus"></i> <span id="addBtnText">เพิ่มผู้ใช้ใหม่</span>
-                </button>
-            </div>
-        </header>
 
-        <div class="flex-1 overflow-auto p-6 bg-gray-50 relative no-print" id="contentArea">
-            <div class="flex justify-center items-center h-full text-gray-400">
-                <i class="fas fa-spinner fa-spin text-3xl mr-3"></i> กำลังโหลดข้อมูล...
+            <!-- 2. DATA CONTENT -->
+            <div class="px-4 sm:px-8 -mt-16 pb-12 w-full relative z-20">
+                <div class="glass-panel overflow-hidden min-h-[600px] border border-gray-200/60 shadow-xl bg-white flex flex-col h-full">
+                    
+                    <!-- Toolbar -->
+                    <div class="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center bg-white sticky top-0 z-10 gap-4">
+                        <div class="flex items-center gap-3 text-sm">
+                            <span class="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider" id="currentSectionName">Data</span>
+                            <span class="text-slate-300">|</span>
+                            <span class="text-slate-500 font-medium" id="dataCount">Loading...</span>
+                        </div>
+                        <div class="relative w-full sm:w-auto">
+                            <i class="fas fa-search absolute left-4 top-3 text-slate-400 text-sm"></i>
+                            <input type="text" placeholder="ค้นหาข้อมูล..." class="pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white w-full sm:w-64 transition-all outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Full Width Table Container -->
+                    <div class="overflow-x-auto w-full flex-1 bg-white" id="contentArea">
+                        <div class="flex flex-col justify-center items-center h-96 text-slate-300">
+                            <i class="fas fa-circle-notch fa-spin text-4xl mb-4 text-blue-500"></i> 
+                            <span class="text-sm font-medium text-slate-400">กำลังโหลดข้อมูล...</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
 
     <!-- Generic Modal -->
-    <div id="genericModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center backdrop-blur-sm transition-opacity no-print">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform scale-100 animate-zoom-in">
-            <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-edit text-blue-500"></i> <span id="modalTitle">Title</span>
+    <div id="genericModal" class="fixed inset-0 bg-slate-900/80 z-[60] hidden flex items-center justify-center backdrop-blur-sm p-4 transition-opacity no-print">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-0 transform scale-100 transition-all overflow-hidden border border-white/20">
+            <div class="bg-slate-900 px-6 py-5 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white flex items-center gap-3">
+                    <span id="modalTitle">จัดการข้อมูล</span>
                 </h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"><i class="fas fa-times"></i></button>
             </div>
-            <form id="modalForm" onsubmit="handleFormSubmit(event)">
+            
+            <form id="modalForm" onsubmit="handleFormSubmit(event)" class="p-6">
                 <input type="hidden" id="editId">
-                <div id="modalFields" class="space-y-4"></div>
-                <div class="mt-6 flex gap-3 pt-4 border-t">
-                    <button type="button" onclick="closeModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-lg font-bold transition">ยกเลิก</button>
-                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold shadow-lg shadow-blue-200 transition">บันทึก</button>
+                <div id="modalFields" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scroll"></div>
+                
+                <div class="mt-8 flex gap-3 pt-4 border-t border-gray-100">
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-white border border-gray-300 hover:bg-gray-50 text-slate-700 py-2.5 rounded-xl font-bold transition">ยกเลิก</button>
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-bold shadow-lg shadow-blue-200 transition">บันทึก</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- QR Code Modal -->
-    <div id="qrModal" class="fixed inset-0 bg-black/80 hidden z-[60] flex items-center justify-center backdrop-blur-sm transition-opacity">
-        <div class="bg-white rounded-2xl shadow-2xl w-[320px] p-8 text-center transform scale-100 animate-zoom-in relative">
-            <button onclick="document.getElementById('qrModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl no-print">&times;</button>
-            <h3 class="text-lg font-bold text-gray-800 mb-1">QR Code เครื่องจักร</h3>
-            <p class="text-sm text-gray-500 mb-4">สแกนเพื่อดูประวัติหรือแจ้งซ่อม</p>
-            <div class="border-2 border-gray-100 rounded-xl p-4 inline-block bg-white shadow-inner mb-4">
+    <div id="qrModal" class="fixed inset-0 bg-slate-900/90 hidden z-[70] flex items-center justify-center backdrop-blur-md">
+        <div class="bg-white rounded-3xl shadow-2xl w-[320px] p-8 text-center relative border border-white/10">
+            <button onclick="document.getElementById('qrModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-300 hover:text-gray-500 text-2xl no-print transition"><i class="fas fa-times"></i></button>
+            
+            <div class="mb-5">
+                <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-600 text-3xl">
+                    <i class="fas fa-qrcode"></i>
+                </div>
+                <h3 class="text-xl font-extrabold text-slate-800">Asset QR Code</h3>
+                <p class="text-slate-400 text-xs mt-1">สแกนเพื่อแจ้งซ่อมหรือดูประวัติ</p>
+            </div>
+            
+            <div class="border-4 border-slate-100 rounded-2xl p-4 inline-block bg-white shadow-inner mb-6">
                 <div id="qrcode"></div>
             </div>
-            <div class="text-left bg-gray-50 p-3 rounded-lg border border-gray-100 mb-6">
-                <p class="text-xs text-gray-500">ชื่อเครื่องจักร:</p>
-                <p class="font-bold text-gray-800 text-sm truncate" id="qrAssetName">-</p>
-                <p class="text-xs text-gray-500 mt-2">รหัส (ID):</p>
-                <p class="font-mono text-xs text-blue-600 truncate" id="qrAssetId">-</p>
+            
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6 text-left">
+                <div class="flex justify-between items-end mb-1">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Asset Name</span>
+                    <span class="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-100 font-mono" id="qrAssetId">-</span>
+                </div>
+                <div class="font-bold text-slate-800 text-lg leading-tight truncate" id="qrAssetName">-</div>
             </div>
-            <button onclick="window.print()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold shadow-lg transition flex items-center justify-center gap-2 no-print">
+            
+            <button onclick="window.print()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl font-bold shadow-xl transition flex items-center justify-center gap-2 no-print active:scale-95">
                 <i class="fas fa-print"></i> พิมพ์ QR Code
             </button>
         </div>
     </div>
 
     <script>
+        // --- EMBEDDED CONFIG & AUTH ---
         const SUPABASE_URL = 'https://nmezqexpvhdozpdzxxek.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tZXpxZXhwdmhkb3pwZHp4eGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5OTAwNTEsImV4cCI6MjA4MjU2NjA1MX0.N1OjCh1sp0xx0DGFjR6yX2hix5oIX7suzrnvQk8qPWU';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        const Auth = {
+            requireRole: (allowedRoles = []) => {
+                const session = localStorage.getItem('cmms_user_session');
+                if (!session) { window.location.href = 'index.html'; return null; }
+                const user = JSON.parse(session);
+                if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+                    alert('Access Denied'); window.location.href = 'index.html'; return null;
+                }
+                return user;
+            },
+            logout: () => { if(confirm('ออกจากระบบ?')) { localStorage.removeItem('cmms_user_session'); window.location.href = 'index.html'; } },
+        };
+
+        // --- MAIN LOGIC ---
         let currentTab = 'USERS';
         let dataList = [];
-
-        // --- SAFE REDIRECT (Improved) ---
-        function safeRedirect(url) {
-            // Check if environment is blob/preview
-            if (window.location.protocol === 'blob:' || window.location.href.includes('usercontent.goog')) {
-                console.warn('Redirect prevented in preview mode');
-                document.body.innerHTML = `
-                    <div class="fixed inset-0 bg-slate-900/90 flex flex-col items-center justify-center z-50 p-6 text-center">
-                        <div class="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
-                            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                                <i class="fas fa-shield-alt"></i>
-                            </div>
-                            <h2 class="text-xl font-bold text-slate-800 mb-2">ยืนยันการเปลี่ยนหน้า</h2>
-                            <p class="text-slate-500 text-sm mb-6">ระบบต้องการนำคุณไปยังหน้า <strong>${url}</strong></p>
-                            <a href="${url}" class="block w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow hover:bg-blue-700 transition">
-                                ไปต่อ <i class="fas fa-arrow-right ml-1"></i>
-                            </a>
-                        </div>
-                    </div>`;
-                return;
-            }
-            try {
-                window.location.href = url;
-            } catch (e) {
-                console.error(e);
-            }
-        }
+        let selectedIcon = 'fa-tools';
+        
+        const iconList = ['fa-power-off', 'fa-tools', 'fa-wrench', 'fa-hammer', 'fa-cogs', 'fa-cog', 'fa-tint', 'fa-fire', 'fa-bolt', 'fa-plug', 'fa-wifi', 'fa-server', 'fa-desktop', 'fa-microchip', 'fa-temperature-high', 'fa-snowflake', 'fa-fan', 'fa-oil-can', 'fa-exclamation-triangle', 'fa-question-circle', 'fa-times-circle', 'fa-check-circle', 'fa-stop-circle', 'fa-play-circle', 'fa-car', 'fa-truck', 'fa-ship', 'fa-plane'];
 
         document.addEventListener('DOMContentLoaded', async () => {
-            const session = localStorage.getItem('cmms_user_session');
-            if(!session) { safeRedirect('index.html'); return; }
-            const user = JSON.parse(session);
-            if(user.role !== 'admin') { 
-                alert('Access Denied: สำหรับผู้ดูแลระบบเท่านั้น (Admin Only)'); 
-                safeRedirect('manager_dashboard_v8.html'); // Changed to v8
-                return; 
-            }
-            
-            document.getElementById('userName').innerText = user.full_name || user.username;
-            fetchData();
+            const user = Auth.requireRole(['admin']);
+            if(!user) return;
+            switchTab('USERS');
         });
+        
+        function toggleSidebar() {
+            const sb = document.getElementById('mobileSidebar');
+            const ov = document.getElementById('sidebarOverlay');
+            sb.classList.toggle('closed');
+            if(sb.classList.contains('closed')) ov.classList.add('hidden'); else ov.classList.remove('hidden');
+        }
 
         function switchTab(tab) {
             currentTab = tab;
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            // Update Sidebar Menu Active State
+            document.querySelectorAll('.menu-btn').forEach(el => el.classList.remove('active'));
             if(tab === 'USERS') document.getElementById('nav-users').classList.add('active');
             if(tab === 'ASSETS') document.getElementById('nav-assets').classList.add('active');
+            if(tab === 'ISSUES') document.getElementById('nav-issues').classList.add('active');
             
-            if (tab === 'USERS') {
-                document.getElementById('pageTitle').innerText = 'จัดการผู้ใช้งาน (User Management)';
-                document.getElementById('addBtnText').innerText = 'เพิ่มผู้ใช้ใหม่';
-            } else {
-                document.getElementById('pageTitle').innerText = 'จัดการเครื่องจักร (Asset Management)';
-                document.getElementById('addBtnText').innerText = 'เพิ่มเครื่องจักรใหม่';
-            }
+            const titles = { 'USERS': 'ผู้ใช้งาน (Users)', 'ASSETS': 'เครื่องจักร (Assets)', 'ISSUES': 'อาการเสีย (Issues)' };
+            const btnTexts = { 'USERS': 'เพิ่มผู้ใช้', 'ASSETS': 'เพิ่มเครื่องจักร', 'ISSUES': 'เพิ่มอาการ' };
+            
+            document.getElementById('pageTitleDisplay').innerText = titles[tab];
+            document.getElementById('currentSectionName').innerText = tab;
+            document.getElementById('addBtnText').innerText = btnTexts[tab];
+            
             fetchData();
+            
+            // Auto close sidebar on mobile when clicking item
+            if(window.innerWidth < 768) toggleSidebar();
         }
 
         async function fetchData() {
             const container = document.getElementById('contentArea');
-            container.innerHTML = '<div class="flex justify-center items-center h-64 text-gray-400"><i class="fas fa-spinner fa-spin text-3xl mr-3"></i> กำลังโหลดข้อมูล...</div>';
+            container.innerHTML = '<div class="flex justify-center items-center h-80 text-slate-300"><i class="fas fa-circle-notch fa-spin text-4xl mr-3 text-blue-500"></i> กำลังโหลด...</div>';
 
             try {
                 let query;
-                if (currentTab === 'USERS') {
-                    query = supabaseClient.from('profiles').select('*').order('username', { ascending: true });
-                } else {
-                    query = supabaseClient.from('assets').select('*').order('name', { ascending: true });
-                }
+                if (currentTab === 'USERS') query = supabaseClient.from('profiles').select('*').order('username');
+                else if (currentTab === 'ASSETS') query = supabaseClient.from('assets').select('*').order('name');
+                else if (currentTab === 'ISSUES') query = supabaseClient.from('issue_options').select('*').order('created_at');
 
                 let { data, error } = await query;
+                if (error) throw error;
                 
-                if (error) {
-                    if (error.code === '42P01') throw new Error(`ไม่พบตาราง "${currentTab === 'USERS' ? 'profiles' : 'assets'}" ในฐานข้อมูล`);
-                    throw error;
-                }
                 dataList = data || [];
+                document.getElementById('dataCount').innerText = `${dataList.length} รายการ`;
                 renderTable();
             } catch (e) {
-                container.innerHTML = `<div class="text-center text-red-500 py-10"><i class="fas fa-exclamation-circle text-4xl mb-2"></i><br>เกิดข้อผิดพลาด: ${e.message}</div>`;
+                container.innerHTML = `<div class="text-center text-red-400 py-16"><i class="fas fa-exclamation-triangle text-5xl mb-3 opacity-30"></i><br>${e.message}</div>`;
             }
         }
 
         function renderTable() {
             const container = document.getElementById('contentArea');
             if (dataList.length === 0) {
-                container.innerHTML = `<div class="text-center text-gray-400 py-10 bg-white rounded-xl shadow-sm border border-gray-100"><i class="fas fa-folder-open text-4xl mb-2 opacity-50"></i><br>ไม่พบข้อมูล</div>`;
+                container.innerHTML = `<div class="text-center text-gray-400 py-24 flex flex-col items-center"><div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4"><i class="fas fa-folder-open text-3xl opacity-30"></i></div><span class="text-sm font-medium">ไม่พบข้อมูลในระบบ</span></div>`;
                 return;
             }
 
-            let tableHeader = '';
-            let tableRows = '';
+            let tableHeader = '', tableRows = '';
 
             if (currentTab === 'USERS') {
-                tableHeader = `
-                    <th class="px-6 py-4">Username</th>
-                    <th class="px-6 py-4">ชื่อ-นามสกุล</th>
-                    <th class="px-6 py-4 text-center">สิทธิ์ (Role)</th>
-                    <th class="px-6 py-4 text-center">แผนก</th>
-                    <th class="px-6 py-4 text-center">จัดการ</th>`;
-                
+                tableHeader = `<th class="px-8 py-4 text-xs font-bold text-slate-500 uppercase">Username</th><th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Full Name</th><th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">Role</th><th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">Dept.</th><th class="px-8 py-4 text-right text-xs font-bold text-slate-500 uppercase">Action</th>`;
                 dataList.forEach(u => {
-                    let roleBadge = '';
-                    switch(u.role) {
-                        case 'admin': roleBadge = '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">ADMIN</span>'; break;
-                        case 'manager': roleBadge = '<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold">MANAGER</span>'; break;
-                        case 'technician': roleBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">TECH</span>'; break;
-                        default: roleBadge = '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">USER</span>';
-                    }
-
-                    tableRows += `
-                        <tr class="hover:bg-blue-50 border-b last:border-0 transition bg-white">
-                            <td class="px-6 py-4 font-bold text-gray-700">${u.username || '-'}</td>
-                            <td class="px-6 py-4 text-gray-600">${u.full_name || '-'}</td>
-                            <td class="px-6 py-4 text-center">${roleBadge}</td>
-                            <td class="px-6 py-4 text-center text-gray-500 text-sm">${u.department || '-'}</td>
-                            <td class="px-6 py-4 text-center">
-                                <button onclick="openModal('${u.id}')" class="text-blue-500 hover:text-blue-700 mx-1" title="แก้ไข"><i class="fas fa-edit"></i></button>
-                                <button onclick="deleteItem('${u.id}')" class="text-red-400 hover:text-red-600 mx-1" title="ลบ"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>`;
+                    let roleClass = { 'admin': 'bg-red-100 text-red-700 border-red-200', 'manager': 'bg-purple-100 text-purple-700 border-purple-200', 'technician': 'bg-orange-100 text-orange-700 border-orange-200', 'user': 'bg-blue-100 text-blue-700 border-blue-200' };
+                    let roleBadge = `<span class="${roleClass[u.role]||'bg-gray-100'} px-2.5 py-0.5 rounded border text-[10px] font-bold uppercase tracking-wide">${u.role}</span>`;
+                    tableRows += `<tr class="hover:bg-blue-50/40 border-b border-gray-100 last:border-0 transition-colors"><td class="px-8 py-4 font-bold text-slate-700">${u.username}</td><td class="px-6 py-4 text-sm font-medium text-slate-600">${u.full_name||'-'}</td><td class="px-6 py-4 text-center">${roleBadge}</td><td class="px-6 py-4 text-center text-sm text-gray-500">${u.department||'-'}</td><td class="px-8 py-4 text-right"><div class="flex justify-end gap-2"><button onclick="openModal('${u.id}')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-slate-400 hover:border-blue-500 hover:text-blue-600 hover:shadow-sm flex items-center justify-center transition"><i class="fas fa-pen text-xs"></i></button><button onclick="deleteItem('${u.id}')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-slate-400 hover:border-red-500 hover:text-red-600 hover:shadow-sm flex items-center justify-center transition"><i class="fas fa-trash text-xs"></i></button></div></td></tr>`;
                 });
-            } else {
-                tableHeader = `
-                    <th class="px-6 py-4">รหัสทรัพย์สิน</th>
-                    <th class="px-6 py-4">ชื่อเครื่องจักร</th>
-                    <th class="px-6 py-4">สถานที่ตั้ง</th>
-                    <th class="px-6 py-4 text-center">สถานะ</th>
-                    <th class="px-6 py-4 text-center w-32">QR Code</th>
-                    <th class="px-6 py-4 text-center">จัดการ</th>`;
-                
+            } else if (currentTab === 'ASSETS') {
+                tableHeader = `<th class="px-8 py-4 text-xs font-bold text-slate-500 uppercase">Code</th><th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Asset Name</th><th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Location</th><th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">Status</th><th class="px-6 py-4 text-center w-24 text-xs font-bold text-slate-500 uppercase">QR</th><th class="px-8 py-4 text-right text-xs font-bold text-slate-500 uppercase">Action</th>`;
                 dataList.forEach(a => {
-                    const statusClass = a.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
-                    tableRows += `
-                        <tr class="hover:bg-blue-50 border-b last:border-0 transition bg-white">
-                            <td class="px-6 py-4 font-mono text-gray-500 text-sm">${a.asset_code || '-'}</td>
-                            <td class="px-6 py-4 font-bold text-gray-700">${a.name}</td>
-                            <td class="px-6 py-4 text-gray-600">${a.location || '-'}</td>
-                            <td class="px-6 py-4 text-center"><span class="${statusClass} px-2 py-1 rounded text-xs font-bold uppercase">${a.status || 'active'}</span></td>
-                            <td class="px-6 py-4 text-center">
-                                <button onclick="openQRModal('${a.id}')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded text-xs font-bold border border-gray-300 flex items-center justify-center gap-1 mx-auto transition">
-                                    <i class="fas fa-qrcode"></i> QR
-                                </button>
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                <button onclick="openModal('${a.id}')" class="text-blue-500 hover:text-blue-700 mx-1"><i class="fas fa-edit"></i></button>
-                                <button onclick="deleteItem('${a.id}')" class="text-red-400 hover:text-red-600 mx-1"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>`;
+                    const st = a.status === 'active' ? '<span class="text-emerald-600 font-bold text-[10px] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 uppercase">Active</span>' : '<span class="text-slate-400 font-bold text-[10px] bg-slate-100 px-2 py-0.5 rounded border border-slate-200 uppercase">Inactive</span>';
+                    tableRows += `<tr class="hover:bg-blue-50/40 border-b border-gray-100 last:border-0 transition-colors"><td class="px-8 py-4 font-mono text-xs text-blue-600 font-bold">${a.asset_code||'-'}</td><td class="px-6 py-4 font-bold text-slate-700">${a.name}</td><td class="px-6 py-4 text-sm text-gray-500">${a.location||'-'}</td><td class="px-6 py-4 text-center">${st}</td><td class="px-6 py-4 text-center"><button onclick="openQRModal('${a.id}')" class="text-slate-400 hover:text-slate-800 transition transform hover:scale-110"><i class="fas fa-qrcode text-lg"></i></button></td><td class="px-8 py-4 text-right"><div class="flex justify-end gap-2"><button onclick="openModal('${a.id}')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-slate-400 hover:border-blue-500 hover:text-blue-600 hover:shadow-sm flex items-center justify-center transition"><i class="fas fa-pen text-xs"></i></button><button onclick="deleteItem('${a.id}')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-slate-400 hover:border-red-500 hover:text-red-600 hover:shadow-sm flex items-center justify-center transition"><i class="fas fa-trash text-xs"></i></button></div></td></tr>`;
+                });
+            } else if (currentTab === 'ISSUES') {
+                tableHeader = `<th class="px-8 py-4 text-center w-20 text-xs font-bold text-slate-500 uppercase">Icon</th><th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Label</th><th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">Class</th><th class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">Active</th><th class="px-8 py-4 text-right text-xs font-bold text-slate-500 uppercase">Action</th>`;
+                dataList.forEach(i => {
+                    const st = i.is_active ? '<i class="fas fa-check-circle text-emerald-500"></i>' : '<i class="fas fa-times-circle text-slate-300"></i>';
+                    const iconColor = i.is_active ? 'text-blue-600 bg-blue-50 border-blue-100' : 'text-slate-400 bg-slate-50 border-slate-100';
+                    tableRows += `<tr class="hover:bg-blue-50/40 border-b border-gray-100 last:border-0 transition-colors"><td class="px-8 py-4 text-center"><div class="w-9 h-9 rounded-lg flex items-center justify-center mx-auto border ${iconColor} shadow-sm"><i class="fas ${i.icon_class}"></i></div></td><td class="px-6 py-4 font-bold text-slate-700">${i.label}</td><td class="px-6 py-4 text-center font-mono text-xs text-slate-400">${i.icon_class}</td><td class="px-6 py-4 text-center">${st}</td><td class="px-8 py-4 text-right"><div class="flex justify-end gap-2"><button onclick="openModal('${i.id}')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-slate-400 hover:border-blue-500 hover:text-blue-600 hover:shadow-sm flex items-center justify-center transition"><i class="fas fa-pen text-xs"></i></button><button onclick="deleteItem('${i.id}')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-slate-400 hover:border-red-500 hover:text-red-600 hover:shadow-sm flex items-center justify-center transition"><i class="fas fa-trash text-xs"></i></button></div></td></tr>`;
                 });
             }
 
-            container.innerHTML = `
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden fade-in">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-slate-50 text-slate-600 uppercase text-xs font-semibold tracking-wider border-b border-slate-200"><tr>${tableHeader}</tr></thead>
-                            <tbody class="divide-y divide-gray-100 text-sm text-gray-700">${tableRows}</tbody>
-                        </table>
-                    </div>
-                </div>`;
+            container.innerHTML = `<table class="w-full text-left border-collapse"><thead class="bg-gray-50/50 border-b border-gray-200"><tr>${tableHeader}</tr></thead><tbody class="divide-y divide-gray-100 text-sm">${tableRows}</tbody></table>`;
         }
 
         function openModal(id = null) {
-            const modalTitle = document.getElementById('modalTitle');
-            const fieldsContainer = document.getElementById('modalFields');
+            const f = document.getElementById('modalFields');
             document.getElementById('editId').value = id || '';
             document.getElementById('genericModal').classList.remove('hidden');
-
-            let data = null;
-            if (id) data = dataList.find(i => i.id === id);
+            let d = id ? dataList.find(x => x.id === id) : null;
+            document.getElementById('modalTitle').innerText = id ? 'แก้ไขข้อมูล' : 'เพิ่มข้อมูลใหม่';
 
             if (currentTab === 'USERS') {
-                modalTitle.innerText = id ? 'แก้ไขข้อมูลผู้ใช้' : 'เพิ่มผู้ใช้ใหม่';
-                fieldsContainer.innerHTML = `
-                    <div><label class="block text-sm font-bold text-gray-700 mb-1">Username <span class="text-red-500">*</span></label><input type="text" name="username" value="${data?.username || ''}" class="w-full border rounded-lg px-3 py-2 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" required ${id ? 'readonly' : ''}></div>
-                    <div><label class="block text-sm font-bold text-gray-700 mb-1">Password ${id ? '(เว้นว่างถ้าไม่เปลี่ยน)' : '<span class="text-red-500">*</span>'}</label><input type="text" name="password" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="ตั้งรหัสผ่าน..." ${!id ? 'required' : ''}></div>
-                    <div><label class="block text-sm font-bold text-gray-700 mb-1">ชื่อ-นามสกุล</label><input type="text" name="full_name" value="${data?.full_name || ''}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"></div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div><label class="block text-sm font-bold text-gray-700 mb-1">แผนก</label><input type="text" name="department" value="${data?.department || ''}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"></div>
-                        <div><label class="block text-sm font-bold text-gray-700 mb-1">สิทธิ์การใช้งาน (Role)</label>
-                            <select name="role" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                                <option value="user" ${data?.role === 'user' ? 'selected' : ''}>User (แจ้งซ่อม)</option>
-                                <option value="technician" ${data?.role === 'technician' ? 'selected' : ''}>Technician (ช่าง)</option>
-                                <option value="manager" ${data?.role === 'manager' ? 'selected' : ''}>Manager (หัวหน้า)</option>
-                                <option value="admin" ${data?.role === 'admin' ? 'selected' : ''}>Admin (ดูแลระบบ)</option>
-                            </select>
-                        </div>
-                    </div>`;
-            } else {
-                modalTitle.innerText = id ? 'แก้ไขข้อมูลเครื่องจักร' : 'เพิ่มเครื่องจักรใหม่';
-                fieldsContainer.innerHTML = `
-                    <div><label class="block text-sm font-bold text-gray-700 mb-1">รหัสทรัพย์สิน (Code)</label><input type="text" name="asset_code" value="${data?.asset_code || ''}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="เช่น MC-001"></div>
-                    <div><label class="block text-sm font-bold text-gray-700 mb-1">ชื่อเครื่องจักร <span class="text-red-500">*</span></label><input type="text" name="name" value="${data?.name || ''}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" required></div>
-                    <div><label class="block text-sm font-bold text-gray-700 mb-1">สถานที่ตั้ง (Location)</label><input type="text" name="location" value="${data?.location || ''}" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="เช่น Line A, อาคาร 2"></div>
-                    <div><label class="block text-sm font-bold text-gray-700 mb-1">สถานะ</label><select name="status" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white"><option value="active" ${data?.status === 'active' ? 'selected' : ''}>Active (ใช้งานปกติ)</option><option value="inactive" ${data?.status === 'inactive' ? 'selected' : ''}>Inactive (เลิกใช้งาน/ซ่อมยาว)</option></select></div>`;
+                f.innerHTML=`<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Username *</label><input type="text" name="username" value="${d?.username||''}" class="w-full border-gray-200 bg-gray-50 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-bold text-slate-700 outline-none transition" required ${id?'readonly':''}></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password ${id?'(Optional)':'*'}</label><input type="text" name="password" class="w-full border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" ${!id?'required':''}></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Full Name</label><input type="text" name="full_name" value="${d?.full_name||''}" class="w-full border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Department</label><input type="text" name="department" value="${d?.department||''}" class="w-full border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Role</label><select name="role" class="w-full border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white outline-none transition"><option value="user" ${d?.role==='user'?'selected':''}>User</option><option value="technician" ${d?.role==='technician'?'selected':''}>Technician</option><option value="manager" ${d?.role==='manager'?'selected':''}>Manager</option><option value="admin" ${d?.role==='admin'?'selected':''}>Admin</option></select></div></div>`;
+            } else if(currentTab==='ASSETS') {
+                f.innerHTML=`<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Code</label><input type="text" name="asset_code" value="${d?.asset_code||''}" class="w-full border-gray-200 bg-gray-50 rounded-xl px-4 py-3 font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Asset Name *</label><input type="text" name="name" value="${d?.name||''}" class="w-full border-gray-200 rounded-xl px-4 py-3 font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none" required></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Location</label><input type="text" name="location" value="${d?.location||''}" class="w-full border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label><select name="status" class="w-full border-gray-200 rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500 outline-none"><option value="active" ${d?.status==='active'?'selected':''}>Active</option><option value="inactive" ${d?.status==='inactive'?'selected':''}>Inactive</option></select></div>`;
+            } else if(currentTab==='ISSUES') {
+                selectedIcon = d?.icon_class || 'fa-tools';
+                let iconHTML = `<div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase mb-2">Select Icon</label><div class="icon-grid">`;
+                iconList.forEach(ic => {
+                    const activeClass = (ic === selectedIcon) ? 'selected' : '';
+                    iconHTML += `<div class="icon-option ${activeClass}" onclick="selectIcon('${ic}', this)"><i class="fas ${ic}"></i></div>`;
+                });
+                iconHTML += `</div><input type="hidden" name="icon_class" id="iconInput" value="${selectedIcon}"></div>`;
+                f.innerHTML=`<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Label Name *</label><input type="text" name="label" value="${d?.label||''}" class="w-full border-gray-200 rounded-xl px-4 py-3 font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none" required></div>${iconHTML}<div><label class="flex items-center gap-3 mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100 transition"><input type="checkbox" name="is_active" class="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500" ${!d || d.is_active ? 'checked' : ''}> <span class="text-sm font-bold text-slate-700">เปิดใช้งาน (Active)</span></label></div>`;
             }
+        }
+
+        function selectIcon(icon, el) {
+            selectedIcon = icon;
+            document.getElementById('iconInput').value = icon;
+            document.querySelectorAll('.icon-option').forEach(e => e.classList.remove('selected'));
+            el.classList.add('selected');
         }
 
         function closeModal() { document.getElementById('genericModal').classList.add('hidden'); }
@@ -338,19 +388,26 @@
             const formData = new FormData(e.target);
             const id = document.getElementById('editId').value;
             const data = Object.fromEntries(formData.entries());
-            const table = currentTab === 'USERS' ? 'profiles' : 'assets';
-            if(currentTab === 'USERS' && id && !data.password) delete data.password;
+            let table = '';
+            
+            if(currentTab === 'USERS') { table = 'profiles'; if(id && !data.password) delete data.password; }
+            else if(currentTab === 'ASSETS') table = 'assets';
+            else if(currentTab === 'ISSUES') { table = 'issue_options'; data.is_active = formData.get('is_active') === 'on'; }
 
             try {
                 if (id) await supabaseClient.from(table).update(data).eq('id', id);
                 else await supabaseClient.from(table).insert([data]);
-                alert('บันทึกข้อมูลเรียบร้อย ✅'); closeModal(); fetchData();
+                closeModal(); fetchData();
             } catch (err) { alert('Error: ' + err.message); }
         }
 
         async function deleteItem(id) {
-            if(!confirm('ยืนยันลบข้อมูลนี้? การกระทำนี้ไม่สามารถย้อนกลับได้')) return;
-            const table = currentTab === 'USERS' ? 'profiles' : 'assets';
+            if(!confirm('ยืนยันลบข้อมูลนี้? (ไม่สามารถกู้คืนได้)')) return;
+            let table = '';
+            if(currentTab === 'USERS') table = 'profiles';
+            else if(currentTab === 'ASSETS') table = 'assets';
+            else if(currentTab === 'ISSUES') table = 'issue_options'; 
+
             try {
                 const { error } = await supabaseClient.from(table).delete().eq('id', id);
                 if(error) throw error;
@@ -363,13 +420,11 @@
             if (!asset) return;
             document.getElementById('qrModal').classList.remove('hidden');
             document.getElementById('qrAssetName').innerText = asset.name;
-            document.getElementById('qrAssetId').innerText = asset.id;
+            document.getElementById('qrAssetId').innerText = asset.asset_code || asset.id;
             const qrContainer = document.getElementById('qrcode');
             qrContainer.innerHTML = ''; 
-            new QRCode(qrContainer, { text: asset.id, width: 128, height: 128, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
+            new QRCode(qrContainer, { text: asset.id, width: 160, height: 160, colorDark : "#0f172a", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
         }
-
-        function logout() { localStorage.removeItem('cmms_user_session'); safeRedirect('index.html'); }
     </script>
 </body>
 </html>
