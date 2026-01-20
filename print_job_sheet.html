@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ใบแจ้งซ่อม (Job Sheet)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&family=Libre+Barcode+39+Text&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Sarabun', sans-serif; margin: 0; padding: 0; background: #525659; }
+        
+        /* A4 Paper Style (Screen View) */
+        .page {
+            width: 210mm;
+            min-height: 296mm; /* A4 Height */
+            padding: 15mm;     /* Reduced padding for more space */
+            margin: 10mm auto;
+            border: 1px solid #d3d3d3;
+            border-radius: 5px;
+            background: white;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            position: relative;
+            box-sizing: border-box; /* Include padding in width/height */
+        }
+        
+        /* Print Styles (Crucial for Layout) */
+        @media print {
+            @page { size: A4; margin: 0; } /* Reset browser margins */
+            body { background: white; margin: 0; padding: 0; }
+            .page { 
+                margin: 0; 
+                border: initial; 
+                border-radius: initial; 
+                width: 210mm; 
+                height: 296mm; /* Fix height to force fit */
+                box-shadow: initial; 
+                background: initial; 
+                page-break-after: always;
+                padding: 15mm; /* Consistent padding */
+                overflow: hidden; /* Prevent spillover */
+            }
+            .no-print { display: none !important; }
+        }
+
+        /* Compact Typography */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 5px; } /* Reduced margin */
+        th, td { border: 1px solid black; padding: 4px 6px; font-size: 13px; vertical-align: top; } /* Compact cells */
+        p { margin: 0; }
+        
+        .bg-gray { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; font-weight: bold; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-bold { font-weight: bold; }
+        
+        /* Header Optimization */
+        .header-title { font-size: 20px; font-weight: bold; margin: 0; line-height: 1.2; }
+        .barcode { font-family: 'Libre Barcode 39 Text', cursive; font-size: 32px; margin: 2px 0; } /* Smaller barcode */
+        
+        /* Section Optimization */
+        .section-header { background-color: #eee; font-weight: bold; padding: 3px 5px; border: 1px solid black; border-bottom: none; font-size: 13px; -webkit-print-color-adjust: exact; margin-top: 5px; }
+        .section-content { border: 1px solid black; padding: 5px; margin-bottom: 0; } /* Remove bottom margin */
+        
+        /* Image Box Optimization */
+        .img-box { width: 100%; height: 130px; border: 1px dashed #999; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; } /* Reduced height */
+        .img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        
+        /* Layout Helpers */
+        .row { display: flex; gap: 10px; }
+        .col { flex: 1; }
+    </style>
+</head>
+<body>
+
+    <div class="page">
+        <!-- Control Bar -->
+        <div class="no-print" style="position:fixed; top:0; left:0; width:100%; background:#333; padding:10px; text-align:center; box-shadow:0 2px 5px rgba(0,0,0,0.2); z-index:999;">
+            <button onclick="window.print()" style="padding:8px 20px; font-size:16px; font-weight:bold; cursor:pointer; background:#4CAF50; color:white; border:none; border-radius:4px;">🖨️ สั่งพิมพ์</button>
+            <button onclick="window.close()" style="padding:8px 20px; font-size:16px; font-weight:bold; cursor:pointer; background:#f44336; color:white; border:none; border-radius:4px; margin-left:10px;">❌ ปิด</button>
+        </div>
+
+        <div id="loading" style="text-align:center; padding:50px;">กำลังโหลดข้อมูล...</div>
+
+        <div id="content" style="display:none;">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; border-bottom: 2px solid black; padding-bottom: 5px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 60px; height: 60px; border: 1px solid #000; display: flex; align-items: center; justify-content: center; font-weight:bold; background:#f9f9f9; font-size:12px;">LOGO</div>
+                    <div>
+                        <h2 style="margin: 0; font-size: 18px;">บริษัท ไทยรุ่งกิจ ไวท์ดั๊ก จำกัด</h2>
+                        <p style="margin: 0; font-size: 12px; color:#555;">Thairoongkij Whiteduck.Co.,Ltd</p>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <h1 class="header-title">ใบแจ้งซ่อม / JOB SHEET</h1>
+                    <div class="barcode" id="barcode">JOB-0000</div>
+                    <p style="font-size:11px;">WD Maintenance System | <span id="printDate">Date: -</span></p>
+                </div>
+            </div>
+
+            <!-- 1. Asset & 2. Request Info (Combined in 2 blocks) -->
+            <div class="section-header">1. ข้อมูลการแจ้งซ่อม (Request & Asset Info)</div>
+            <div style="border: 1px solid black;">
+                <table style="border: none; margin: 0;">
+                    <tr>
+                        <td style="border:none; width: 15%;" class="text-bold bg-gray">เครื่องจักร:</td>
+                        <td style="border:none; width: 35%;" id="assetName">-</td>
+                        <td style="border:none; width: 15%;" class="text-bold bg-gray">เลขที่แจ้ง:</td>
+                        <td style="border:none;" id="jobIdText">-</td>
+                    </tr>
+                    <tr>
+                        <td style="border:none;" class="text-bold bg-gray">รหัสทรัพย์สิน:</td>
+                        <td style="border:none;" id="assetCode">-</td>
+                        <td style="border:none;" class="text-bold bg-gray">วันที่แจ้ง:</td>
+                        <td style="border:none;"><span id="reqDate">-</span> <span id="reqTime">-</span></td>
+                    </tr>
+                    <tr>
+                        <td style="border:none;" class="text-bold bg-gray">สถานที่:</td>
+                        <td style="border:none;" id="location">-</td>
+                        <td style="border:none;" class="text-bold bg-gray">ผู้แจ้ง:</td>
+                        <td style="border:none;" id="requester">-</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- 3. Problem -->
+            <div class="section-header">3. รายละเอียดอาการเสีย (Problem Description)</div>
+            <div class="section-content" style="min-height: 40px; font-size:13px;" id="problemDesc">-</div>
+
+            <!-- 4. Photos (Reduced Height) -->
+            <div class="section-header">4. รูปภาพประกอบ (Photos)</div>
+            <div class="section-content">
+                <div class="row">
+                    <div class="col">
+                        <div class="img-box"><img id="imgBefore" alt="" style="display:none;"></div>
+                        <p class="text-center" style="font-size:11px; margin-top:2px;"><b>รูปตอนแจ้งซ่อม (Before)</b></p>
+                    </div>
+                    <div class="col">
+                        <div class="img-box"><img id="imgAfter" alt="" style="display:none;"></div>
+                        <p class="text-center" style="font-size:11px; margin-top:2px;"><b>รูปหลังซ่อม (After)</b></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Action Taken -->
+            <div class="section-header">5. ผลการดำเนินงาน (Action Taken)</div>
+            <div style="border: 1px solid black;">
+                <table style="border: none; margin: 0;">
+                    <tr>
+                        <td style="border:none; width: 20%;" class="text-bold bg-gray">ช่างผู้ดำเนินการ:</td>
+                        <td style="border:none;" id="technician">-</td>
+                    </tr>
+                    <tr>
+                        <td style="border:none; vertical-align: top;" class="text-bold bg-gray">รายละเอียดการแก้ไข:</td>
+                        <td style="border:none; height: 40px;" id="repairDetails">-</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- 6. Parts -->
+            <div class="section-header">6. รายการเบิกอุปกรณ์ใช้งาน</div>
+            <table style="margin-bottom: 0;">
+                <thead>
+                    <tr class="bg-gray">
+                        <th style="width: 10%;" class="text-center">ลำดับ</th>
+                        <th>รายการอะไหล่</th>
+                        <th style="width: 15%;" class="text-center">จำนวน</th>
+                        <th style="width: 25%;">หมายเหตุ</th>
+                    </tr>
+                </thead>
+                <tbody id="partsTable">
+                    <tr><td colspan="4" class="text-center" style="padding:10px;">- ไม่มีรายการ -</td></tr>
+                </tbody>
+            </table>
+
+            <!-- 7. Approval (Bottom of page) -->
+            <div class="section-header">7. การอนุมัติ (Approval)</div>
+            <div class="section-content" style="padding: 10px 5px;">
+                <div style="display: flex; justify-content: space-between; text-align: center;">
+                    <div style="width: 32%;">
+                        <p class="text-bold" style="font-size:12px;">ผู้แจ้งซ่อม (Requester)</p>
+                        <div style="height: 30px; border-bottom: 1px dotted black; margin-bottom: 2px;"></div>
+                        <p style="font-size: 11px;">วันที่ ......../......../........</p>
+                    </div>
+                    <div style="width: 32%;">
+                        <p class="text-bold" style="font-size:12px;">ช่างผู้ปฏิบัติงาน (Technician)</p>
+                        <div style="height: 30px; border-bottom: 1px dotted black; margin-bottom: 2px;"></div>
+                        <p style="font-size: 11px;">วันที่ ......../......../........</p>
+                    </div>
+                    <div style="width: 32%;">
+                        <p class="text-bold" style="font-size:12px;">ผู้อนุมัติ (Approver)</p>
+                        <div style="height: 30px; border-bottom: 1px dotted black; margin-bottom: 2px;"></div>
+                        <p style="font-size: 11px;">วันที่ ......../......../........</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="font-size: 10px; text-align: right; margin-top: 5px; color: #666;">* เอกสารนี้สร้างจากระบบอัตโนมัติ (WD Maintenance System)</div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- EMBEDDED CONFIG ---
+        const SUPABASE_URL = 'https://nmezqexpvhdozpdzxxek.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tZXpxZXhwdmhkb3pwZHp4eGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5OTAwNTEsImV4cCI6MjA4MjU2NjA1MX0.N1OjCh1sp0xx0DGFjR6yX2hix5oIX7suzrnvQk8qPWU';
+        
+        // Use 'supabaseClient' to match other files and avoid conflicts
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Get ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const ticketId = urlParams.get('id');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!ticketId) {
+                document.getElementById('loading').innerHTML = '<span style="color:red">ไม่พบรหัสใบงาน (ID Not Found)</span>';
+                return;
+            }
+
+            try {
+                // Fetch Ticket
+                const { data: ticket, error } = await supabaseClient.from('tickets').select('*').eq('id', ticketId).single();
+                if (error) throw error;
+
+                // Fetch Related Data (Using Safe Check ?.)
+                let asset = {}, requester = {}, technician = {}, parts = [], media = [];
+
+                if(ticket.asset_id) {
+                    const res = await supabaseClient.from('assets').select('*').eq('id', ticket.asset_id).single();
+                    asset = res.data || {};
+                }
+                if(ticket.requester_id) {
+                    const res = await supabaseClient.from('profiles').select('*').eq('id', ticket.requester_id).single();
+                    requester = res.data || {};
+                }
+                if(ticket.technician_id) {
+                    const res = await supabaseClient.from('profiles').select('*').eq('id', ticket.technician_id).single();
+                    technician = res.data || {};
+                }
+                
+                const partsRes = await supabaseClient.from('spare_parts_requests').select('*').eq('ticket_id', ticketId);
+                parts = partsRes.data || [];
+
+                const mediaRes = await supabaseClient.from('media').select('*').eq('ticket_id', ticketId);
+                media = mediaRes.data || [];
+
+                // --- Populate Data ---
+                const jobCode = 'JOB-' + ticket.id.substring(0, 6).toUpperCase();
+                document.getElementById('barcode').innerText = jobCode;
+                document.getElementById('jobIdText').innerText = jobCode;
+                document.getElementById('printDate').innerText = 'พิมพ์: ' + dayjs().format('DD/MM/YYYY HH:mm');
+
+                // Asset
+                document.getElementById('assetName').innerText = asset.name || '-';
+                document.getElementById('assetCode').innerText = asset.asset_code || '-';
+                document.getElementById('location').innerText = asset.location || '-';
+
+                // Users & Time
+                document.getElementById('requester').innerText = requester.full_name || requester.username || '-';
+                document.getElementById('reqDate').innerText = dayjs(ticket.incident_time).format('DD/MM/YYYY');
+                document.getElementById('reqTime').innerText = dayjs(ticket.incident_time).format('HH:mm');
+
+                // Details
+                document.getElementById('problemDesc').innerText = (ticket.issue_text || '-') + (ticket.description ? ` (${ticket.description})` : '');
+                document.getElementById('technician').innerText = technician.full_name || technician.username || '-';
+                document.getElementById('repairDetails').innerText = ticket.repair_details || '-';
+
+                // Parts Table
+                const pTable = document.getElementById('partsTable');
+                if (parts.length > 0) {
+                    pTable.innerHTML = parts.map((p, i) => `
+                        <tr>
+                            <td class="text-center">${i + 1}</td>
+                            <td>${p.part_name || '-'}</td>
+                            <td class="text-center">${p.quantity || 1}</td>
+                            <td></td>
+                        </tr>`).join('');
+                }
+
+                // Images
+                const imgBefore = document.getElementById('imgBefore');
+                const imgAfter = document.getElementById('imgAfter');
+
+                // 1. Before Image (Cover)
+                if (ticket.photo_url) {
+                    imgBefore.src = ticket.photo_url;
+                    imgBefore.style.display = 'block';
+                }
+                
+                // 2. After Image (First in media list)
+                if (media.length > 0) {
+                    // Try to find image that is NOT the cover
+                    const after = media.find(m => m.url !== ticket.photo_url) || media[0];
+                    if (after) {
+                        imgAfter.src = after.url;
+                        imgAfter.style.display = 'block';
+                    }
+                }
+
+                // Finish
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+            } catch (err) {
+                document.getElementById('loading').innerHTML = `<span style="color:red">Error: ${err.message}</span>`;
+            }
+        });
+    </script>
+</body>
+</html>
