@@ -8,7 +8,6 @@
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
@@ -22,316 +21,472 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
-        body { font-family: 'Sarabun', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Sarabun', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #f0f9ff; } /* Light Blue-ish bg */
+        
+        /* --- FUN & ENERGETIC THEME --- */
+        .header-gradient { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); } /* Blue to Purple */
+        .btn-gradient-scan { background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); } /* Amber to Orange */
+        .btn-gradient-submit { background: linear-gradient(135deg, #10b981 0%, #059669 100%); } /* Emerald */
+        
+        /* Accents */
+        .text-theme-primary { color: #4f46e5; } /* Indigo Text */
+        .text-theme-secondary { color: #f59e0b; } /* Amber Text */
+        
         .touch-card { transition: transform 0.1s; }
         .touch-card:active { transform: scale(0.96); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; margin-top: 10px; }
-        .media-item { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; }
-        .media-item img, .media-item video { width: 100%; height: 100%; object-fit: cover; }
-        .delete-btn { position: absolute; top: 2px; right: 2px; background: rgba(239, 68, 68, 0.9); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; }
-        .fab-history { position: fixed; bottom: 20px; right: 20px; background: #3b82f6; color: white; padding: 12px 20px; border-radius: 30px; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4); font-weight: bold; display: flex; align-items: center; gap: 8px; z-index: 40; transition: transform 0.2s; }
+        
+        /* Media Grid */
+        .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; margin-top: 10px; }
+        .media-item { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; border: 2px solid white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .media-item img { width: 100%; height: 100%; object-fit: cover; }
+        .delete-btn { position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; border: 2px solid white; }
+        
+        /* Floating History Button */
+        .fab-history { position: fixed; bottom: 24px; right: 24px; background: #2563eb; color: white; padding: 14px 24px; border-radius: 50px; box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4); font-weight: bold; display: flex; align-items: center; gap: 10px; z-index: 40; transition: all 0.2s; border: 2px solid rgba(255,255,255,0.3); }
         .fab-history:active { transform: scale(0.95); }
-        .step-circle { width: 24px; height: 24px; background: #e0f2fe; color: #0284c7; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-shrink: 0; }
-        .issue-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80px; transition: all 0.2s; }
-        .issue-card.selected { border-color: #3b82f6; background-color: #eff6ff; color: #1d4ed8; }
-        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Step Indicators */
+        .step-badge { width: 30px; height: 30px; background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3); border: 2px solid white; }
+        
+        /* Cards */
+        .modern-card { background: white; border-radius: 24px; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.5); }
+        
+        .issue-card { border: 2px solid #f1f5f9; border-radius: 16px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 90px; transition: all 0.2s; background: #fff; }
+        .issue-card:active { transform: scale(0.95); }
+        .issue-card.selected { border-color: #8b5cf6; background-color: #f5f3ff; color: #6d28d9; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.2); }
+        .issue-card i { transition: color 0.2s; }
+        .issue-card.selected i { color: #8b5cf6 !important; }
+        
+        /* Priority Styles (Fun Colors) */
+        .priority-btn { border: 2px solid #f1f5f9; border-radius: 16px; padding: 10px; text-align: center; font-size: 12px; font-weight: bold; color: #64748b; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 5px; background: white; }
+        .priority-btn.active-normal { background-color: #ecfdf5; color: #059669; border-color: #34d399; box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.2); } 
+        .priority-btn.active-urgent { background-color: #fff7ed; color: #ea580c; border-color: #fb923c; box-shadow: 0 4px 6px -1px rgba(234, 88, 12, 0.2); } 
+        .priority-btn.active-emergency { background-color: #fef2f2; color: #dc2626; border-color: #f87171; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.2); } 
+
+        /* Toast */
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none; }
+        .toast { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 12px 16px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; animation: slideIn 0.3s ease-out; pointer-events: auto; border: 1px solid rgba(255,255,255,0.5); }
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
     </style>
 </head>
-<body class="bg-gray-50 h-screen flex flex-col overflow-hidden text-gray-800">
+<body class="h-screen flex flex-col overflow-hidden text-gray-800 bg-[#f0f9ff]">
 
-    <header class="bg-white px-4 py-3 shadow-sm z-30 flex justify-between items-center sticky top-0 shrink-0">
-        <div><h1 class="text-xl font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-wrench text-blue-600"></i> แจ้งซ่อม</h1><p class="text-xs text-gray-500" id="userDisplayName">...</p></div>
-        <button onclick="logout()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200"><i class="fas fa-sign-out-alt"></i></button>
+    <!-- Toast -->
+    <div id="toast-container"></div>
+
+    <!-- Header (Blue-Purple Fun) -->
+    <header class="header-gradient px-6 py-6 shadow-lg z-30 flex justify-between items-center sticky top-0 shrink-0 text-white rounded-b-[30px] mx-[-2px]">
+        <div>
+            <h1 class="text-2xl font-extrabold flex items-center gap-2 drop-shadow-sm tracking-tight"><i class="fas fa-tools animate-bounce"></i> แจ้งซ่อม</h1>
+            <p class="text-xs font-medium opacity-90 mt-1 ml-1 bg-white/20 inline-block px-3 py-1 rounded-full backdrop-blur-sm border border-white/20" id="userDisplayName">Loading...</p>
+        </div>
+        <button onclick="logout()" class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition backdrop-blur-md shadow-inner border border-white/20">
+            <i class="fas fa-sign-out-alt text-white"></i>
+        </button>
     </header>
 
-    <main class="flex-1 overflow-y-auto p-4 pb-24 relative scroll-smooth no-scrollbar" id="mainContainer">
-        <!-- STEP 1: ระบุเครื่องจักร -->
-        <section class="mb-5">
-            <div class="flex items-center gap-2 mb-2 px-1"><div class="step-circle">1</div><h2 class="text-sm font-bold text-gray-700">ระบุเครื่องจักร</h2></div>
-            <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                <button onclick="startScanner('ASSET')" class="w-full bg-blue-600 text-white rounded-xl py-5 shadow-lg shadow-blue-100 touch-card flex flex-col items-center justify-center gap-1 mb-3 active:bg-blue-700"><i class="fas fa-qrcode text-3xl"></i><span class="text-base font-bold">สแกน QR Code</span></button>
-                <div class="text-center"><button onclick="openAssetModal()" class="text-gray-500 text-xs py-2 px-4 rounded-full hover:bg-gray-50 transition flex items-center justify-center gap-2 mx-auto border border-transparent hover:border-gray-200"><i class="fas fa-list"></i> เลือกจากรายการ (ค้นหาเอง)</button></div>
-                <div id="selectedAssetCard" class="hidden mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 relative animate-pulse">
-                    <button onclick="clearAsset()" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 w-8 h-8 flex items-center justify-center"><i class="fas fa-times-circle text-lg"></i></button>
-                    <div class="pr-6"><div class="text-[10px] text-blue-600 font-bold uppercase mb-1">Selected Asset</div><div class="font-bold text-gray-800 text-base leading-tight mb-1" id="assetNameDisplay">-</div><div class="flex flex-wrap gap-2 text-[10px] text-gray-500"><span class="bg-white px-1.5 py-0.5 rounded border border-blue-100 font-mono" id="assetSerialDisplay">ID: -</span><span class="flex items-center gap-1"><i class="fas fa-map-marker-alt text-red-400"></i> <span id="assetLocationDisplay">-</span></span></div></div>
+    <main class="flex-1 overflow-y-auto p-5 pb-32 relative scroll-smooth no-scrollbar" id="mainContainer">
+        
+        <!-- Fun Decoration -->
+        <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0 opacity-40">
+            <div class="absolute top-[-50px] right-[-50px] w-64 h-64 bg-purple-300 rounded-full blur-[80px]"></div>
+            <div class="absolute top-[200px] left-[-50px] w-52 h-52 bg-blue-300 rounded-full blur-[80px]"></div>
+            <div class="absolute bottom-[-20px] right-[20px] w-40 h-40 bg-pink-200 rounded-full blur-[60px]"></div>
+        </div>
+
+        <div class="relative z-10 space-y-6">
+            <!-- STEP 1 -->
+            <section>
+                <div class="flex items-center gap-3 mb-3 px-2">
+                    <div class="step-badge">1</div>
+                    <h2 class="text-lg font-bold text-slate-700">ระบุรายการแจ้งซ่อม</h2>
                 </div>
-                <input type="hidden" id="assetId">
-            </div>
-        </section>
+                
+                <div class="modern-card p-5">
+                    <!-- Scan Button (Fun Orange) -->
+                    <button onclick="startScanner('ASSET')" class="w-full btn-gradient-scan text-white rounded-2xl py-5 shadow-lg shadow-orange-200/50 touch-card flex flex-col items-center justify-center gap-2 mb-4 active:scale-95 transition relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-white/20 group-hover:bg-white/30 transition"></div>
+                        <i class="fas fa-qrcode text-3xl drop-shadow-md text-white animate-pulse"></i>
+                        <span class="text-sm font-bold tracking-wide text-white">สแกน QR Code</span>
+                    </button>
+                    
+                    <div class="text-center mb-4">
+                        <button onclick="openAssetModal()" class="text-slate-500 text-xs font-bold py-2.5 px-6 rounded-full bg-slate-100 hover:bg-slate-200 transition flex items-center justify-center gap-2 mx-auto border border-slate-200">
+                            <i class="fas fa-list text-blue-500"></i> เลือกจากรายการ
+                        </button>
+                    </div>
 
-        <!-- STEP 2: อาการเสีย -->
-        <section class="mb-5 opacity-50 pointer-events-none transition-all duration-300" id="step2">
-            <div class="flex items-center gap-2 mb-2 px-1"><div class="step-circle">2</div><h2 class="text-sm font-bold text-gray-700">อาการเสีย</h2></div>
-            <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                <div class="grid grid-cols-3 gap-2 mb-3" id="issueOptionsContainer"><div class="col-span-3 text-center text-gray-400 py-4 text-xs">กำลังโหลด...</div></div>
-                <div><label class="text-xs font-bold text-gray-500 mb-1 block">รายละเอียดเพิ่มเติม (ถ้ามี)</label><textarea id="issueDescription" rows="2" class="w-full bg-gray-50 border-0 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition placeholder-gray-400" placeholder="เช่น มีเสียงดัง, กลิ่นไหม้..."></textarea></div>
-            </div>
-        </section>
+                    <!-- Selected Card -->
+                    <div id="selectedAssetCard" class="hidden bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-2xl p-4 relative animate-fadeIn shadow-sm">
+                        <button onclick="clearAsset()" class="absolute top-3 right-3 text-gray-400 hover:text-red-500 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition"><i class="fas fa-times"></i></button>
+                        <div class="pr-8">
+                            <div class="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1 bg-blue-100/50 inline-block px-2 py-0.5 rounded-lg">Selected</div>
+                            <div class="font-extrabold text-slate-800 text-lg leading-tight mb-2" id="assetNameDisplay">-</div>
+                            <div class="flex flex-wrap gap-2 text-[10px] font-medium text-slate-500">
+                                <span class="bg-white px-2 py-1 rounded-lg border border-blue-100 font-mono text-blue-600"><i class="fas fa-tag mr-1"></i> <span id="assetSerialDisplay">-</span></span>
+                                <span class="bg-white px-2 py-1 rounded-lg border border-blue-100"><i class="fas fa-map-marker-alt text-red-400 mr-1"></i> <span id="assetLocationDisplay">-</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="assetId">
 
-        <!-- STEP 3: รูปภาพ/วิดีโอ -->
-        <section class="mb-8 opacity-50 pointer-events-none transition-all duration-300" id="step3">
-            <div class="flex items-center justify-between mb-2 px-1"><div class="flex items-center gap-2"><div class="step-circle">3</div><h2 class="text-sm font-bold text-gray-700">รูปภาพ/วิดีโอ</h2></div><span class="text-[10px] font-bold text-gray-400" id="mediaCount">0/10</span></div>
-            <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4">
-                <div class="flex gap-2 mb-2">
-                    <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden" onchange="handleFileSelect(this)">
-                    <label for="cameraInput" class="flex-1 bg-blue-50 border border-blue-200 text-blue-600 rounded-lg py-3 flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-blue-100 active:scale-95 transition"><i class="fas fa-camera text-lg"></i> <span class="text-xs font-bold">ถ่ายรูป</span></label>
-                    <input type="file" accept="image/*,video/*" id="galleryInput" class="hidden" multiple onchange="handleFileSelect(this)">
-                    <label for="galleryInput" class="flex-1 bg-gray-50 border border-gray-200 text-gray-600 rounded-lg py-3 flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-gray-100 active:scale-95 transition"><i class="fas fa-images text-lg"></i> <span class="text-xs font-bold">เลือกรูป</span></label>
+                    <!-- Manual Input -->
+                    <div class="relative mt-6 pt-5 border-t border-dashed border-slate-200">
+                        <div class="absolute top-[-10px] left-1/2 transform -translate-x-1/2 bg-white px-3 text-xs text-slate-400 font-bold uppercase tracking-widest rounded-full border border-slate-100">หรือ</div>
+                        <label class="text-xs font-bold text-slate-500 block mb-2"><i class="fas fa-pen text-orange-500 mr-1"></i> กรณีไม่มี QR Code (ซ่อมทั่วไป)</label>
+                        <input type="text" id="manualAssetInput" oninput="handleManualInput(this)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition placeholder-slate-400 font-medium" placeholder="พิมพ์ชื่ออุปกรณ์ / สิ่งที่ชำรุด...">
+                        <div id="manualLocationField" class="hidden mt-3 animate-fadeIn">
+                             <input type="text" id="manualLocationInput" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition placeholder-slate-400 font-medium" placeholder="ระบุสถานที่ (ชั้น/ห้อง/บริเวณ)...">
+                        </div>
+                    </div>
                 </div>
-                <div id="mediaDropZone" class="media-grid"></div>
-            </div>
-            <button onclick="submitTicket()" id="btnSubmit" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3.5 rounded-xl shadow-lg shadow-green-200 font-bold text-base touch-card flex items-center justify-center gap-2 active:scale-95 transition-all"><i class="fas fa-paper-plane"></i><span>ส่งแจ้งซ่อม</span></button>
-        </section>
+            </section>
 
-        <div class="text-center pt-2 border-t border-gray-200"><button onclick="openHistoryModal()" class="text-blue-500 text-xs py-2 flex items-center justify-center gap-1 mx-auto hover:underline">ดูประวัติการแจ้งซ่อมทั้งหมด <i class="fas fa-chevron-right text-[10px]"></i></button></div>
+            <!-- STEP 2 -->
+            <section class="opacity-50 pointer-events-none transition-all duration-500" id="step2">
+                <div class="flex items-center gap-3 mb-3 px-2">
+                    <div class="step-badge">2</div>
+                    <h2 class="text-lg font-bold text-slate-700">รายละเอียดอาการ</h2>
+                </div>
+                
+                <div class="modern-card p-5 space-y-5">
+                    <!-- Priority -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-wide flex items-center gap-1"><i class="fas fa-fire text-red-400"></i> ความเร่งด่วน</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button type="button" onclick="setPriority('normal')" id="prio-normal" class="priority-btn active-normal"><i class="fas fa-check-circle text-xl mb-1"></i> ปกติ</button>
+                            <button type="button" onclick="setPriority('urgent')" id="prio-urgent" class="priority-btn"><i class="fas fa-exclamation-circle text-xl mb-1"></i> ด่วน</button>
+                            <button type="button" onclick="setPriority('emergency')" id="prio-emergency" class="priority-btn"><i class="fas fa-radiation-alt text-xl mb-1"></i> ด่วนที่สุด</button>
+                        </div>
+                        <input type="hidden" id="priorityInput" value="ปกติ">
+                    </div>
+
+                    <!-- Issues -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-wide">อาการที่พบ</label>
+                        <div class="grid grid-cols-3 gap-3" id="issueOptionsContainer">
+                            <div class="col-span-3 text-center text-slate-400 py-4 text-xs">Loading...</div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 mb-2 block uppercase tracking-wide">เพิ่มเติม & ติดต่อ</label>
+                        <textarea id="issueDescription" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-purple-500 focus:bg-white transition placeholder-slate-400 mb-3 font-medium" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
+                        <div class="relative">
+                            <i class="fas fa-phone-alt absolute left-3.5 top-3.5 text-slate-400"></i>
+                            <input type="tel" id="contactNumber" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-purple-500 focus:bg-white transition placeholder-slate-400 font-bold text-slate-700" placeholder="เบอร์โทรติดต่อกลับ">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STEP 3 -->
+            <section class="opacity-50 pointer-events-none transition-all duration-500 pb-4" id="step3">
+                <div class="flex items-center justify-between mb-3 px-2">
+                    <div class="flex items-center gap-3">
+                        <div class="step-badge">3</div>
+                        <h2 class="text-lg font-bold text-slate-700">รูปภาพประกอบ</h2>
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-500 bg-white px-2 py-1 rounded-full border border-slate-200 shadow-sm" id="mediaCount">0/5</span>
+                </div>
+                
+                <div class="modern-card p-5 mb-6">
+                    <div class="flex gap-3 mb-4">
+                        <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden" onchange="handleFileSelect(this)">
+                        <label for="cameraInput" class="flex-1 bg-blue-50 border-2 border-blue-100 text-blue-600 rounded-xl py-3 flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition shadow-sm hover:bg-blue-100 hover:border-blue-200">
+                            <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm text-blue-500"><i class="fas fa-camera"></i></div>
+                            <span class="text-[10px] font-bold">ถ่ายรูป</span>
+                        </label>
+                        <input type="file" accept="image/*" id="galleryInput" class="hidden" multiple onchange="handleFileSelect(this)">
+                        <label for="galleryInput" class="flex-1 bg-purple-50 border-2 border-purple-100 text-purple-600 rounded-xl py-3 flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-purple-100 hover:border-purple-200 active:scale-95 transition shadow-sm">
+                            <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm text-purple-500"><i class="fas fa-images"></i></div>
+                            <span class="text-[10px] font-bold">เลือกรูป</span>
+                        </label>
+                    </div>
+                    <div id="mediaDropZone" class="media-grid empty:hidden"></div>
+                </div>
+
+                <!-- Submit Button (Emerald Green) -->
+                <button onclick="submitTicket()" id="btnSubmit" class="w-full btn-gradient-submit text-white py-4 rounded-2xl shadow-xl shadow-green-200/50 font-bold text-lg touch-card flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale relative overflow-hidden group border-b-4 border-[#047857]">
+                    <div class="absolute inset-0 bg-white/20 group-hover:bg-white/10 transition"></div>
+                    <i class="fas fa-paper-plane"></i><span>ส่งแจ้งซ่อมทันที</span>
+                </button>
+            </section>
+        </div>
+
+        <div class="text-center pt-2 relative z-10">
+            <button onclick="openHistoryModal()" class="text-blue-500 text-xs font-bold py-2 px-4 rounded-full hover:bg-blue-50 transition">
+                ดูประวัติการแจ้งซ่อมทั้งหมด <i class="fas fa-chevron-right text-[10px] ml-1"></i>
+            </button>
+        </div>
     </main>
 
-    <button onclick="openHistoryModal()" class="fab-history touch-card"><i class="fas fa-clipboard-list text-xl"></i><span>ติดตามงาน</span></button>
+    <!-- Floating History Button -->
+    <button onclick="openHistoryModal()" class="fab-history touch-card">
+        <i class="fas fa-clipboard-list text-2xl"></i>
+        <span>ติดตามงาน</span>
+    </button>
 
-    <!-- Modals (Asset, History, Scanner, Image) -->
+    <!-- Modals & Overlays (Same Functionality) -->
     <div id="assetModal" class="fixed inset-0 bg-white z-50 hidden flex flex-col animate-fadeIn">
-        <div class="p-4 bg-white border-b shadow-sm flex items-center gap-3 sticky top-0 z-10"><button onclick="closeAssetModal()" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200"><i class="fas fa-arrow-left"></i></button><div class="relative flex-1"><i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i><input type="text" id="assetSearch" onkeyup="filterAssets()" placeholder="ค้นหาชื่อเครื่อง..." class="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"></div></div><div class="flex-1 overflow-y-auto p-2" id="assetListContainer"><div class="text-center py-10 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดข้อมูล...</div></div>
+        <div class="p-4 bg-white border-b shadow-sm flex items-center gap-3 sticky top-0 z-10">
+            <button onclick="closeAssetModal()" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200"><i class="fas fa-arrow-left"></i></button>
+            <div class="relative flex-1">
+                <i class="fas fa-search absolute left-3 top-3 text-slate-400"></i>
+                <input type="text" id="assetSearch" onkeyup="filterAssets()" placeholder="ค้นหาชื่อเครื่องจักร..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium transition">
+            </div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-2" id="assetListContainer">
+            <div class="text-center py-10 text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดข้อมูล...</div>
+        </div>
     </div>
     
-    <!-- History Modal -->
-    <div id="historyModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-end sm:items-center justify-center backdrop-blur-sm transition-opacity duration-300">
-        <div class="bg-gray-100 w-full sm:w-[480px] h-[90vh] sm:h-[85vh] sm:rounded-2xl rounded-t-3xl flex flex-col shadow-2xl transform transition-transform duration-300 translate-y-full" id="historyModalContent">
-            <div class="bg-white p-4 rounded-t-3xl border-b border-gray-200 sticky top-0 z-10 flex justify-between items-center shadow-sm">
-                <div><h3 class="font-bold text-lg text-gray-800 flex items-center gap-2"><i class="fas fa-history text-blue-600"></i> ติดตามสถานะงาน</h3></div>
-                <button onclick="closeHistoryModal()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200"><i class="fas fa-times"></i></button>
+    <div id="historyModal" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-end sm:items-center justify-center backdrop-blur-sm transition-opacity duration-300">
+        <div class="bg-slate-50 w-full sm:w-[480px] h-[95vh] sm:h-[85vh] sm:rounded-2xl rounded-t-3xl flex flex-col shadow-2xl transform transition-transform duration-300 translate-y-full" id="historyModalContent">
+            <div class="bg-white p-5 rounded-t-3xl border-b border-slate-100 sticky top-0 z-10 flex justify-between items-center shadow-sm">
+                <div><h3 class="font-bold text-xl text-slate-800 flex items-center gap-2"><i class="fas fa-history text-blue-500"></i> ประวัติงานซ่อม</h3></div>
+                <button onclick="closeHistoryModal()" class="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"><i class="fas fa-times"></i></button>
             </div>
-            <div class="bg-white px-4 py-3 border-b border-gray-200 flex gap-2">
+            <div class="bg-white px-5 py-3 border-b border-slate-100 flex gap-2">
                 <div class="relative flex-1">
-                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
-                    <input type="text" id="historySearchInput" onkeyup="filterHistory()" placeholder="ค้นหา Ticket ID, ชื่องาน..." class="w-full bg-gray-100 border-0 rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                    <input type="text" id="historySearchInput" onkeyup="filterHistory()" placeholder="ค้นหา Ticket ID..." class="w-full bg-slate-50 border-none rounded-xl pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-100 outline-none">
                 </div>
-                <button onclick="startScanner('HISTORY')" class="bg-blue-600 text-white w-10 rounded-lg flex items-center justify-center shadow-sm active:scale-95 transition"><i class="fas fa-qrcode"></i></button>
             </div>
-            <div class="overflow-y-auto p-4 flex-1 pb-safe" id="historyListContainer">
-                <div class="flex flex-col items-center justify-center h-64 text-gray-400"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p class="text-xs">กำลังโหลด...</p></div>
-            </div>
+            <div class="overflow-y-auto p-4 flex-1 pb-safe" id="historyListContainer"></div>
         </div>
     </div>
 
-    <div id="imageViewerModal" class="fixed inset-0 bg-black/95 z-[60] hidden flex items-center justify-center touch-none" onclick="closeImageViewer()"><button class="absolute top-4 right-4 text-white/80 hover:text-white text-3xl p-2 z-10">&times;</button><img id="fullImage" class="max-w-full max-h-full object-contain p-2 transition-transform duration-200" src="" alt="Full size"></div>
-    <div id="scannerModal" class="fixed inset-0 bg-black z-50 hidden flex flex-col"><div class="flex justify-between items-center p-4 pt-safe bg-black/80 text-white backdrop-blur-md absolute top-0 w-full z-10"><span class="font-bold text-lg"><i class="fas fa-qrcode mr-2"></i>สแกน QR</span><button onclick="stopScanner()" class="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/30"><i class="fas fa-times"></i></button></div><div class="flex-1 flex items-center justify-center bg-black relative"><div id="reader" class="w-full h-full"></div><div class="absolute inset-0 pointer-events-none flex items-center justify-center"><div class="w-64 h-64 border-4 border-blue-500 rounded-2xl relative shadow-[0_0_50px_rgba(59,130,246,0.5)]"><div class="absolute inset-0 animate-pulse bg-blue-500/10"></div></div></div></div><div class="p-6 pb-10 bg-black text-center text-white"><p class="text-gray-300 text-sm" id="scannerInstruction">ส่อง QR Code ที่ติดอยู่กับเครื่องจักร</p></div></div>
-    <div id="loadingOverlay" class="fixed inset-0 bg-white/90 z-[60] hidden flex flex-col items-center justify-center backdrop-blur-sm"><div class="loader mb-4"></div><p class="text-gray-800 font-bold text-sm animate-pulse">กำลังบันทึก...</p></div>
+    <div id="imageViewerModal" class="fixed inset-0 bg-black/95 z-[60] hidden flex items-center justify-center touch-none" onclick="closeImageViewer()"><button class="absolute top-4 right-4 text-white/80 hover:text-white text-3xl p-2 z-10"><i class="fas fa-times"></i></button><img id="fullImage" class="max-w-full max-h-full object-contain p-2 transition-transform duration-200" src="" alt="Full size"></div>
+    <div id="scannerModal" class="fixed inset-0 bg-black z-50 hidden flex flex-col"><div class="flex justify-between items-center p-4 pt-safe bg-black/80 text-white backdrop-blur-md absolute top-0 w-full z-10"><span class="font-bold text-lg"><i class="fas fa-qrcode mr-2"></i>สแกน QR</span><button onclick="stopScanner()" class="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/30"><i class="fas fa-times"></i></button></div><div class="flex-1 flex items-center justify-center bg-black relative"><div id="reader" class="w-full h-full"></div><div class="absolute inset-0 pointer-events-none flex items-center justify-center"><div class="w-64 h-64 border-4 border-yellow-400 rounded-2xl relative shadow-[0_0_50px_rgba(250,204,21,0.5)]"><div class="absolute inset-0 animate-pulse bg-yellow-400/10"></div></div></div></div><div class="p-6 pb-10 bg-black text-center text-white"><p class="text-gray-300 text-sm" id="scannerInstruction">ส่อง QR Code ที่ติดอยู่กับเครื่องจักร</p></div></div>
+    <div id="loadingOverlay" class="fixed inset-0 bg-white/90 z-[60] hidden flex flex-col items-center justify-center backdrop-blur-sm"><div class="loader mb-4 border-t-blue-500"></div><p class="text-slate-800 font-bold text-sm animate-pulse">กำลังบันทึก...</p></div>
 
     <script>
-        // --- EMBEDDED CONFIG & AUTH ---
+        // --- CONFIG & AUTH ---
         const SUPABASE_URL = 'https://nmezqexpvhdozpdzxxek.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tZXpxZXhwdmhkb3pwZHp4eGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5OTAwNTEsImV4cCI6MjA4MjU2NjA1MX0.N1OjCh1sp0xx0DGFjR6yX2hix5oIX7suzrnvQk8qPWU';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const Auth = {
-            requireRole: (allowedRoles = []) => {
-                const session = localStorage.getItem('cmms_user_session');
-                if (!session) { window.location.href = 'index.html'; return null; }
-                const user = JSON.parse(session);
-                return user;
-            },
+            requireRole: () => { const s = localStorage.getItem('cmms_user_session'); if (!s) { window.location.href = 'index.html'; return null; } return JSON.parse(s); },
             logout: () => { localStorage.removeItem('cmms_user_session'); window.location.href = 'index.html'; }
         };
 
-        const Utils = {
-            formatDate: (d) => d ? dayjs(d).fromNow() : '-',
-            safeRedirect: (url) => { try { window.location.href = url; } catch(e) { console.error(e); } }
-        };
+        const Utils = { formatDate: (d) => d ? dayjs(d).fromNow() : '-' };
 
-        // --- MAIN LOGIC ---
-        let currentUser = null;
-        let html5QrCode = null;
-        let allAssets = [];
-        let selectedIssue = null;
-        let mediaList = [];
-        let ticketsCache = [];
-        let scannerMode = 'ASSET';
+        let currentUser = null, html5QrCode = null, allAssets = [], selectedIssue = null, mediaList = [], ticketsCache = [];
 
         document.addEventListener('DOMContentLoaded', async () => {
-            currentUser = Auth.requireRole([]); 
+            currentUser = Auth.requireRole(); 
             if (!currentUser) return;
-
             document.getElementById('userDisplayName').innerText = currentUser.full_name || currentUser.username;
-            setTimeout(() => { const historyContent = document.getElementById('historyModalContent'); if(historyContent) historyContent.classList.remove('translate-y-full'); }, 100);
+            setTimeout(() => { const h = document.getElementById('historyModalContent'); if(h) h.classList.remove('translate-y-full'); }, 100);
             await Promise.all([fetchAssets(), fetchIssueOptions(), fetchHistory()]);
         });
 
-        async function fetchAssets() {
-            try {
-                const { data, error } = await supabaseClient.from('assets').select('*').or('status.eq.active,status.eq.ACTIVE');
-                if (!error) allAssets = data || [];
-            } catch(e) { console.error("Fetch Exception:", e); }
+        // --- UI HELPERS ---
+        function showToast(msg, type='info') {
+            const box = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            let icon = type==='success'?'fa-check-circle text-green-500':(type==='error'?'fa-exclamation-circle text-red-500':'fa-info-circle text-blue-500');
+            el.innerHTML = `<i class="fas ${icon} text-xl"></i><span class="text-sm font-bold text-slate-700">${msg}</span>`;
+            box.appendChild(el);
+            setTimeout(() => { el.style.animation='fadeOut 0.3s forwards'; setTimeout(()=>el.remove(),300); }, 3000);
         }
 
+        function setPriority(level) {
+            document.querySelectorAll('.priority-btn').forEach(b => b.className = 'priority-btn');
+            const btn = document.getElementById(`prio-${level}`);
+            let val = 'ปกติ';
+            if(level==='urgent') { btn.classList.add('active-urgent'); val='ด่วน'; }
+            else if(level==='emergency') { btn.classList.add('active-emergency'); val='ด่วนที่สุด'; }
+            else { btn.classList.add('active-normal'); }
+            document.getElementById('priorityInput').value = val;
+        }
+
+        // --- DATA ---
+        async function fetchAssets() { try { const {data}=await supabaseClient.from('assets').select('*').or('status.eq.active,status.eq.ACTIVE'); allAssets=data||[]; } catch(e){} }
         async function fetchIssueOptions() {
             try {
-                const { data } = await supabaseClient.from('issue_options').select('*').eq('is_active', true).order('sort_order');
-                const container = document.getElementById('issueOptionsContainer');
-                container.innerHTML = '';
-                let options = data || [];
-                if (options.length === 0) options = [{label:'เครื่องไม่ทำงาน',icon_class:'fa-power-off'},{label:'อื่นๆ',icon_class:'fa-question'}];
-                options.forEach(opt => {
-                    const btn = document.createElement('div');
-                    btn.className = 'issue-card bg-white cursor-pointer active:scale-95 touch-card';
-                    btn.onclick = () => selectIssue(btn, opt.label);
-                    btn.innerHTML = `<div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center mb-0.5"><i class="fas ${opt.icon_class} text-lg text-gray-400"></i></div><span class="text-xs font-bold text-gray-600 text-center leading-tight">${opt.label}</span>`;
-                    container.appendChild(btn);
+                const {data}=await supabaseClient.from('issue_options').select('*').eq('is_active',true).order('sort_order');
+                const c=document.getElementById('issueOptionsContainer'); c.innerHTML='';
+                (data||[]).forEach(o => {
+                    c.innerHTML += `<div class="issue-card cursor-pointer touch-card" onclick="selectIssue(this,'${o.label}')"><div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center mb-1 shadow-sm"><i class="fas ${o.icon_class} text-lg text-slate-400"></i></div><span class="text-[10px] font-bold text-slate-600 text-center leading-tight px-1">${o.label}</span></div>`;
                 });
-            } catch (e) {}
+            } catch(e){}
+        }
+
+        function selectIssue(el, label) {
+            selectedIssue = label;
+            document.querySelectorAll('.issue-card').forEach(c => { c.classList.remove('selected'); c.querySelector('i').classList.replace('text-purple-600','text-slate-400'); });
+            el.classList.add('selected'); el.querySelector('i').classList.replace('text-slate-400','text-purple-600');
+            setTimeout(() => document.getElementById('step3').scrollIntoView({behavior:'smooth',block:'center'}), 300);
         }
 
         async function fetchHistory() {
-            const list = document.getElementById('historyListContainer');
             try {
-                const { data: tickets, error } = await supabaseClient.from('tickets').select('*').eq('requester_id', currentUser.id).order('incident_time', { ascending: false });
-                if (error) throw error;
-                if (!tickets || tickets.length === 0) { list.innerHTML = '<div class="text-center py-20 opacity-50"><i class="fas fa-history text-4xl text-gray-300 mb-2"></i><br><span class="text-xs text-gray-500">ไม่มีประวัติการแจ้งซ่อม</span></div>'; return; }
-
-                const assetIds = [...new Set(tickets.map(t => t.asset_id).filter(id => id))];
-                const ticketIds = tickets.map(t => t.id);
-                let assetsMap = {}, mediaMap = {};
-                if(assetIds.length>0) { const {data:a} = await supabaseClient.from('assets').select('id,name').in('id',assetIds); if(a) a.forEach(x=>assetsMap[x.id]=x); }
-                if(ticketIds.length>0) { const {data:m} = await supabaseClient.from('media').select('*').in('ticket_id',ticketIds); if(m) m.forEach(x=>{if(!mediaMap[x.ticket_id]) mediaMap[x.ticket_id]=[]; mediaMap[x.ticket_id].push(x);}); }
-
-                ticketsCache = tickets.map(t => ({ ...t, assets: assetsMap[t.asset_id] || { name: 'Unknown Machine' }, media: mediaMap[t.id] || [] }));
-                renderHistoryList(ticketsCache);
-            } catch(e) { list.innerHTML = `<div class="text-center text-red-500 mt-10 text-sm">โหลดไม่สำเร็จ: ${e.message}</div>`; }
+                const { data } = await supabaseClient.from('tickets').select('*').eq('requester_id', currentUser.id).order('incident_time', { ascending: false });
+                const ids = [...new Set(data.map(t=>t.asset_id).filter(Boolean))];
+                let assetMap = {};
+                if(ids.length) { const {data:a} = await supabaseClient.from('assets').select('id,name').in('id',ids); a?.forEach(x=>assetMap[x.id]=x.name); }
+                ticketsCache = data.map(t => ({...t, asset_name: assetMap[t.asset_id]||'ไม่ระบุ'}));
+                renderHistory();
+            } catch(e){}
         }
 
-        function renderHistoryList(data) {
+        function renderHistory() {
             const list = document.getElementById('historyListContainer');
-            list.innerHTML = data.map(t => {
-                let statusBadge='', statusBg='', iconStatus='';
-                switch(t.status) {
-                    case 'OPEN': statusBadge='รอรับงาน'; statusBg='bg-red-50 text-red-600 border border-red-100'; iconStatus='fa-hourglass-start'; break;
-                    case 'IN_PROGRESS': statusBadge='กำลังซ่อม'; statusBg='bg-blue-50 text-blue-600 border border-blue-100'; iconStatus='fa-tools'; break;
-                    case 'PENDING_APPROVAL': statusBadge='รออะไหล่'; statusBg='bg-orange-50 text-orange-600 border border-orange-100'; iconStatus='fa-box-open'; break;
-                    case 'PENDING_INSPECTION': statusBadge='รอตรวจ'; statusBg='bg-purple-50 text-purple-600 border border-purple-100'; iconStatus='fa-clipboard-check'; break;
-                    case 'CLOSED': statusBadge='เสร็จสิ้น'; statusBg='bg-green-50 text-green-600 border border-green-100'; iconStatus='fa-check-circle'; break;
-                    default: statusBadge=t.status; statusBg='bg-gray-50 text-gray-600 border border-gray-200'; iconStatus='fa-info-circle';
-                }
-                const timeStr = Utils.formatDate(t.incident_time);
-                let photoUrl = t.photo_url;
-                if (!photoUrl && t.media.length > 0) { const img = t.media.find(m => m.type === 'IMAGE'); if(img) photoUrl = img.url; }
-                const imgHtml = photoUrl ? `<div class="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 shrink-0 border border-gray-300 relative group cursor-pointer" onclick="viewImage('${t.id}')"><img src="${photoUrl}" class="w-full h-full object-cover"></div>` : `<div class="w-16 h-16 rounded-lg bg-gray-100 shrink-0 flex items-center justify-center text-gray-300 border border-gray-200"><i class="fas ${iconStatus} text-xl"></i></div>`;
-                
+            if(!ticketsCache.length) { list.innerHTML='<div class="text-center py-10 text-slate-400 text-sm">ไม่มีประวัติ</div>'; return; }
+            list.innerHTML = ticketsCache.map(t => {
+                let stClass='bg-slate-100 text-slate-600', stLabel=t.status;
+                if(t.status==='OPEN') { stClass='bg-red-50 text-red-600 border border-red-100'; stLabel='รอรับงาน'; }
+                if(t.status==='IN_PROGRESS') { stClass='bg-blue-50 text-blue-600 border border-blue-100'; stLabel='กำลังซ่อม'; }
+                if(t.status==='CLOSED') { stClass='bg-green-50 text-green-600 border border-green-100'; stLabel='เสร็จสิ้น'; }
                 return `
-                <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm mb-3 flex gap-3 items-start relative">
-                    ${imgHtml}
-                    <div class="flex-1 min-w-0">
-                        <div class="flex justify-between items-start mb-1">
-                            <h4 class="font-bold text-gray-800 text-sm truncate pr-2">${t.assets.name}</h4>
-                            <span class="${statusBg} px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap">${statusBadge}</span>
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-3 relative">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-sm">${t.asset_name}</h4>
+                            <div class="text-xs text-slate-500 mt-0.5">${t.issue_text}</div>
                         </div>
-                        <div class="text-xs text-gray-600 line-clamp-1 mb-1">${t.issue_text}</div>
-                        <div class="flex justify-between items-center">
-                            <div class="text-[10px] text-gray-400 font-medium"><i class="far fa-clock mr-1"></i> ${timeStr} • ID: ${t.id.substring(0,4)}</div>
-                            <button onclick="openPrint('${t.id}')" class="text-gray-400 hover:text-blue-600 p-1 transition" title="พิมพ์ใบแจ้งซ่อม"><i class="fas fa-print"></i></button>
-                        </div>
+                        <span class="${stClass} px-2 py-0.5 rounded-lg text-[10px] font-bold">${stLabel}</span>
+                    </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-50">
+                        <div class="text-[10px] text-slate-400"><i class="far fa-clock"></i> ${Utils.formatDate(t.incident_time)}</div>
+                        <button onclick="window.open('print_job_sheet.html?id=${t.id}','_blank')" class="text-slate-400 hover:text-blue-600 p-2"><i class="fas fa-print"></i></button>
                     </div>
                 </div>`;
             }).join('');
         }
 
-        function openPrint(id) {
-            window.open(`print_job_sheet.html?id=${id}`, '_blank');
-        }
-
-        function filterHistory() {
-            const term = document.getElementById('historySearchInput').value.toLowerCase();
-            const filtered = ticketsCache.filter(t => t.id.toLowerCase().includes(term) || t.assets.name.toLowerCase().includes(term) || t.issue_text.toLowerCase().includes(term));
-            renderHistoryList(filtered);
-        }
-
-        function viewImage(id) { const ticket = ticketsCache.find(t => t.id === id); let url = ticket?.photo_url; if(!url && ticket?.media?.length > 0) url = ticket.media.find(m=>m.type==='IMAGE')?.url; if(url) { document.getElementById('fullImage').src = url; document.getElementById('imageViewerModal').classList.remove('hidden'); } }
-        function closeImageViewer() { document.getElementById('imageViewerModal').classList.add('hidden'); }
-
-        // --- MODALS ---
-        function openHistoryModal() { document.getElementById('historyModal').classList.remove('hidden'); setTimeout(() => { document.getElementById('historyModalContent').classList.remove('translate-y-full'); }, 10); fetchHistory(); }
-        function closeHistoryModal() { document.getElementById('historyModalContent').classList.add('translate-y-full'); setTimeout(() => { document.getElementById('historyModal').classList.add('hidden'); }, 300); }
+        // --- ASSET LOGIC ---
         function openAssetModal() { 
             const c = document.getElementById('assetListContainer'); c.innerHTML=''; 
-            if (allAssets.length === 0) c.innerHTML = '<div class="text-center py-8 text-gray-400 text-sm">ไม่พบรายการเครื่องจักร</div>';
-            else allAssets.forEach(a => { const div = document.createElement('div'); div.className='p-4 border-b border-gray-100 hover:bg-blue-50 active:bg-blue-100 cursor-pointer transition flex justify-between items-center'; div.onclick=()=>confirmAsset(a); div.innerHTML=`<div><div class="font-bold text-gray-800 text-sm">${a.name}</div><div class="text-xs text-gray-400 font-mono mt-0.5">ID: ${a.asset_code||'-'}</div></div><div class="bg-gray-100 px-2 py-1 rounded text-xs text-gray-500">${a.location||'-'}</div>`; c.appendChild(div); });
+            allAssets.forEach(a => {
+                c.innerHTML += `<div class="p-4 border-b border-slate-100 hover:bg-slate-50 cursor-pointer flex justify-between items-center" onclick='confirmAsset(${JSON.stringify(a)})'><div><div class="font-bold text-sm text-slate-800">${a.name}</div><div class="text-xs text-slate-400 font-mono">${a.asset_code||'-'}</div></div><i class="fas fa-chevron-right text-slate-300 text-xs"></i></div>`;
+            });
             document.getElementById('assetModal').classList.remove('hidden'); 
         }
         function closeAssetModal() { document.getElementById('assetModal').classList.add('hidden'); }
-        function filterAssets() { const t=document.getElementById('assetSearch').value.toLowerCase(); Array.from(document.getElementById('assetListContainer').children).forEach(el=>{ el.style.display=el.innerText.toLowerCase().includes(t)?'flex':'none'; }); }
         
-        function confirmAsset(asset) {
-            document.getElementById('assetId').value = asset.id;
-            document.getElementById('assetNameDisplay').innerText = asset.name;
-            document.getElementById('assetSerialDisplay').innerText = `ID: ${asset.asset_code || '-'}`;
-            document.getElementById('assetLocationDisplay').innerText = asset.location || '-';
-            const card = document.getElementById('selectedAssetCard'); card.classList.remove('hidden'); card.classList.remove('animate-pulse'); void card.offsetWidth; card.classList.add('animate-pulse'); setTimeout(()=>card.classList.remove('animate-pulse'),500);
+        function confirmAsset(a) {
+            document.getElementById('assetId').value = a.id;
+            document.getElementById('manualAssetInput').value = '';
+            document.getElementById('manualLocationField').classList.add('hidden');
+            document.getElementById('assetNameDisplay').innerText = a.name;
+            document.getElementById('assetSerialDisplay').innerText = `ID: ${a.asset_code||'-'}`;
+            document.getElementById('assetLocationDisplay').innerText = a.location||'-';
+            
+            const card = document.getElementById('selectedAssetCard');
+            card.classList.remove('hidden');
             closeAssetModal(); stopScanner();
-            document.getElementById('step2').classList.remove('opacity-50', 'pointer-events-none'); document.getElementById('step3').classList.remove('opacity-50', 'pointer-events-none'); setTimeout(()=>document.getElementById('step2').scrollIntoView({behavior:'smooth',block:'start'}),300);
+            unlockSteps();
         }
-        function clearAsset() { document.getElementById('assetId').value = ''; document.getElementById('selectedAssetCard').classList.add('hidden'); document.getElementById('step2').classList.add('opacity-50', 'pointer-events-none'); document.getElementById('step3').classList.add('opacity-50', 'pointer-events-none'); }
-
-        // --- SCANNER ---
-        function startScanner(mode = 'ASSET') {
-            scannerMode = mode;
-            document.getElementById('scannerModal').classList.remove('hidden');
-            document.getElementById('scannerInstruction').innerText = mode === 'ASSET' ? 'ส่อง QR Code ที่เครื่องจักร' : 'ส่อง QR Code เพื่อค้นหาประวัติ';
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({facingMode:"environment"}, {fps:10, qrbox:{width:250,height:250}}, (txt) => {
-                if (scannerMode === 'ASSET') {
-                    let found = allAssets.find(a => a.id == txt || a.asset_code == txt || txt.includes(a.id));
-                    if(found) { confirmAsset(found); stopScanner(); } else { if(navigator.vibrate) navigator.vibrate(200); alert("ไม่พบข้อมูล: "+txt); }
-                } else {
-                    let asset = allAssets.find(a => a.id == txt || a.asset_code == txt || txt.includes(a.id));
-                    let searchTerm = asset ? asset.name : txt;
-                    document.getElementById('historySearchInput').value = searchTerm;
-                    filterHistory(); stopScanner(); if(navigator.vibrate) navigator.vibrate(200);
-                }
-            }, (err)=>{}).catch(err=>console.log(err));
+        
+        function clearAsset() {
+            document.getElementById('assetId').value = '';
+            document.getElementById('selectedAssetCard').classList.add('hidden');
+            if(!document.getElementById('manualAssetInput').value) lockSteps();
         }
-        function stopScanner() { if(html5QrCode){ html5QrCode.stop().then(()=>{document.getElementById('scannerModal').classList.add('hidden'); html5QrCode.clear();}); } else { document.getElementById('scannerModal').classList.add('hidden'); } }
 
-        function selectIssue(el, label) { selectedIssue = label; document.querySelectorAll('.issue-card').forEach(c => { c.classList.remove('selected'); c.querySelector('i').classList.replace('text-blue-500', 'text-gray-400'); }); el.classList.add('selected'); el.querySelector('i').classList.replace('text-gray-400', 'text-blue-500'); setTimeout(()=>document.getElementById('step3').scrollIntoView({behavior:'smooth',block:'center'}),300); }
+        function handleManualInput(el) {
+            if(el.value.trim()) {
+                document.getElementById('assetId').value = '';
+                document.getElementById('selectedAssetCard').classList.add('hidden');
+                document.getElementById('manualLocationField').classList.remove('hidden');
+                unlockSteps(false);
+            } else if(!document.getElementById('assetId').value) {
+                document.getElementById('manualLocationField').classList.add('hidden');
+                lockSteps();
+            }
+        }
 
-        async function handleFileSelect(input) { if(mediaList.length+input.files.length>10) return alert("สูงสุด 10 ไฟล์"); document.getElementById('loadingOverlay').classList.remove('hidden'); for(const f of input.files){ try{ if(f.type.startsWith('image/')) mediaList.push({type:'IMAGE',data:await compressImage(f)}); else if(f.type.startsWith('video/')) mediaList.push({type:'VIDEO',data:await processVideo(f)}); }catch(e){alert(e)} } renderMedia(); document.getElementById('loadingOverlay').classList.add('hidden'); input.value=''; }
-        function renderMedia() { const z=document.getElementById('mediaDropZone'); z.innerHTML=''; mediaList.forEach((m,i)=>{ const d=document.createElement('div'); d.className='media-item'; d.innerHTML=m.type==='IMAGE'?`<img src="${m.data}">`:`<video src="${m.data}"></video><div class="video-indicator">VIDEO</div>`; d.innerHTML+=`<div class="delete-btn" onclick="removeMedia(${i})">&times;</div>`; z.appendChild(d); }); document.getElementById('mediaCount').innerText=mediaList.length+'/10'; }
+        function unlockSteps(scroll=true) {
+            document.getElementById('step2').classList.remove('opacity-50','pointer-events-none');
+            document.getElementById('step3').classList.remove('opacity-50','pointer-events-none');
+            if(scroll) setTimeout(()=>document.getElementById('step2').scrollIntoView({behavior:'smooth'}),300);
+        }
+        function lockSteps() {
+            document.getElementById('step2').classList.add('opacity-50','pointer-events-none');
+            document.getElementById('step3').classList.add('opacity-50','pointer-events-none');
+        }
+
+        // --- CAMERA & SUBMIT ---
+        async function handleFileSelect(input) {
+            if(mediaList.length+input.files.length > 5) return showToast("สูงสุด 5 รูป", 'error');
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            for(const f of input.files) {
+                try {
+                    const data = await compressImage(f);
+                    mediaList.push({type:'IMAGE', data});
+                } catch(e){showToast(e, 'error')} } renderMedia(); document.getElementById('loadingOverlay').classList.add('hidden'); input.value=''; }
+        function renderMedia() { const z=document.getElementById('mediaDropZone'); z.innerHTML=''; mediaList.forEach((m,i)=>{ const d=document.createElement('div'); d.className='media-item'; d.innerHTML=m.type==='IMAGE'?`<img src="${m.data}">`:`<video src="${m.data}"></video><div class="video-indicator">VIDEO</div>`; d.innerHTML+=`<div class="delete-btn" onclick="removeMedia(${i})">&times;</div>`; z.appendChild(d); }); document.getElementById('mediaCount').innerText=mediaList.length+'/5'; }
         function removeMedia(i) { mediaList.splice(i,1); renderMedia(); }
         function compressImage(f){return new Promise(r=>{const rd=new FileReader();rd.readAsDataURL(f);rd.onload=e=>{const i=new Image();i.src=e.target.result;i.onload=()=>{const c=document.createElement('canvas');const m=800;let w=i.width,h=i.height;if(w>h&&w>m){h*=m/w;w=m}else if(h>m){w*=m/h;h=m}c.width=w;c.height=h;c.getContext('2d').drawImage(i,0,0,w,h);r(c.toDataURL('image/jpeg',0.7))}}})}
-        function processVideo(f){return new Promise((r,j)=>{const v=document.createElement('video');v.preload='metadata';v.onloadedmetadata=()=>{window.URL.revokeObjectURL(v.src);if(v.duration>15)j("Video max 15s");else if(f.size>20*1024*1024)j("Video too large");else{const rd=new FileReader();rd.readAsDataURL(f);rd.onload=e=>r(e.target.result)}};v.src=URL.createObjectURL(f)})}
 
         async function submitTicket() {
-            const assetId = document.getElementById('assetId').value;
+            const aid = document.getElementById('assetId').value;
+            const man = document.getElementById('manualAssetInput').value.trim();
+            const loc = document.getElementById('manualLocationInput').value.trim();
             const desc = document.getElementById('issueDescription').value;
-            if(!assetId) return alert("กรุณาเลือกเครื่องจักร");
-            if(!selectedIssue) return alert("กรุณาเลือกอาการเสีย");
+            const prio = document.getElementById('priorityInput').value;
+            const tel = document.getElementById('contactNumber').value;
+
+            if(!aid && !man) return showToast("กรุณาระบุรายการแจ้งซ่อม", 'error');
+            if(!selectedIssue) return showToast("กรุณาเลือกอาการเสีย", 'error');
 
             document.getElementById('loadingOverlay').classList.remove('hidden');
+            
             try {
-                const cover = mediaList.find(m=>m.type==='IMAGE')?.data || null;
-                const { data, error } = await supabaseClient.from('tickets').insert([{ asset_id: assetId, requester_id: currentUser.id, issue_text: selectedIssue, description: desc, photo_url: cover, status: 'OPEN', incident_time: new Date().toISOString() }]).select();
+                let fullDesc = desc;
+                let meta = [];
+                if(prio !== 'ปกติ') meta.push(`[ความเร่งด่วน: ${prio}]`);
+                if(tel) meta.push(`[ติดต่อ: ${tel}]`);
+                if(!aid && man) { meta.push(`[ซ่อมทั่วไป: ${man}]`); if(loc) meta.push(`[สถานที่: ${loc}]`); }
+                
+                if(meta.length) fullDesc = meta.join(' ') + '\n\n' + desc;
+
+                const cover = mediaList[0]?.data || null;
+                const {data, error} = await supabaseClient.from('tickets').insert([{
+                    asset_id: aid || null,
+                    requester_id: currentUser.id,
+                    issue_text: selectedIssue,
+                    description: fullDesc,
+                    photo_url: cover,
+                    status: 'OPEN',
+                    incident_time: new Date().toISOString()
+                }]).select();
+
                 if(error) throw error;
                 const tid = data[0].id;
-                if(mediaList.length>0) { const rows=mediaList.map(m=>({ticket_id:tid, type:m.type, url:m.data})); await supabaseClient.from('media').insert(rows); }
-                
-                // --- Updated Success Logic ---
-                if (confirm("✅ ส่งแจ้งซ่อมเรียบร้อย!\nต้องการพิมพ์ใบแจ้งซ่อมทันทีหรือไม่?")) {
-                    window.open(`print_job_sheet.html?id=${tid}`, '_blank');
+
+                if(mediaList.length) {
+                    const rows = mediaList.map(m => ({ticket_id: tid, type: 'IMAGE', url: m.data}));
+                    await supabaseClient.from('media').insert(rows);
                 }
 
-                // Reset UI
-                clearAsset(); 
-                selectedIssue=null; 
-                document.getElementById('issueDescription').value=''; 
-                mediaList=[]; 
-                renderMedia(); 
-                document.querySelectorAll('.issue-card').forEach(c => {c.classList.remove('selected');c.querySelector('i').classList.replace('text-blue-500', 'text-gray-400');}); 
-                document.getElementById('mainContainer').scrollTop=0; 
-                await fetchHistory(); 
-                // openHistoryModal(); // Optional: Auto open history or stay on main
-            } catch(e) { alert("Error: "+e.message); } finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
-        }
+                showToast("ส่งแจ้งซ่อมสำเร็จ!", 'success');
+                if(confirm("ส่งงานเรียบร้อย! ต้องการพิมพ์ใบแจ้งซ่อมเลยไหม?")) {
+                    window.open(`print_job_sheet.html?id=${tid}`, '_blank');
+                }
+                setTimeout(() => location.reload(), 500);
 
-        function logout() { localStorage.removeItem('cmms_user_session'); Utils.safeRedirect('index.html'); }
+            } catch(e) { showToast(e.message, 'error'); document.getElementById('loadingOverlay').classList.add('hidden'); }
+        }
+        
+        function openHistoryModal() { document.getElementById('historyModal').classList.remove('hidden'); setTimeout(()=>document.getElementById('historyModalContent').classList.remove('translate-y-full'),10); fetchHistory(); }
+        function closeHistoryModal() { document.getElementById('historyModalContent').classList.add('translate-y-full'); setTimeout(()=>document.getElementById('historyModal').classList.add('hidden'),300); }
+        function closeImageViewer() { document.getElementById('imageViewerModal').classList.add('hidden'); }
+        function stopScanner() { document.getElementById('scannerModal').classList.add('hidden'); if(html5QrCode) html5QrCode.stop(); }
+        function startScanner() { 
+            document.getElementById('scannerModal').classList.remove('hidden');
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({facingMode:"environment"}, {fps:10}, (txt)=>{ confirmAsset(allAssets.find(a=>a.asset_code===txt)||{id:null,name:'Unknown',asset_code:txt}); }, ()=>{});
+        }
     </script>
 </body>
 </html>
