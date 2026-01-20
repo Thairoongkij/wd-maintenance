@@ -6,198 +6,158 @@
     <title>ช่างซ่อมบำรุง - WD Maintenance</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Supabase & Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap'); 
-        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; } 
-        
-        /* Hide scrollbar for Chrome, Safari and Opera */
+        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        /* Hide scrollbar for IE, Edge and Firefox */
-        .no-scrollbar { -ms-overflow-style: none;  scrollbar-width: none; }
-        
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .image-preview-modal { transition: opacity 0.2s ease; }
         .image-preview-modal.hidden { opacity: 0; pointer-events: none; }
         .image-preview-modal:not(.hidden) { opacity: 1; pointer-events: auto; }
-
         .job-card { transition: transform 0.2s, box-shadow 0.2s; }
         .job-card:active { transform: scale(0.98); }
-
-        /* Mic Animation */
         .mic-listening { animation: pulse-red 1.5s infinite; background-color: #fee2e2 !important; color: #ef4444 !important; border-color: #ef4444 !important; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-
-        /* New Job Wiggle Animation */
-        @keyframes wiggle { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+        /* Badge Pulse */
         .wiggle-alert { animation: wiggle 0.5s ease-in-out infinite; background-color: #fef2f2 !important; color: #ef4444 !important; border: 2px solid #ef4444 !important; }
+        @keyframes wiggle { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
         .badge-dot { position: absolute; top: -5px; right: -5px; width: 12px; height: 12px; background-color: #ef4444; border-radius: 50%; border: 2px solid white; display: none; }
         .badge-dot.show { display: block; animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite; }
         @keyframes ping { 75%, 100% { transform: scale(2); opacity: 0; } }
 
-        /* Mobile Sidebar */
-        #mobileSidebar { transition: transform 0.3s ease-in-out; }
-        #mobileSidebar.closed { transform: translateX(-100%); }
-        #sidebarOverlay.hidden { opacity: 0; pointer-events: none; }
-        #sidebarOverlay { transition: opacity 0.3s ease; opacity: 1; pointer-events: auto; }
+        /* Media Grid for Upload */
+        .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; margin-top: 10px; }
+        .media-item { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; }
+        .media-item img { width: 100%; height: 100%; object-fit: cover; }
+        .delete-btn { position: absolute; top: 2px; right: 2px; background: rgba(239, 68, 68, 0.9); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-gray-800">
     
-    <!-- Mobile Sidebar Overlay -->
-    <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-40 hidden" onclick="toggleSidebar()"></div>
-
-    <!-- Mobile Sidebar -->
-    <div id="mobileSidebar" class="fixed inset-y-0 left-0 w-64 bg-white z-50 shadow-2xl transform closed flex flex-col">
-        <div class="p-5 border-b flex items-center justify-between bg-slate-900 text-white">
-            <div class="font-bold text-lg flex items-center gap-2"><i class="fas fa-wrench text-orange-500"></i> WD Maint.</div>
-            <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
-        </div>
-        <div class="flex-1 overflow-y-auto p-4 space-y-2">
-            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">เมนูหลัก</div>
-            <a href="#" onclick="toggleSidebar(); switchTab('OPEN')" class="block p-3 rounded-lg hover:bg-gray-50 text-gray-700 font-medium"><i class="fas fa-inbox w-6 text-blue-500"></i> งานใหม่</a>
-            <a href="#" onclick="toggleSidebar(); switchTab('MY_JOBS')" class="block p-3 rounded-lg hover:bg-gray-50 text-gray-700 font-medium"><i class="fas fa-briefcase w-6 text-orange-500"></i> งานของฉัน</a>
-            <a href="#" onclick="toggleSidebar(); switchTab('HISTORY')" class="block p-3 rounded-lg hover:bg-gray-50 text-gray-700 font-medium"><i class="fas fa-history w-6 text-gray-500"></i> ประวัติงาน</a>
-            <hr class="my-2 border-gray-100">
-            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">บัญชีผู้ใช้</div>
-            <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg mb-2">
-                <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">U</div>
-                <div class="overflow-hidden">
-                    <div class="text-sm font-bold truncate" id="sidebarUserName">Loading...</div>
-                    <div class="text-xs text-gray-500">Technician</div>
-                </div>
-            </div>
-            <button onclick="Auth.logout()" class="w-full text-left p-3 rounded-lg hover:bg-red-50 text-red-600 font-medium"><i class="fas fa-sign-out-alt w-6"></i> ออกจากระบบ</button>
-        </div>
-    </div>
-
     <!-- Header -->
-    <header class="bg-white px-4 py-3 shadow-sm z-30 flex justify-between items-center sticky top-0 shrink-0">
+    <header class="bg-white px-5 py-4 shadow-sm z-30 flex justify-between items-center sticky top-0 shrink-0">
         <div class="flex items-center gap-3">
-            <!-- Hamburger Menu Button -->
-            <button onclick="toggleSidebar()" class="w-10 h-10 -ml-2 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600 transition">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
-            
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white shadow-sm">
-                    <i class="fas fa-wrench text-xs"></i>
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold text-gray-800 leading-none">งานช่าง</h1>
-                    <p class="text-[10px] text-gray-500 font-medium mt-0.5 truncate max-w-[120px]" id="techName">...</p>
-                </div>
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white shadow-md shadow-orange-200">
+                <i class="fas fa-wrench"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-gray-800 leading-none">งานช่าง</h1>
+                <p class="text-xs text-gray-500 font-medium mt-1" id="techName">กำลังโหลด...</p>
             </div>
         </div>
-        
-        <!-- Quick Stats / Status -->
-        <div class="flex items-center gap-2">
-            <div class="hidden sm:flex bg-green-50 text-green-700 px-2 py-1 rounded text-xs font-bold items-center gap-1 border border-green-100">
-                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> ออนไลน์
-            </div>
-            <button onclick="fetchJobs()" class="w-9 h-9 rounded-full bg-gray-50 text-gray-400 hover:text-blue-600 hover:bg-blue-50 flex items-center justify-center transition border border-transparent hover:border-blue-100">
-                <i class="fas fa-sync-alt"></i>
-            </button>
-        </div>
+        <button onclick="Auth.logout()" class="w-9 h-9 rounded-full bg-gray-100 text-gray-400 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition">
+            <i class="fas fa-power-off"></i>
+        </button>
     </header>
 
-    <!-- Tabs (Horizontal Scroll on very small screens) -->
-    <div class="px-4 py-3 bg-gray-50/95 backdrop-blur-sm sticky top-[60px] z-20 border-b border-gray-200/50">
-        <div class="flex bg-white p-1 rounded-xl shadow-sm border border-gray-200 relative overflow-x-auto no-scrollbar">
-            <button onclick="switchTab('OPEN')" id="tab-open" class="flex-1 min-w-[80px] py-2 rounded-lg text-xs sm:text-sm font-bold text-gray-500 transition-all relative whitespace-nowrap">
-                งานใหม่
-                <span id="badge-open" class="badge-dot"></span>
+    <!-- Tabs -->
+    <div class="px-4 py-4 bg-gray-50/80 backdrop-blur-sm sticky top-16 z-20">
+        <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100">
+            <button onclick="switchTab('OPEN')" id="tab-open" class="flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-500 transition-all relative">
+                งานใหม่ <span id="badge-open" class="badge-dot"></span>
             </button>
-            <button onclick="switchTab('MY_JOBS')" id="tab-my" class="flex-1 min-w-[80px] py-2 rounded-lg text-xs sm:text-sm font-bold text-gray-500 transition-all whitespace-nowrap">งานฉัน</button>
-            <button onclick="switchTab('HISTORY')" id="tab-history" class="flex-1 min-w-[80px] py-2 rounded-lg text-xs sm:text-sm font-bold text-gray-500 transition-all whitespace-nowrap">ประวัติ</button>
+            <button onclick="switchTab('MY_JOBS')" id="tab-my" class="flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-500 transition-all">งานฉัน</button>
+            <button onclick="switchTab('HISTORY')" id="tab-history" class="flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-500 transition-all">ประวัติ</button>
         </div>
     </div>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto px-4 pb-24 no-scrollbar scroll-smooth w-full" id="mainScrollArea">
-        <div class="max-w-2xl mx-auto space-y-3 mt-3" id="jobContainer">
-            <!-- Cards will be injected here -->
-        </div>
+    <main class="flex-1 overflow-y-auto px-4 pb-24 no-scrollbar scroll-smooth" id="mainScrollArea">
+        <div class="max-w-2xl mx-auto space-y-4" id="jobContainer"></div>
     </main>
 
     <!-- Finish Job Modal -->
-    <div id="finishModal" class="fixed inset-0 bg-gray-900/60 z-50 hidden flex items-end sm:items-center justify-center backdrop-blur-md transition-all duration-300">
-        <div class="bg-white w-full sm:max-w-md p-5 pb-8 sm:pb-6 rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto shadow-2xl transform transition-transform animate-slide-up">
-            <!-- Drag Handle for Mobile -->
+    <div id="finishModal" class="fixed inset-0 bg-gray-900/50 z-50 hidden flex items-end sm:items-center justify-center backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white w-full sm:max-w-md p-5 rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto shadow-2xl transform transition-transform">
             <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-5 sm:hidden"></div>
             
-            <div class="flex items-center gap-3 mb-5">
-                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 shrink-0"><i class="fas fa-check text-lg"></i></div>
-                <div>
-                    <h3 class="text-lg font-bold text-gray-800 leading-tight">ปิดงานซ่อม</h3>
-                    <p class="text-xs text-gray-500">บันทึกรายละเอียด</p>
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600"><i class="fas fa-check text-lg"></i></div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">ปิดงานซ่อม</h3>
+                        <p class="text-xs text-gray-500" id="finishJobTitle">#ID - Asset Name</p>
+                    </div>
                 </div>
-                <button onclick="closeFinishModal()" class="ml-auto w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full"><i class="fas fa-times"></i></button>
+                <button onclick="closeFinishModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
             </div>
 
             <input type="hidden" id="finishTicketId">
             
             <div class="space-y-4">
+                <!-- 1. Description -->
                 <div>
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="block text-xs font-bold text-gray-700 uppercase">รายละเอียดการซ่อม</label>
-                        <span class="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full flex items-center gap-1 cursor-pointer" onclick="toggleVoiceType()"><i class="fas fa-microphone"></i> แตะเพื่อพูด</span>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-bold text-gray-700 uppercase">รายละเอียดการแก้ไข</label>
+                        <span class="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full cursor-pointer" onclick="toggleVoiceType()"><i class="fas fa-microphone"></i> พูด</span>
                     </div>
                     <div class="relative">
-                        <textarea id="repairDetails" class="w-full bg-gray-50 border border-gray-200 p-3 pr-10 rounded-xl focus:ring-2 focus:ring-green-500 focus:bg-white outline-none transition text-sm" rows="3" placeholder="ระบุสิ่งที่ได้ทำไป..."></textarea>
-                        <div id="micStatusIndicator" class="absolute right-3 bottom-3 text-gray-300 transition-colors"><i class="fas fa-microphone"></i></div>
+                        <textarea id="repairDetails" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm" rows="2" placeholder="ระบุสิ่งที่ทำ..."></textarea>
+                        <div id="micStatusIndicator" class="absolute right-2 bottom-2 text-gray-300 text-xs"><i class="fas fa-microphone"></i></div>
+                    </div>
+                </div>
+
+                <!-- 2. After Photos (New Feature) -->
+                <div>
+                    <label class="text-xs font-bold text-gray-700 uppercase mb-1 block">รูปหลังซ่อม (After)</label>
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                        <div class="flex gap-2">
+                            <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden" onchange="handleFileSelect(this)">
+                            <label for="cameraInput" class="flex-1 bg-white border border-blue-200 text-blue-600 rounded-lg py-2 flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-blue-50 active:scale-95 transition">
+                                <i class="fas fa-camera"></i> <span class="text-[10px] font-bold">ถ่ายรูป</span>
+                            </label>
+                            <input type="file" accept="image/*" id="galleryInput" class="hidden" multiple onchange="handleFileSelect(this)">
+                            <label for="galleryInput" class="flex-1 bg-white border border-gray-200 text-gray-600 rounded-lg py-2 flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-gray-100 active:scale-95 transition">
+                                <i class="fas fa-images"></i> <span class="text-[10px] font-bold">เลือกรูป</span>
+                            </label>
+                        </div>
+                        <div id="mediaDropZone" class="media-grid"></div>
+                        <div class="text-right text-[10px] text-gray-400 mt-1" id="mediaCount">0/5</div>
                     </div>
                 </div>
                 
+                <!-- 3. Spare Parts -->
                 <div class="border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm">
                     <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex justify-between items-center">
                         <label class="font-bold text-xs text-gray-700 flex items-center gap-1"><i class="fas fa-cubes text-gray-400"></i> อะไหล่ที่ใช้</label>
-                        <button onclick="openInventory()" class="text-[10px] font-bold text-white bg-slate-700 hover:bg-slate-800 px-3 py-1.5 rounded-lg transition shadow-sm">+ เพิ่มรายการ</button>
+                        <button onclick="openInventory()" class="text-[10px] font-bold text-white bg-slate-700 hover:bg-slate-800 px-3 py-1 rounded-lg transition shadow-sm">+ เพิ่ม</button>
                     </div>
                     <div id="partsList" class="p-2 text-sm max-h-32 overflow-y-auto min-h-[50px] bg-white">
-                        <div class="text-center text-gray-400 py-3 text-xs italic">ยังไม่มีการเลือกอะไหล่</div>
+                        <div class="text-center text-gray-400 py-3 text-xs italic">ไม่มีการใช้อะไหล่</div>
                     </div>
                 </div>
             </div>
             
             <div class="pt-5 mt-2">
-                <button onclick="submitFinishJob()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-green-200 transition active:scale-95 flex items-center justify-center gap-2">
+                <button onclick="submitFinishJob()" id="btnSubmitFinish" class="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-green-200 transition active:scale-95 flex items-center justify-center gap-2">
                     <i class="fas fa-save"></i> ยืนยันปิดงาน
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Inventory Picker Modal (Mobile Optimized) -->
+    <!-- Inventory Picker Modal -->
     <div id="invModal" class="fixed inset-0 bg-white z-[60] hidden flex flex-col animate-fade-in">
-        <div class="px-4 py-3 border-b flex justify-between items-center bg-white shadow-sm z-10 sticky top-0">
-            <h3 class="font-bold text-lg text-gray-800">คลังอะไหล่</h3>
-            <button onclick="closeInventory()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-gray-200 transition"><i class="fas fa-times"></i></button>
+        <div class="px-5 py-4 border-b flex justify-between items-center bg-white shadow-sm z-10">
+            <h3 class="font-bold text-xl text-gray-800">คลังอะไหล่</h3>
+            <button onclick="closeInventory()" class="w-9 h-9 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-gray-200 transition"><i class="fas fa-times"></i></button>
         </div>
-        
-        <!-- Category Filter -->
-        <div class="p-2 border-b overflow-x-auto whitespace-nowrap bg-gray-50 no-scrollbar" id="catContainer"></div>
-        
-        <!-- List Area -->
-        <div class="flex-1 overflow-y-auto p-3 bg-gray-50 pb-32" id="invList"></div>
-        
-        <!-- Bottom Selection Bar (Fixed) -->
-        <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-[0_-4px_20px_rgba(0,0,0,0.1)] pb-safe z-20">
-            <div class="max-w-2xl mx-auto flex flex-col gap-3">
-                <div class="flex justify-between items-center">
-                    <div class="text-xs text-gray-500">รายการที่เลือก:</div>
-                    <div id="partSelectorText" class="font-bold text-gray-800 text-sm truncate max-w-[200px]">-</div>
-                </div>
-                <div class="flex gap-3 h-11">
-                    <div class="flex items-center bg-gray-100 rounded-lg px-1 w-28 shrink-0 border border-gray-200">
-                        <button onclick="adjQty(-1)" class="w-8 h-full font-bold text-gray-500 hover:text-black active:bg-gray-200 rounded text-lg">-</button>
-                        <input type="number" id="partQty" class="w-full text-center font-bold text-lg bg-transparent border-0 p-0 focus:ring-0" value="1" readonly>
-                        <button onclick="adjQty(1)" class="w-8 h-full font-bold text-gray-500 hover:text-black active:bg-gray-200 rounded text-lg">+</button>
+        <div class="p-3 border-b overflow-x-auto whitespace-nowrap bg-gray-50 no-scrollbar" id="catContainer"></div>
+        <div class="flex-1 overflow-y-auto p-4 bg-gray-50" id="invList"></div>
+        <div class="p-5 bg-white border-t shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-safe">
+            <div class="flex flex-col gap-3">
+                <div class="flex justify-between items-center"><div class="text-sm text-gray-500">เลือก:</div><div id="partSelectorText" class="font-bold text-gray-800 text-right truncate max-w-[200px]">-</div></div>
+                <div class="flex gap-3 h-12">
+                    <div class="flex items-center bg-gray-100 rounded-xl px-2 w-32 shrink-0">
+                        <button onclick="adjQty(-1)" class="w-8 h-full font-bold text-gray-500">-</button>
+                        <input type="number" id="partQty" class="w-full text-center font-bold text-xl bg-transparent border-0 p-0 focus:ring-0" value="1" readonly>
+                        <button onclick="adjQty(1)" class="w-8 h-full font-bold text-gray-500">+</button>
                     </div>
-                    <button onclick="addPart()" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold shadow-md active:scale-95 transition text-sm">เพิ่มรายการ</button>
+                    <button onclick="addPart()" class="flex-1 bg-gray-900 text-white rounded-xl font-bold shadow-lg active:scale-95 transition">เพิ่ม</button>
                 </div>
             </div>
         </div>
@@ -205,8 +165,14 @@
     
     <!-- Image Viewer -->
     <div id="imageViewerModal" class="image-preview-modal fixed inset-0 z-[70] bg-black/95 hidden flex items-center justify-center touch-none" onclick="closeImageViewer()">
-        <button class="absolute top-4 right-4 text-white/80 hover:text-white text-3xl p-2 z-10 w-12 h-12 flex items-center justify-center bg-black/20 rounded-full"><i class="fas fa-times"></i></button>
+        <button class="absolute top-4 right-4 text-white/80 hover:text-white text-3xl p-2 z-10"><i class="fas fa-times"></i></button>
         <img id="fullImage" class="max-w-full max-h-full object-contain p-2 transition-transform duration-200" src="" alt="Full size">
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white/80 z-[80] hidden flex flex-col items-center justify-center backdrop-blur-sm">
+        <div class="animate-spin rounded-full h-10 w-10 border-4 border-orange-500 border-t-transparent"></div>
+        <p class="mt-3 text-sm font-bold text-gray-600 animate-pulse">กำลังบันทึก...</p>
     </div>
 
     <script>
@@ -235,6 +201,7 @@
         let currentTab = 'OPEN';
         let tickets = [];
         let partsList = [];
+        let mediaList = []; // New: For storing After photos
         let inventory = [];
         let assetsMap = {};
         let selectedPart = null;
@@ -245,12 +212,7 @@
         document.addEventListener('DOMContentLoaded', async () => { 
             currentUser = Auth.requireRole(['technician', 'admin', 'manager']);
             if (!currentUser) return;
-            
-            // Set User Name in Header & Sidebar
-            const name = currentUser.full_name || currentUser.username;
-            document.getElementById('techName').innerText = name;
-            document.getElementById('sidebarUserName').innerText = name;
-            
+            document.getElementById('techName').innerText = currentUser.full_name || currentUser.username;
             try { const { data } = await supabaseClient.from('assets').select('id, name'); if(data) data.forEach(a => assetsMap[a.id] = a.name); } catch(e) {}
             await fetchInventory(); 
             fetchJobs(); 
@@ -258,18 +220,6 @@
             initVoiceRecognition();
         });
         
-        // --- MOBILE UI FUNCTIONS ---
-        function toggleSidebar() {
-            const sb = document.getElementById('mobileSidebar');
-            const ov = document.getElementById('sidebarOverlay');
-            sb.classList.toggle('closed');
-            if (sb.classList.contains('closed')) {
-                ov.classList.add('hidden');
-            } else {
-                ov.classList.remove('hidden');
-            }
-        }
-
         // --- VOICE ---
         function initVoiceRecognition() {
             if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -277,7 +227,6 @@
                 recognition = new SpeechRecognition();
                 recognition.lang = 'th-TH';
                 recognition.interimResults = false;
-                recognition.maxAlternatives = 1;
                 recognition.onresult = (event) => {
                     const text = event.results[0][0].transcript;
                     const area = document.getElementById('repairDetails');
@@ -286,74 +235,51 @@
                 recognition.onend = () => { isListening = false; updateMicUI(); };
             }
         }
-
         function toggleVoiceType() {
-            if (!recognition) return alert('Browser นี้ไม่รองรับ');
+            if (!recognition) return alert('ไม่รองรับเสียง');
             if (isListening) { recognition.stop(); isListening = false; } else { recognition.start(); isListening = true; }
             updateMicUI();
         }
-
         function updateMicUI() {
             const ind = document.getElementById('micStatusIndicator');
             if (isListening) { ind.classList.add('text-red-500', 'animate-pulse'); ind.classList.remove('text-gray-300'); } 
             else { ind.classList.remove('text-red-500', 'animate-pulse'); ind.classList.add('text-gray-300'); }
         }
 
-        // --- DATA FETCHING ---
+        // --- DATA ---
         async function fetchJobs() {
             const { data, error } = await supabaseClient.from('tickets').select('*').order('incident_time', {ascending: false});
             if (!error) { 
                 const openJobs = data.filter(t => t.status === 'OPEN').length;
-                if (openJobs > lastTicketCount && lastTicketCount !== 0) { triggerNewJobAlert(); }
+                if (openJobs > lastTicketCount && lastTicketCount !== 0) triggerNewJobAlert();
                 lastTicketCount = openJobs;
-                tickets = data || []; 
-                renderJobs(); 
-                updateBadges(openJobs);
+                tickets = data || []; renderJobs(); updateBadges(openJobs);
             }
         }
         
-        function triggerNewJobAlert() {
-            const tabBtn = document.getElementById('tab-open');
-            tabBtn.classList.add('wiggle-alert');
-            setTimeout(() => { tabBtn.classList.remove('wiggle-alert'); }, 3000);
-        }
-        
-        function updateBadges(count) {
-            const badge = document.getElementById('badge-open');
-            if (count > 0) badge.classList.add('show'); else badge.classList.remove('show');
-        }
+        function triggerNewJobAlert() { document.getElementById('tab-open').classList.add('wiggle-alert'); setTimeout(() => { document.getElementById('tab-open').classList.remove('wiggle-alert'); }, 3000); }
+        function updateBadges(count) { const badge = document.getElementById('badge-open'); if (count > 0) badge.classList.add('show'); else badge.classList.remove('show'); }
+        async function fetchInventory() { const { data } = await supabaseClient.from('spare_parts').select('*').order('name'); inventory = data || []; }
 
-        async function fetchInventory() {
-            const { data } = await supabaseClient.from('spare_parts').select('*').order('name'); 
-            inventory = data || [];
-        }
-
+        // --- UI ---
         function switchTab(t) { 
             currentTab = t; 
             const btns = { 'OPEN': 'tab-open', 'MY_JOBS': 'tab-my', 'HISTORY': 'tab-history' };
-            Object.values(btns).forEach(id => {
-                const el = document.getElementById(id);
-                el.className = "flex-1 min-w-[80px] py-2 rounded-lg text-xs sm:text-sm font-bold text-gray-500 hover:bg-gray-100 transition-all border border-transparent relative whitespace-nowrap";
-            });
-            const activeEl = document.getElementById(btns[t]);
-            activeEl.className = "flex-1 min-w-[80px] py-2 rounded-lg text-xs sm:text-sm font-bold text-white bg-slate-800 shadow-md transform transition-all border border-slate-800 relative whitespace-nowrap";
+            Object.values(btns).forEach(id => { document.getElementById(id).className = "flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 transition-all border border-transparent relative"; });
+            document.getElementById(btns[t]).className = "flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-slate-800 shadow-md transform scale-105 transition-all border border-slate-800 relative";
             renderJobs(); 
         }
         
         function renderJobs() {
             const container = document.getElementById('jobContainer'); 
             container.innerHTML = '';
-            
             const filtered = tickets.filter(t => {
                 if (currentTab === 'OPEN') return t.status === 'OPEN' || (t.status === 'ASSIGNED' && !t.technician_id);
                 if (currentTab === 'MY_JOBS') return ['IN_PROGRESS', 'PENDING_APPROVAL'].includes(t.status) && t.technician_id === currentUser.id;
                 return ['CLOSED', 'PENDING_INSPECTION'].includes(t.status) && t.technician_id === currentUser.id;
             });
 
-            if (filtered.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center h-64 text-gray-400 opacity-60"><i class="fas fa-clipboard-check text-4xl mb-3 text-gray-300"></i><p class="text-sm font-medium">ไม่มีรายการ</p></div>`;
-                return;
-            }
+            if (filtered.length === 0) { container.innerHTML = `<div class="flex flex-col items-center justify-center h-80 text-gray-400 opacity-60"><i class="fas fa-clipboard-check text-5xl mb-4 text-gray-300"></i><p class="text-base font-medium">ไม่มีงาน</p></div>`; return; }
 
             filtered.forEach(t => {
                 let statusBadge = '', borderColor = 'border-gray-200', actionBtn = '';
@@ -361,16 +287,13 @@
                 const assetName = assetsMap[t.asset_id] || 'ไม่ระบุ';
 
                 if (t.status === 'OPEN') { 
-                    statusBadge = '<span class="bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border border-red-100">🔥 รอรับ</span>'; borderColor = 'border-red-500';
+                    statusBadge = '<span class="bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase border border-red-100">🔥 รอรับ</span>'; borderColor = 'border-red-500';
                     actionBtn = `<button onclick="acceptJob('${t.id}')" class="w-full mt-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-2"><i class="fas fa-hand-paper"></i> รับงาน</button>`;
                 } else if (t.status === 'IN_PROGRESS') { 
-                    statusBadge = '<span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border border-blue-100">🛠️ กำลังทำ</span>'; borderColor = 'border-blue-500';
+                    statusBadge = '<span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase border border-blue-100">🛠️ กำลังทำ</span>'; borderColor = 'border-blue-500';
                     actionBtn = `<button onclick="openFinish('${t.id}')" class="w-full mt-3 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-2"><i class="fas fa-check-circle"></i> ปิดงาน</button>`;
-                } else if (t.status === 'PENDING_INSPECTION') { 
-                    statusBadge = '<span class="bg-purple-50 text-purple-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border border-purple-100">🔍 รอตรวจ</span>';
-                } else if (t.status === 'CLOSED') { 
-                    statusBadge = '<span class="bg-green-50 text-green-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border border-green-100">✅ เสร็จ</span>';
-                }
+                } else if (t.status === 'PENDING_INSPECTION') { statusBadge = '<span class="bg-purple-50 text-purple-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase border border-purple-100">🔍 รอตรวจ</span>'; } 
+                else if (t.status === 'CLOSED') { statusBadge = '<span class="bg-green-50 text-green-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase border border-green-100">✅ เสร็จ</span>'; }
 
                 let imgHtml = t.photo_url ? `<div class="w-20 h-20 rounded-lg bg-gray-100 border border-gray-100 overflow-hidden shrink-0 cursor-pointer shadow-sm ml-3 relative group" onclick="viewImage('${t.photo_url}')"><img src="${t.photo_url}" class="w-full h-full object-cover"></div>` : '';
 
@@ -401,62 +324,125 @@
             const { error } = await supabaseClient.from('tickets').update({ status: 'IN_PROGRESS', technician_id: currentUser.id }).eq('id', id);
             if(error) alert('Error: ' + error.message); else fetchJobs(); 
         }
-        
-        function openFinish(id) { document.getElementById('finishTicketId').value = id; document.getElementById('finishModal').classList.remove('hidden'); document.getElementById('repairDetails').value = ''; partsList = []; renderParts(); }
-        function closeFinishModal() { document.getElementById('finishModal').classList.add('hidden'); if(isListening && recognition) { recognition.stop(); isListening=false; updateMicUI(); } }
-        
-        function openInventory() { 
-            document.getElementById('invModal').classList.remove('hidden'); 
-            const cats = ['ALL', ...new Set(inventory.map(i => i.category || 'ทั่วไป'))]; 
-            document.getElementById('catContainer').innerHTML = cats.map(c => `<button class="px-3 py-1.5 rounded-full text-xs font-bold mr-2 border transition ${c==='ALL'?'bg-slate-700 text-white border-slate-700':'bg-white text-gray-600 border-gray-200'}" onclick="renderInv('${c}')">${c === 'ALL' ? 'ทั้งหมด' : c}</button>`).join(''); 
-            renderInv('ALL'); resetPartSelection(); 
+
+        // --- FINISH JOB & MEDIA LOGIC ---
+        function openFinish(id) { 
+            const ticket = tickets.find(t => t.id === id);
+            const assetName = assetsMap[ticket.asset_id] || 'Unknown';
+            document.getElementById('finishTicketId').value = id; 
+            document.getElementById('finishJobTitle').innerText = `#${id.substring(0,4)} - ${assetName} (${ticket.issue_text})`;
+            document.getElementById('finishModal').classList.remove('hidden'); 
+            document.getElementById('repairDetails').value = ''; 
+            partsList = []; 
+            mediaList = []; // Reset photos
+            renderParts(); 
+            renderMedia();
         }
-        function closeInventory() { document.getElementById('invModal').classList.add('hidden'); }
         
-        function renderInv(cat) {
-            const c = document.getElementById('invList'); c.innerHTML = '';
-            let f = inventory; 
-            if (cat && cat !== 'ALL') f = f.filter(i => (i.category || 'ทั่วไป') === cat);
-            f.forEach(i => { 
-                const isLow = i.stock <= (i.min_stock || 0);
-                c.innerHTML += `<div class="p-3 border border-gray-100 bg-white flex justify-between items-center active:bg-blue-50 rounded-lg mb-2 shadow-sm" onclick="selectPart('${i.id}','${i.name}',${i.stock})"><div><div class="font-bold text-gray-800 text-sm mb-0.5">${i.name}</div><div class="text-[10px] text-gray-400 font-mono">ID: ${i.part_no || '-'}</div></div><div class="text-right"><span class="text-sm font-bold ${i.stock>0 ? 'text-green-600' : 'text-red-500'} block">${i.stock}</span>${isLow ? '<span class="text-[10px] text-red-400"><i class="fas fa-exclamation-triangle"></i> หมด</span>' : ''}</div></div>`; 
+        function closeFinishModal() { document.getElementById('finishModal').classList.add('hidden'); if(isListening && recognition) { recognition.stop(); isListening=false; updateMicUI(); } }
+
+        // Media Handlers
+        async function handleFileSelect(input) {
+            if (mediaList.length + input.files.length > 5) return alert("สูงสุด 5 รูป");
+            const loader = document.getElementById('loadingOverlay');
+            loader.classList.remove('hidden');
+            
+            for (const f of input.files) {
+                try {
+                    const compressed = await compressImage(f);
+                    mediaList.push({ type: 'IMAGE', data: compressed });
+                } catch(e) { console.error(e); }
+            }
+            renderMedia();
+            loader.classList.add('hidden');
+            input.value = ''; // Reset input
+        }
+
+        function renderMedia() {
+            const z = document.getElementById('mediaDropZone');
+            z.innerHTML = '';
+            mediaList.forEach((m, i) => {
+                const d = document.createElement('div');
+                d.className = 'media-item';
+                d.innerHTML = `<img src="${m.data}"><div class="delete-btn" onclick="removeMedia(${i})">&times;</div>`;
+                z.appendChild(d);
+            });
+            document.getElementById('mediaCount').innerText = `${mediaList.length}/5`;
+        }
+
+        function removeMedia(i) { mediaList.splice(i, 1); renderMedia(); }
+
+        function compressImage(f) {
+            return new Promise(resolve => {
+                const reader = new FileReader();
+                reader.readAsDataURL(f);
+                reader.onload = e => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const maxDim = 800;
+                        let w = img.width, h = img.height;
+                        if(w > h && w > maxDim) { h *= maxDim/w; w = maxDim; }
+                        else if(h > maxDim) { w *= maxDim/h; h = maxDim; }
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    }
+                }
             });
         }
         
+        // Inventory Handlers
+        function openInventory() { document.getElementById('invModal').classList.remove('hidden'); const cats = ['ALL', ...new Set(inventory.map(i => i.category || 'ทั่วไป'))]; document.getElementById('catContainer').innerHTML = cats.map(c => `<button class="px-3 py-1.5 rounded-full text-xs font-bold mr-2 border transition ${c==='ALL'?'bg-slate-700 text-white border-slate-700':'bg-white text-gray-600 border-gray-200'}" onclick="renderInv('${c}')">${c === 'ALL' ? 'ทั้งหมด' : c}</button>`).join(''); renderInv('ALL'); resetPartSelection(); }
+        function closeInventory() { document.getElementById('invModal').classList.add('hidden'); }
+        function renderInv(cat) { const c = document.getElementById('invList'); c.innerHTML = ''; let f = inventory; if (cat && cat !== 'ALL') f = f.filter(i => (i.category || 'ทั่วไป') === cat); f.forEach(i => { const isLow = i.stock <= (i.min_stock || 0); c.innerHTML += `<div class="p-3 border border-gray-100 bg-white flex justify-between items-center active:bg-blue-50 rounded-lg mb-2 shadow-sm" onclick="selectPart('${i.id}','${i.name}',${i.stock})"><div><div class="font-bold text-gray-800 text-sm mb-0.5">${i.name}</div><div class="text-[10px] text-gray-400 font-mono">ID: ${i.part_no || '-'}</div></div><div class="text-right"><span class="text-sm font-bold ${i.stock>0 ? 'text-green-600' : 'text-red-500'} block">${i.stock}</span>${isLow ? '<span class="text-[10px] text-red-400"><i class="fas fa-exclamation-triangle"></i> หมด</span>' : ''}</div></div>`; }); }
         function selectPart(id, name, stock) { selectedPart = { id, name, stock }; document.getElementById('partSelectorText').innerText = name; document.getElementById('partQty').value = 1; }
         function adjQty(delta) { let v = parseInt(document.getElementById('partQty').value) + delta; if(v < 1) v = 1; document.getElementById('partQty').value = v; }
         function resetPartSelection() { selectedPart = null; document.getElementById('partSelectorText').innerText = '-'; document.getElementById('partQty').value = 1; }
-        
-        function addPart() { 
-            if (!selectedPart) return alert('กรุณาเลือกอะไหล่ก่อน'); 
-            const qty = parseInt(document.getElementById('partQty').value);
-            if (qty > selectedPart.stock) return alert('สต็อกไม่พอ');
-            const exist = partsList.find(p => p.id === selectedPart.id);
-            if (exist) { if (exist.qty + qty > selectedPart.stock) return alert('รวมแล้วเกินสต็อก'); exist.qty += qty; } else { partsList.push({ ...selectedPart, qty }); }
-            closeInventory(); renderParts();
-        }
-        
-        function renderParts() { document.getElementById('partsList').innerHTML = partsList.map((p, index) => `<div class="flex justify-between items-center border-b border-gray-100 p-2 last:border-0"><span class="text-gray-700 text-xs font-medium flex items-center gap-1"><i class="fas fa-check-circle text-green-500 text-[10px]"></i> ${p.name} <span class="bg-gray-100 text-gray-600 px-1.5 rounded font-bold">x${p.qty}</span></span><button onclick="partsList.splice(${index}, 1); renderParts();" class="text-red-400 w-6 h-6 flex items-center justify-center"><i class="fas fa-trash-alt text-xs"></i></button></div>`).join('') || '<div class="text-center text-gray-400 py-3 text-xs italic">ยังไม่มีการเลือกอะไหล่</div>'; }
+        function addPart() { if (!selectedPart) return alert('เลือกอะไหล่ก่อน'); const qty = parseInt(document.getElementById('partQty').value); if (qty > selectedPart.stock) return alert('สต็อกไม่พอ'); const exist = partsList.find(p => p.id === selectedPart.id); if (exist) { if (exist.qty + qty > selectedPart.stock) return alert('เกินสต็อก'); exist.qty += qty; } else { partsList.push({ ...selectedPart, qty }); } closeInventory(); renderParts(); }
+        function renderParts() { document.getElementById('partsList').innerHTML = partsList.map((p, index) => `<div class="flex justify-between items-center border-b border-gray-100 p-2 last:border-0"><span class="text-gray-700 text-xs font-medium flex items-center gap-1"><i class="fas fa-check-circle text-green-500 text-[10px]"></i> ${p.name} <span class="bg-gray-100 text-gray-600 px-1.5 rounded font-bold">x${p.qty}</span></span><button onclick="partsList.splice(${index}, 1); renderParts();" class="text-red-400 w-6 h-6 flex items-center justify-center"><i class="fas fa-trash-alt text-xs"></i></button></div>`).join('') || '<div class="text-center text-gray-400 py-3 text-xs italic">ไม่มีการใช้อะไหล่</div>'; }
 
+        // --- SUBMIT ---
         async function submitFinishJob() {
             const id = document.getElementById('finishTicketId').value;
             const det = document.getElementById('repairDetails').value;
+            
             if (!det) return alert('กรุณาระบุรายละเอียดการซ่อม');
             if (!confirm('ยืนยันการปิดงาน?')) return;
+            
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+
             try {
+                // 1. Update Ticket
                 const { error: tError } = await supabaseClient.from('tickets').update({ status: 'PENDING_INSPECTION', repair_details: det, finished_at: new Date() }).eq('id', id);
                 if (tError) throw tError;
+
+                // 2. Insert Parts
                 for (const p of partsList) {
                     await supabaseClient.from('spare_parts_requests').insert({ ticket_id: id, part_id: p.id, quantity: p.qty, requester_id: currentUser.id, part_name: p.name });
                     const { data: currentP } = await supabaseClient.from('spare_parts').select('stock').eq('id', p.id).single();
                     if (currentP) await supabaseClient.from('spare_parts').update({ stock: currentP.stock - p.qty }).eq('id', p.id);
                 }
+
+                // 3. Insert Photos (After Repair)
+                if (mediaList.length > 0) {
+                    const rows = mediaList.map(m => ({ ticket_id: id, type: 'AFTER_IMAGE', url: m.data }));
+                    const { error: mError } = await supabaseClient.from('media').insert(rows);
+                    if (mError) console.error("Media Upload Error", mError);
+                }
+                
                 closeFinishModal();
+                
+                // Confetti
                 var duration = 3 * 1000; var animationEnd = Date.now() + duration; var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
                 function randomInRange(min, max) { return Math.random() * (max - min) + min; }
                 var interval = setInterval(function() { var timeLeft = animationEnd - Date.now(); if (timeLeft <= 0) { return clearInterval(interval); } var particleCount = 50 * (timeLeft / duration); confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } })); confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } })); }, 250);
+                
                 setTimeout(() => { alert('🎉 เยี่ยมมาก! ปิดงานสำเร็จแล้ว'); fetchJobs(); fetchInventory(); }, 500);
+
             } catch (e) { alert('Error: ' + e.message); }
+            finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
         }
     </script>
 </body>
