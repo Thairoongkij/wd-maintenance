@@ -10,42 +10,42 @@
     <style>
         body { font-family: 'Sarabun', sans-serif; margin: 0; padding: 0; background: #525659; }
         
-        /* A4 Paper Style (Screen View) */
+        /* A4 Paper Style */
         .page {
             width: 210mm;
-            min-height: 296mm; /* A4 Height */
-            padding: 15mm;     /* Reduced padding for more space */
+            min-height: 297mm;
+            padding: 15mm;
             margin: 10mm auto;
             border: 1px solid #d3d3d3;
             border-radius: 5px;
             background: white;
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
             position: relative;
-            box-sizing: border-box; /* Include padding in width/height */
+            box-sizing: border-box;
         }
         
-        /* Print Styles (Crucial for Layout) */
+        /* Print Styles */
         @media print {
-            @page { size: A4; margin: 0; } /* Reset browser margins */
+            @page { size: A4; margin: 0; }
             body { background: white; margin: 0; padding: 0; }
             .page { 
                 margin: 0; 
                 border: initial; 
                 border-radius: initial; 
                 width: 210mm; 
-                height: 296mm; /* Fix height to force fit */
+                height: 296mm; 
                 box-shadow: initial; 
                 background: initial; 
                 page-break-after: always;
-                padding: 15mm; /* Consistent padding */
-                overflow: hidden; /* Prevent spillover */
+                padding: 15mm;
+                overflow: hidden;
             }
             .no-print { display: none !important; }
         }
 
         /* Compact Typography */
-        table { width: 100%; border-collapse: collapse; margin-bottom: 5px; } /* Reduced margin */
-        th, td { border: 1px solid black; padding: 4px 6px; font-size: 13px; vertical-align: top; } /* Compact cells */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 5px; }
+        th, td { border: 1px solid black; padding: 4px 6px; font-size: 13px; vertical-align: top; }
         p { margin: 0; }
         
         .bg-gray { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; font-weight: bold; }
@@ -55,14 +55,14 @@
         
         /* Header Optimization */
         .header-title { font-size: 20px; font-weight: bold; margin: 0; line-height: 1.2; }
-        .barcode { font-family: 'Libre Barcode 39 Text', cursive; font-size: 32px; margin: 2px 0; } /* Smaller barcode */
+        .barcode { font-family: 'Libre Barcode 39 Text', cursive; font-size: 32px; margin: 2px 0; }
         
         /* Section Optimization */
         .section-header { background-color: #eee; font-weight: bold; padding: 3px 5px; border: 1px solid black; border-bottom: none; font-size: 13px; -webkit-print-color-adjust: exact; margin-top: 5px; }
-        .section-content { border: 1px solid black; padding: 5px; margin-bottom: 0; } /* Remove bottom margin */
+        .section-content { border: 1px solid black; padding: 5px; margin-bottom: 0; }
         
         /* Image Box Optimization */
-        .img-box { width: 100%; height: 130px; border: 1px dashed #999; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; } /* Reduced height */
+        .img-box { width: 100%; height: 130px; border: 1px dashed #999; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; background-color: #fafafa; }
         .img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
         
         /* Layout Helpers */
@@ -85,6 +85,7 @@
             <!-- Header -->
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; border-bottom: 2px solid black; padding-bottom: 5px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
+                    <!-- Placeholder Logo -->
                     <div style="width: 60px; height: 60px; border: 1px solid #000; display: flex; align-items: center; justify-content: center; font-weight:bold; background:#f9f9f9; font-size:12px;">LOGO</div>
                     <div>
                         <h2 style="margin: 0; font-size: 18px;">บริษัท ไทยรุ่งกิจ ไวท์ดั๊ก จำกัด</h2>
@@ -98,7 +99,7 @@
                 </div>
             </div>
 
-            <!-- 1. Asset & 2. Request Info (Combined in 2 blocks) -->
+            <!-- 1. Asset & 2. Request Info -->
             <div class="section-header">1. ข้อมูลการแจ้งซ่อม (Request & Asset Info)</div>
             <div style="border: 1px solid black;">
                 <table style="border: none; margin: 0;">
@@ -127,7 +128,7 @@
             <div class="section-header">3. รายละเอียดอาการเสีย (Problem Description)</div>
             <div class="section-content" style="min-height: 40px; font-size:13px;" id="problemDesc">-</div>
 
-            <!-- 4. Photos (Reduced Height) -->
+            <!-- 4. Photos -->
             <div class="section-header">4. รูปภาพประกอบ (Photos)</div>
             <div class="section-content">
                 <div class="row">
@@ -173,7 +174,7 @@
                 </tbody>
             </table>
 
-            <!-- 7. Approval (Bottom of page) -->
+            <!-- 7. Approval -->
             <div class="section-header">7. การอนุมัติ (Approval)</div>
             <div class="section-content" style="padding: 10px 5px;">
                 <div style="display: flex; justify-content: space-between; text-align: center;">
@@ -205,10 +206,7 @@
         const SUPABASE_URL = 'https://nmezqexpvhdozpdzxxek.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tZXpxZXhwdmhkb3pwZHp4eGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5OTAwNTEsImV4cCI6MjA4MjU2NjA1MX0.N1OjCh1sp0xx0DGFjR6yX2hix5oIX7suzrnvQk8qPWU';
         
-        // Use 'supabaseClient' to match other files and avoid conflicts
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // Get ID from URL
         const urlParams = new URLSearchParams(window.location.search);
         const ticketId = urlParams.get('id');
 
@@ -223,7 +221,7 @@
                 const { data: ticket, error } = await supabaseClient.from('tickets').select('*').eq('id', ticketId).single();
                 if (error) throw error;
 
-                // Fetch Related Data (Using Safe Check ?.)
+                // Fetch Related Data
                 let asset = {}, requester = {}, technician = {}, parts = [], media = [];
 
                 if(ticket.asset_id) {
@@ -251,54 +249,47 @@
                 document.getElementById('jobIdText').innerText = jobCode;
                 document.getElementById('printDate').innerText = 'พิมพ์: ' + dayjs().format('DD/MM/YYYY HH:mm');
 
-                // Asset
+                // Info
                 document.getElementById('assetName').innerText = asset.name || '-';
                 document.getElementById('assetCode').innerText = asset.asset_code || '-';
                 document.getElementById('location').innerText = asset.location || '-';
-
-                // Users & Time
                 document.getElementById('requester').innerText = requester.full_name || requester.username || '-';
                 document.getElementById('reqDate').innerText = dayjs(ticket.incident_time).format('DD/MM/YYYY');
                 document.getElementById('reqTime').innerText = dayjs(ticket.incident_time).format('HH:mm');
-
-                // Details
                 document.getElementById('problemDesc').innerText = (ticket.issue_text || '-') + (ticket.description ? ` (${ticket.description})` : '');
                 document.getElementById('technician').innerText = technician.full_name || technician.username || '-';
                 document.getElementById('repairDetails').innerText = ticket.repair_details || '-';
 
-                // Parts Table
+                // Parts
                 const pTable = document.getElementById('partsTable');
                 if (parts.length > 0) {
-                    pTable.innerHTML = parts.map((p, i) => `
-                        <tr>
-                            <td class="text-center">${i + 1}</td>
-                            <td>${p.part_name || '-'}</td>
-                            <td class="text-center">${p.quantity || 1}</td>
-                            <td></td>
-                        </tr>`).join('');
+                    pTable.innerHTML = parts.map((p, i) => `<tr><td class="text-center">${i + 1}</td><td>${p.part_name || '-'}</td><td class="text-center">${p.quantity || 1}</td><td></td></tr>`).join('');
                 }
 
-                // Images
+                // --- IMAGE LOGIC (FIXED) ---
                 const imgBefore = document.getElementById('imgBefore');
                 const imgAfter = document.getElementById('imgAfter');
 
-                // 1. Before Image (Cover)
+                // 1. Before Image: Ticket Cover
                 if (ticket.photo_url) {
                     imgBefore.src = ticket.photo_url;
                     imgBefore.style.display = 'block';
                 }
-                
-                // 2. After Image (First in media list)
+
+                // 2. After Image: Must be type 'AFTER_IMAGE' only
+                // Find the image uploaded by technician during finish
                 if (media.length > 0) {
-                    // Try to find image that is NOT the cover
-                    const after = media.find(m => m.url !== ticket.photo_url) || media[0];
-                    if (after) {
-                        imgAfter.src = after.url;
+                    const afterImgData = media.find(m => m.type === 'AFTER_IMAGE');
+                    
+                    if (afterImgData) {
+                        imgAfter.src = afterImgData.url;
                         imgAfter.style.display = 'block';
+                    } else {
+                        // If no after image found, ensure it's blank
+                        imgAfter.style.display = 'none';
                     }
                 }
 
-                // Finish
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('content').style.display = 'block';
 
