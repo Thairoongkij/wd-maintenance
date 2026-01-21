@@ -21,10 +21,12 @@
         .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* Sidebar Transition Logic */
         #mobileSidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         @media (max-width: 768px) { #mobileSidebar.closed { transform: translateX(-100%); } }
         #sidebarOverlay { transition: opacity 0.3s ease; }
@@ -41,10 +43,9 @@
         .menu-btn { transition: all 0.2s; position: relative; overflow: hidden; }
         .menu-btn:hover { background-color: rgba(255,255,255,0.1); transform: translateX(5px); }
         .menu-btn.active { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); border: none; }
+        .menu-btn.active i { color: white !important; }
 
         .glass-icon { background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.3); }
-        .hover-scale { transition: transform 0.2s; }
-        .hover-scale:hover { transform: translateY(-4px); }
         .glass-panel { background: white; border-radius: 1.5rem; box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05); }
 
         /* Filter Inputs */
@@ -72,7 +73,7 @@
             <button onclick="toggleSidebar()" class="md:hidden ml-auto text-slate-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
         </div>
         
-        <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-6">
+        <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-6 custom-scroll">
             <div>
                 <div class="px-2 mb-3 text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"><span class="w-8 h-[1px] bg-slate-700"></span> Dashboards</div>
                 <div class="space-y-1">
@@ -84,6 +85,7 @@
                     </a>
                 </div>
             </div>
+            
             <div>
                 <div class="px-2 mb-3 text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"><span class="w-8 h-[1px] bg-slate-700"></span> System</div>
                 <div class="space-y-1">
@@ -103,8 +105,7 @@
 
     <!-- Main Content -->
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative w-full bg-slate-50">
-        <!-- Scrollable Area -->
-        <div class="flex-1 overflow-y-auto no-scrollbar scroll-smooth">
+        <div class="flex-1 overflow-y-auto custom-scroll scroll-smooth">
             
             <!-- HERO HEADER -->
             <div class="hero-gradient pt-8 pb-32 px-6 sm:px-10 relative overflow-hidden">
@@ -137,25 +138,29 @@
 
             <!-- CONTENT SECTION -->
             <div class="px-4 sm:px-8 -mt-24 pb-20 w-full relative z-20">
-                
                 <!-- Stats Cards Grid -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 fade-in-up">
                     <div class="card-gradient-blue rounded-3xl p-5 text-white shadow-xl shadow-blue-200 hover-scale relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:scale-110 transition duration-500"><i class="fas fa-folder-open text-6xl"></i></div>
                         <div class="glass-icon w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-clipboard-list"></i></div>
                         <p class="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">งานทั้งหมด</p>
                         <h3 class="text-3xl font-extrabold" id="statTotal">-</h3>
                     </div>
                     <div class="card-gradient-orange rounded-3xl p-5 text-white shadow-xl shadow-orange-200 hover-scale relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:scale-110 transition duration-500"><i class="fas fa-cogs text-6xl"></i></div>
                         <div class="glass-icon w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-tools"></i></div>
                         <p class="text-orange-100 text-xs font-bold uppercase tracking-wider mb-1">กำลังซ่อม</p>
                         <h3 class="text-3xl font-extrabold" id="statWIP">-</h3>
                     </div>
                     <div class="card-gradient-purple rounded-3xl p-5 text-white shadow-xl shadow-purple-200 hover-scale cursor-pointer relative overflow-hidden group ring-4 ring-white/30" onclick="filterByStatus('PENDING_INSPECTION')">
+                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:scale-110 transition duration-500"><i class="fas fa-search text-6xl"></i></div>
+                        <div class="absolute top-4 right-4 w-3 h-3 bg-red-400 rounded-full animate-ping"></div>
                         <div class="glass-icon w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-check-double"></i></div>
                         <p class="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">รอตรวจสอบ</p>
                         <h3 class="text-3xl font-extrabold" id="statVerify">-</h3>
                     </div>
                     <div class="card-gradient-green rounded-3xl p-5 text-white shadow-xl shadow-green-200 hover-scale relative overflow-hidden group">
+                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:scale-110 transition duration-500"><i class="fas fa-trophy text-6xl"></i></div>
                         <div class="glass-icon w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-thumbs-up"></i></div>
                         <p class="text-green-100 text-xs font-bold uppercase tracking-wider mb-1">เสร็จสิ้น</p>
                         <h3 class="text-3xl font-extrabold" id="statDone">-</h3>
@@ -163,7 +168,7 @@
                 </div>
 
                 <!-- Charts Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 fade-in-up" style="animation-delay: 0.1s;">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10 fade-in-up" style="animation-delay: 0.1s;">
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                         <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><span class="w-1.5 h-6 bg-blue-500 rounded-full"></span> สัดส่วนอาการเสีย</h3>
                         <div class="h-64 relative"><canvas id="issueChart"></canvas></div>
@@ -174,42 +179,51 @@
                     </div>
                 </div>
 
-                <!-- Search & Filter Toolbar -->
-                <div class="bg-white rounded-2xl shadow-lg p-5 mb-6 flex flex-col md:flex-row gap-4 items-center animate-fade-in-up" style="animation-delay: 0.2s;">
-                    <div class="flex-1 w-full relative">
-                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                        <input type="text" id="searchInput" onkeyup="applyFilters()" placeholder="ค้นหาใบงาน, ชื่อเครื่อง, ชื่อช่าง..." class="filter-input pl-10">
-                    </div>
-                    <div class="w-full md:w-48">
-                        <select id="statusFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
-                            <option value="ALL">สถานะ: ทั้งหมด</option>
-                            <option value="OPEN">🔴 รอรับงาน</option>
-                            <option value="IN_PROGRESS">🟠 กำลังซ่อม</option>
-                            <option value="PENDING_INSPECTION">🟣 รอตรวจสอบ</option>
-                            <option value="CLOSED">🟢 เสร็จสิ้น</option>
-                        </select>
-                    </div>
-                    <div class="w-full md:w-48">
-                        <input type="month" id="monthFilter" onchange="applyFilters()" class="filter-input cursor-pointer text-blue-600 font-bold">
-                    </div>
-                    <div class="w-full md:w-auto">
-                        <button onclick="resetFilters()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-bold transition flex items-center justify-center gap-2">
-                            <i class="fas fa-undo"></i>
-                        </button>
-                    </div>
-                </div>
+                <!-- Ticket List Section (With Search & Filter) -->
+                <div id="ticketSection" class="glass-panel overflow-hidden fade-in-up" style="animation-delay: 0.2s;">
+                    
+                    <!-- Search & Filter Toolbar -->
+                    <div class="p-6 border-b border-gray-100 bg-white">
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><i class="fas fa-list-alt text-blue-500"></i> รายการแจ้งซ่อม</h3>
+                            <div class="flex gap-2">
+                                <span class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100" id="filterCount">Loading...</span>
+                            </div>
+                        </div>
 
-                <!-- Ticket List -->
-                <div id="ticketSection" class="glass-panel overflow-hidden fade-in-up" style="animation-delay: 0.3s;">
-                    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
-                        <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><i class="fas fa-list-alt text-blue-500"></i> รายการแจ้งซ่อม</h3>
-                        <span class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100" id="filterCount">Loading...</span>
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                            <!-- Text Search -->
+                            <div class="md:col-span-4 relative">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400 text-sm"></i>
+                                <input type="text" id="searchInput" onkeyup="applyFilters()" placeholder="ค้นหา ID, ชื่อเครื่อง, ช่าง..." class="filter-input pl-10">
+                            </div>
+                            <!-- Status Filter -->
+                            <div class="md:col-span-3">
+                                <select id="statusFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
+                                    <option value="ALL">สถานะ: ทั้งหมด</option>
+                                    <option value="PENDING_INSPECTION">🟣 รอตรวจสอบ</option>
+                                    <option value="OPEN">🔴 รอรับงาน</option>
+                                    <option value="IN_PROGRESS">🟠 กำลังซ่อม</option>
+                                    <option value="CLOSED">🟢 เสร็จสิ้น</option>
+                                </select>
+                            </div>
+                            <!-- Month Filter -->
+                            <div class="md:col-span-3">
+                                <input type="month" id="monthFilter" onchange="applyFilters()" class="filter-input cursor-pointer text-blue-600 font-bold">
+                            </div>
+                            <!-- Reset -->
+                            <div class="md:col-span-2">
+                                <button onclick="resetFilters()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm border border-slate-200">
+                                    <i class="fas fa-undo"></i> ล้างค่า
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Desktop Table -->
-                    <div class="hidden md:block overflow-x-auto w-full min-h-[300px]">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-gray-50 text-gray-500 uppercase text-xs font-bold border-b border-gray-200">
+                    <!-- Desktop Table (Scrollable Container) -->
+                    <div class="hidden md:block overflow-x-auto w-full custom-scroll" style="max-height: 500px;">
+                        <table class="w-full text-left border-collapse relative">
+                            <thead class="bg-gray-50 text-gray-500 uppercase text-xs font-bold border-b border-gray-200 sticky top-0 z-10">
                                 <tr>
                                     <th class="px-6 py-5 pl-8">Job ID</th>
                                     <th class="px-6 py-5">เวลาแจ้ง</th>
@@ -225,7 +239,7 @@
                     </div>
 
                     <!-- Mobile Cards List -->
-                    <div class="md:hidden p-4 space-y-3 min-h-[300px]" id="mobileTicketCards"></div>
+                    <div class="md:hidden p-4 space-y-3" id="mobileTicketCards"></div>
                     <div id="noDataMob" class="hidden md:hidden text-center py-10 text-gray-400">ไม่พบข้อมูลตามเงื่อนไข</div>
                 </div>
 
@@ -235,16 +249,22 @@
     
     <!-- Verify Modal -->
     <div id="verifyModal" class="fixed inset-0 bg-gray-900/80 z-[60] hidden flex items-end sm:items-center justify-center backdrop-blur-sm transition-opacity">
-        <div class="bg-white w-full h-[95vh] sm:h-auto sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up sm:animate-none">
+        <div class="bg-white w-full h-[95vh] sm:h-auto sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up sm:animate-none max-h-[90vh]">
+            
             <div class="px-6 py-5 border-b bg-white flex justify-between items-center shrink-0">
-                <div><h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">รายละเอียดงาน</h3><p class="text-xs text-gray-500">Ticket Details</p></div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">รายละเอียดงาน</h3>
+                    <p class="text-xs text-gray-500">Ticket Details</p>
+                </div>
                 <div class="flex gap-2">
-                    <button onclick="openPrintPage()" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-2 rounded-lg font-bold text-sm transition flex items-center gap-2 shadow-sm border border-blue-100 cursor-pointer"><i class="fas fa-print"></i> <span class="hidden sm:inline">พิมพ์</span></button>
-                    <button onclick="closeVerifyModal()" class="w-10 h-10 rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 flex items-center justify-center cursor-pointer"><i class="fas fa-times text-lg"></i></button>
+                    <button onclick="openPrintPage()" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-2 rounded-lg font-bold text-sm transition flex items-center gap-2 shadow-sm border border-blue-100 cursor-pointer" title="พิมพ์ใบงาน">
+                        <i class="fas fa-print"></i> <span class="hidden sm:inline">พิมพ์</span>
+                    </button>
+                    <button onclick="closeVerifyModal()" class="w-10 h-10 rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition flex items-center justify-center cursor-pointer"><i class="fas fa-times text-lg"></i></button>
                 </div>
             </div>
             
-            <div class="p-6 overflow-y-auto flex-1 bg-gray-50/50 space-y-5">
+            <div class="p-6 overflow-y-auto flex-1 bg-gray-50/50 space-y-5 custom-scroll">
                 <input type="hidden" id="verifyTicketId">
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-blue-100 relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
@@ -261,7 +281,7 @@
 
             <div id="modalFooter" class="p-5 bg-white border-t border-gray-100 flex gap-3 shrink-0 pb-safe">
                 <button onclick="handleVerify('REJECT')" class="flex-1 bg-white border-2 border-red-100 text-red-600 hover:bg-red-50 py-3.5 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm cursor-pointer"><i class="fas fa-reply"></i> แก้ไข</button>
-                <button onclick="handleVerify('APPROVE')" class="flex-[2] bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-green-200 transition flex items-center justify-center gap-2 cursor-pointer"><i class="fas fa-check-circle"></i> อนุมัติ</button>
+                <button onclick="handleVerify('APPROVE')" class="flex-[2] bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-green-200 transition flex items-center justify-center gap-2 cursor-pointer"><i class="fas fa-check-circle"></i> อนุมัติ / ปิดงาน</button>
             </div>
         </div>
     </div>
@@ -302,7 +322,7 @@
             if(!user) return;
             document.getElementById('userName').innerText = user.full_name || user.username;
             
-            // Default Month Filter
+            // Set Default Month to Current Month
             document.getElementById('monthFilter').value = dayjs().format('YYYY-MM');
             
             fetchData();
@@ -317,11 +337,11 @@
 
         async function fetchData() {
             try {
-                let { data: tickets, error } = await supabaseClient.from('tickets').select('*').order('incident_time', { ascending: false }).limit(500);
+                // Fetch data (Limit to last 1000 for performance, then filter in client)
+                let { data: tickets, error } = await supabaseClient.from('tickets').select('*').order('incident_time', { ascending: false }).limit(1000);
                 if (error) throw error;
                 tickets = tickets || [];
 
-                // Fetch Relations
                 const assetIds = [...new Set(tickets.map(t => t.asset_id).filter(id => id))];
                 const userIds = [...new Set(tickets.map(t => t.requester_id).filter(id => id))];
                 const techIds = [...new Set(tickets.map(t => t.technician_id).filter(id => id))];
@@ -352,7 +372,7 @@
                     parts_data: partsMap[t.id] || []
                 }));
                 
-                applyFilters(); // Filter Initial Data
+                applyFilters(); // Apply Initial Filter (Current Month)
 
             } catch (err) { alert('Failed to load data: ' + err.message); }
         }
@@ -361,12 +381,11 @@
         function applyFilters() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const statusFilter = document.getElementById('statusFilter').value;
-            const monthFilter = document.getElementById('monthFilter').value;
+            const monthFilter = document.getElementById('monthFilter').value; // YYYY-MM
 
             currentTickets = allTickets.filter(t => {
                 const matchSearch = t.id.toLowerCase().includes(searchTerm) || 
                                     t.asset_name.toLowerCase().includes(searchTerm) ||
-                                    t.requester_name.toLowerCase().includes(searchTerm) ||
                                     t.technician_name.toLowerCase().includes(searchTerm);
                 const matchStatus = statusFilter === 'ALL' || t.status === statusFilter;
                 
@@ -449,18 +468,47 @@
             tickets.forEach(t => {
                 const btn = getActionBtn(t, false);
                 const badge = getStatusBadge(t.status);
-                tbody.innerHTML += `<tr class="bg-white border-b hover:bg-indigo-50/30 transition-colors group"><td class="px-6 py-4 pl-8 text-xs font-mono text-blue-600 font-bold">#${t.id.substring(0,4)}</td><td class="px-6 py-4 text-sm text-gray-500">${Utils.formatDate(t.incident_time)}</td><td class="px-6 py-4 font-bold text-gray-700">${t.asset_name}</td><td class="px-6 py-4 text-sm text-gray-600">${t.issue_text}</td><td class="px-6 py-4 text-center">${badge}</td><td class="px-6 py-4 pr-8 text-right">${btn}</td></tr>`;
                 
+                // Desktop Row
+                tbody.innerHTML += `
+                    <tr class="bg-white border-b hover:bg-indigo-50/30 transition-colors group">
+                        <td class="px-6 py-4 pl-8 text-xs font-mono text-blue-600 font-bold group-hover:text-blue-700">#${t.id.substring(0,4)}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${Utils.formatDate(t.incident_time)}</td>
+                        <td class="px-6 py-4 font-bold text-gray-700">${t.asset_name}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${t.issue_text}</td>
+                        <td class="px-6 py-4 text-center">${badge}</td>
+                        <td class="px-6 py-4 pr-8 text-right">${btn}</td>
+                    </tr>`;
+                
+                // Mobile Card
                 const mBtn = getActionBtn(t, true);
-                mList.innerHTML += `<div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-3"><div class="flex justify-between items-start mb-3"><span class="text-xs font-mono bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-bold">#${t.id.substring(0,4)}</span>${badge}</div><div class="mb-4"><h4 class="font-bold text-gray-800 text-lg mb-1 leading-snug">${t.issue_text}</h4><div class="flex items-center gap-1.5 text-sm text-indigo-600 font-bold"><i class="fas fa-industry"></i> ${t.asset_name}</div><div class="text-xs text-gray-400 mt-2 flex items-center gap-1"><i class="far fa-clock"></i> ${Utils.formatDate(t.incident_time)}</div></div><div class="flex items-center justify-between pt-3 border-t border-gray-50"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold border border-gray-200">${t.requester_name.charAt(0)}</div><span class="text-xs text-gray-500 font-medium">${t.requester_name}</span></div>${mBtn}</div></div>`;
+                mList.innerHTML += `
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-3 hover:shadow-md transition">
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="text-xs font-mono bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-bold">#${t.id.substring(0,4)}</span>
+                            ${badge}
+                        </div>
+                        <div class="mb-4">
+                            <h4 class="font-bold text-gray-800 text-lg mb-1 leading-snug">${t.issue_text}</h4>
+                            <div class="flex items-center gap-1.5 text-sm text-indigo-600 font-bold"><i class="fas fa-industry"></i> ${t.asset_name}</div>
+                            <div class="text-xs text-gray-400 mt-2 flex items-center gap-1"><i class="far fa-clock"></i> ${Utils.formatDate(t.incident_time)}</div>
+                        </div>
+                        <div class="flex items-center justify-between pt-3 border-t border-gray-50">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold border border-gray-200">${t.requester_name.charAt(0)}</div>
+                                <span class="text-xs text-gray-500 font-medium">${t.requester_name}</span>
+                            </div>
+                            ${mBtn}
+                        </div>
+                    </div>`;
             });
         }
 
         function getStatusBadge(status) {
-            if(status === 'PENDING_INSPECTION') return '<span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-[10px] font-bold">รอตรวจ</span>';
-            if(status === 'CLOSED') return '<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold">เสร็จสิ้น</span>';
-            if(status === 'IN_PROGRESS') return '<span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-[10px] font-bold">กำลังซ่อม</span>';
-            return `<span class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-[10px] font-bold">รอรับงาน</span>`;
+            if(status === 'PENDING_INSPECTION') return '<span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1 mx-auto w-max"><i class="fas fa-circle text-[6px]"></i> รอตรวจ</span>';
+            if(status === 'CLOSED') return '<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1 mx-auto w-max"><i class="fas fa-check text-[8px]"></i> เสร็จสิ้น</span>';
+            if(status === 'IN_PROGRESS') return '<span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm">กำลังซ่อม</span>';
+            return `<span class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm">รอรับงาน</span>`;
         }
 
         function getActionBtn(t, isMobile) {
@@ -490,8 +538,8 @@
             try {
                 const { data: media } = await supabaseClient.from('media').select('*').eq('ticket_id', id);
                 mContainer.innerHTML = '';
-                if(ticket.photo_url) mContainer.innerHTML += `<img src="${ticket.photo_url}" class="w-full h-24 object-cover rounded cursor-pointer" onclick="viewImage('${ticket.photo_url}')">`;
-                if(media) media.forEach(m => mContainer.innerHTML += `<img src="${m.url}" class="w-full h-24 object-cover rounded cursor-pointer" onclick="viewImage('${m.url}')">`);
+                if(ticket.photo_url) mContainer.innerHTML += `<div class="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-pointer hover:opacity-90 transition shadow-sm relative group" onclick="viewImage('${ticket.photo_url}')"><img src="${ticket.photo_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110"></div>`;
+                if(media) media.forEach(m => mContainer.innerHTML += `<div class="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-pointer hover:opacity-90 transition shadow-sm relative group" onclick="viewImage('${m.url}')"><img src="${m.url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110"></div>`);
                 if(!ticket.photo_url && (!media || media.length === 0)) mContainer.innerHTML = '<span class="text-xs text-gray-400 italic col-span-3 text-center">- ไม่มีรูปภาพ -</span>';
             } catch(e) { mContainer.innerHTML = 'Error'; }
 
@@ -511,10 +559,10 @@
         async function handleVerify(action) {
              const id = document.getElementById('verifyTicketId').value;
              const status = action === 'APPROVE' ? 'CLOSED' : 'IN_PROGRESS';
-             if(!confirm('ยืนยัน?')) return;
+             if(!confirm(action === 'APPROVE' ? 'ยืนยันอนุมัติปิดงาน?' : 'ยืนยันส่งกลับแก้ไข?')) return;
              try {
                  await supabaseClient.from('tickets').update({ status }).eq('id', id);
-                 alert('บันทึกสำเร็จ'); closeVerifyModal(); fetchData();
+                 alert('Done'); closeVerifyModal(); fetchData();
              } catch(err) { alert(err.message); }
         }
         

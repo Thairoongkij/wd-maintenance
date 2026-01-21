@@ -6,158 +6,195 @@
     <title>ช่างซ่อมบำรุง - WD Maintenance</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Supabase & Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap'); 
-        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; font-size: 16px; } /* Base font size increased */
+        
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
         .image-preview-modal { transition: opacity 0.2s ease; }
         .image-preview-modal.hidden { opacity: 0; pointer-events: none; }
         .image-preview-modal:not(.hidden) { opacity: 1; pointer-events: auto; }
+
         .job-card { transition: transform 0.2s, box-shadow 0.2s; }
         .job-card:active { transform: scale(0.98); }
+
+        /* Mic Animation */
         .mic-listening { animation: pulse-red 1.5s infinite; background-color: #fee2e2 !important; color: #ef4444 !important; border-color: #ef4444 !important; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        /* Badge Pulse */
-        .wiggle-alert { animation: wiggle 0.5s ease-in-out infinite; background-color: #fef2f2 !important; color: #ef4444 !important; border: 2px solid #ef4444 !important; }
-        @keyframes wiggle { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
-        .badge-dot { position: absolute; top: -5px; right: -5px; width: 12px; height: 12px; background-color: #ef4444; border-radius: 50%; border: 2px solid white; display: none; }
-        .badge-dot.show { display: block; animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite; }
-        @keyframes ping { 75%, 100% { transform: scale(2); opacity: 0; } }
 
-        /* Media Grid for Upload */
-        .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; margin-top: 10px; }
-        .media-item { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; }
+        /* Media Upload Grid */
+        .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 12px; }
+        .media-item { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb; background: #f9fafb; }
         .media-item img { width: 100%; height: 100%; object-fit: cover; }
-        .delete-btn { position: absolute; top: 2px; right: 2px; background: rgba(239, 68, 68, 0.9); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; }
+        .delete-btn { position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; border: 1px solid white; }
+
+        /* Inventory UI */
+        .cat-chip { transition: all 0.2s; white-space: nowrap; font-size: 1rem; padding: 0.5rem 1rem; }
+        .cat-chip.active { background-color: #3b82f6; color: white; border-color: #3b82f6; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4); }
+        .part-card { transition: all 0.2s; border: 2px solid transparent; }
+        .part-card.selected { border-color: #f97316; background-color: #fff7ed; }
+        .qty-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.1s; font-size: 1.2rem; }
+        .qty-btn:active { transform: scale(0.9); }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-gray-800">
     
     <!-- Header -->
-    <header class="bg-white px-5 py-4 shadow-sm z-30 flex justify-between items-center sticky top-0 shrink-0">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white shadow-md shadow-orange-200">
-                <i class="fas fa-wrench"></i>
+    <header class="bg-white px-5 py-4 shadow-md z-30 flex justify-between items-center sticky top-0 shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white shadow-md shadow-orange-200">
+                <i class="fas fa-wrench text-xl"></i>
             </div>
             <div>
-                <h1 class="text-xl font-bold text-gray-800 leading-none">งานช่าง</h1>
-                <p class="text-xs text-gray-500 font-medium mt-1" id="techName">กำลังโหลด...</p>
+                <h1 class="text-2xl font-bold text-gray-800 leading-none">งานช่าง</h1>
+                <p class="text-sm text-gray-500 font-medium mt-1" id="techName">กำลังโหลด...</p>
             </div>
         </div>
-        <button onclick="Auth.logout()" class="w-9 h-9 rounded-full bg-gray-100 text-gray-400 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition">
-            <i class="fas fa-power-off"></i>
+        <button onclick="Auth.logout()" class="w-11 h-11 rounded-full bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition">
+            <i class="fas fa-power-off text-xl"></i>
         </button>
     </header>
 
-    <!-- Tabs -->
-    <div class="px-4 py-4 bg-gray-50/80 backdrop-blur-sm sticky top-16 z-20">
-        <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100">
-            <button onclick="switchTab('OPEN')" id="tab-open" class="flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-500 transition-all relative">
-                งานใหม่ <span id="badge-open" class="badge-dot"></span>
+    <!-- Tabs (Larger Text) -->
+    <div class="px-4 py-4 bg-gray-50/90 backdrop-blur-sm sticky top-20 z-20">
+        <div class="flex bg-white p-1.5 rounded-2xl shadow-sm border border-gray-200 relative">
+            <button onclick="switchTab('OPEN')" id="tab-open" class="flex-1 py-3 rounded-xl text-base font-bold text-gray-500 transition-all relative">
+                งานใหม่ <span id="badge-open" class="absolute top-2 right-3 w-3 h-3 bg-red-500 rounded-full hidden border-2 border-white"></span>
             </button>
-            <button onclick="switchTab('MY_JOBS')" id="tab-my" class="flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-500 transition-all">งานฉัน</button>
-            <button onclick="switchTab('HISTORY')" id="tab-history" class="flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-500 transition-all">ประวัติ</button>
+            <button onclick="switchTab('MY_JOBS')" id="tab-my" class="flex-1 py-3 rounded-xl text-base font-bold text-gray-500 transition-all">งานฉัน</button>
+            <button onclick="switchTab('HISTORY')" id="tab-history" class="flex-1 py-3 rounded-xl text-base font-bold text-gray-500 transition-all">ประวัติ</button>
         </div>
     </div>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto px-4 pb-24 no-scrollbar scroll-smooth" id="mainScrollArea">
-        <div class="max-w-2xl mx-auto space-y-4" id="jobContainer"></div>
+    <main class="flex-1 overflow-y-auto px-4 pb-28 no-scrollbar scroll-smooth" id="mainScrollArea">
+        <div class="max-w-3xl mx-auto space-y-5" id="jobContainer">
+            <!-- Cards will be injected here -->
+        </div>
     </main>
 
     <!-- Finish Job Modal -->
-    <div id="finishModal" class="fixed inset-0 bg-gray-900/50 z-50 hidden flex items-end sm:items-center justify-center backdrop-blur-sm transition-all duration-300">
-        <div class="bg-white w-full sm:max-w-md p-5 rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto shadow-2xl transform transition-transform">
-            <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-5 sm:hidden"></div>
+    <div id="finishModal" class="fixed inset-0 bg-gray-900/60 z-50 hidden flex items-end sm:items-center justify-center backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white w-full sm:max-w-lg p-6 rounded-t-3xl sm:rounded-2xl max-h-[95vh] overflow-y-auto shadow-2xl transform transition-transform">
+            <div class="w-16 h-2 bg-gray-300 rounded-full mx-auto mb-6 sm:hidden"></div>
             
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600"><i class="fas fa-check text-lg"></i></div>
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-800">ปิดงานซ่อม</h3>
-                        <p class="text-xs text-gray-500" id="finishJobTitle">#ID - Asset Name</p>
-                    </div>
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600"><i class="fas fa-check text-2xl"></i></div>
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-800">ปิดงานซ่อม</h3>
+                    <p class="text-sm text-gray-500">บันทึกผลการซ่อมและหลักฐาน</p>
                 </div>
-                <button onclick="closeFinishModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
             </div>
 
             <input type="hidden" id="finishTicketId">
             
-            <div class="space-y-4">
-                <!-- 1. Description -->
+            <div class="space-y-6">
+                <!-- 1. Repair Details -->
                 <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="text-xs font-bold text-gray-700 uppercase">รายละเอียดการแก้ไข</label>
-                        <span class="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full cursor-pointer" onclick="toggleVoiceType()"><i class="fas fa-microphone"></i> พูด</span>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-base font-bold text-gray-700">รายละเอียดการซ่อม</label>
+                        <span class="text-xs text-blue-600 bg-blue-50 px-3 py-1 rounded-full cursor-pointer border border-blue-100 font-bold" onclick="toggleVoiceType()"><i class="fas fa-microphone mr-1"></i> พูดเพื่อพิมพ์</span>
                     </div>
                     <div class="relative">
-                        <textarea id="repairDetails" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm" rows="2" placeholder="ระบุสิ่งที่ทำ..."></textarea>
-                        <div id="micStatusIndicator" class="absolute right-2 bottom-2 text-gray-300 text-xs"><i class="fas fa-microphone"></i></div>
+                        <textarea id="repairDetails" class="w-full bg-gray-50 border border-gray-300 p-4 pr-14 rounded-2xl focus:ring-4 focus:ring-green-100 focus:border-green-500 outline-none text-lg leading-relaxed" rows="4" placeholder="ระบุสิ่งที่ได้ทำไป..."></textarea>
+                        <button id="btnVoice" onclick="toggleVoiceType()" class="absolute right-3 bottom-3 w-10 h-10 rounded-xl bg-white border border-gray-300 text-gray-400 hover:text-blue-500 flex items-center justify-center shadow-sm transition">
+                            <i class="fas fa-microphone text-lg"></i>
+                        </button>
                     </div>
                 </div>
 
-                <!-- 2. After Photos (New Feature) -->
+                <!-- 2. After Repair Photos -->
                 <div>
-                    <label class="text-xs font-bold text-gray-700 uppercase mb-1 block">รูปหลังซ่อม (After)</label>
-                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                        <div class="flex gap-2">
+                    <label class="block text-base font-bold text-gray-700 mb-2">รูปภาพหลังซ่อม (After)</label>
+                    <div class="bg-white border-2 border-dashed border-gray-300 rounded-2xl p-4 hover:bg-gray-50 transition text-center">
+                        <div class="flex gap-3 justify-center mb-3">
                             <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden" onchange="handleFileSelect(this)">
-                            <label for="cameraInput" class="flex-1 bg-white border border-blue-200 text-blue-600 rounded-lg py-2 flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-blue-50 active:scale-95 transition">
-                                <i class="fas fa-camera"></i> <span class="text-[10px] font-bold">ถ่ายรูป</span>
+                            <label for="cameraInput" class="flex-1 bg-blue-50 text-blue-700 px-4 py-3 rounded-xl text-sm font-bold cursor-pointer hover:bg-blue-100 transition shadow-sm border border-blue-200 flex items-center justify-center gap-2">
+                                <i class="fas fa-camera text-lg"></i> ถ่ายรูป
                             </label>
                             <input type="file" accept="image/*" id="galleryInput" class="hidden" multiple onchange="handleFileSelect(this)">
-                            <label for="galleryInput" class="flex-1 bg-white border border-gray-200 text-gray-600 rounded-lg py-2 flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-gray-100 active:scale-95 transition">
-                                <i class="fas fa-images"></i> <span class="text-[10px] font-bold">เลือกรูป</span>
+                            <label for="galleryInput" class="flex-1 bg-purple-50 text-purple-700 px-4 py-3 rounded-xl text-sm font-bold cursor-pointer hover:bg-purple-100 transition shadow-sm border border-purple-200 flex items-center justify-center gap-2">
+                                <i class="fas fa-images text-lg"></i> เลือกรูป
                             </label>
                         </div>
-                        <div id="mediaDropZone" class="media-grid"></div>
-                        <div class="text-right text-[10px] text-gray-400 mt-1" id="mediaCount">0/5</div>
+                        <div id="mediaDropZone" class="media-grid empty:hidden"></div>
+                        <div class="text-right text-xs text-gray-400 mt-2 font-bold" id="mediaCount">0/5</div>
                     </div>
                 </div>
                 
                 <!-- 3. Spare Parts -->
-                <div class="border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm">
-                    <div class="bg-gray-50 px-3 py-2 border-b border-gray-100 flex justify-between items-center">
-                        <label class="font-bold text-xs text-gray-700 flex items-center gap-1"><i class="fas fa-cubes text-gray-400"></i> อะไหล่ที่ใช้</label>
-                        <button onclick="openInventory()" class="text-[10px] font-bold text-white bg-slate-700 hover:bg-slate-800 px-3 py-1 rounded-lg transition shadow-sm">+ เพิ่ม</button>
+                <div class="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+                    <div class="bg-orange-50 px-5 py-4 border-b border-orange-100 flex justify-between items-center">
+                        <label class="font-bold text-base text-orange-900 flex items-center gap-2"><i class="fas fa-cubes text-orange-500"></i> รายการอะไหล่</label>
+                        <button onclick="openInventory()" class="text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-xl transition shadow-md active:scale-95 flex items-center gap-1">
+                            <i class="fas fa-plus"></i> เบิกอะไหล่
+                        </button>
                     </div>
-                    <div id="partsList" class="p-2 text-sm max-h-32 overflow-y-auto min-h-[50px] bg-white">
-                        <div class="text-center text-gray-400 py-3 text-xs italic">ไม่มีการใช้อะไหล่</div>
+                    <div id="partsList" class="p-0 text-base max-h-48 overflow-y-auto min-h-[80px] bg-white">
+                        <div class="text-center text-gray-400 py-6 text-sm flex flex-col items-center gap-2">
+                            <i class="fas fa-box-open text-3xl opacity-30"></i>
+                            ยังไม่ได้เบิกอะไหล่
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <div class="pt-5 mt-2">
-                <button onclick="submitFinishJob()" id="btnSubmitFinish" class="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-green-200 transition active:scale-95 flex items-center justify-center gap-2">
-                    <i class="fas fa-save"></i> ยืนยันปิดงาน
+            <div class="flex gap-3 pt-8 mt-4 border-t border-gray-100">
+                <button onclick="closeFinishModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 py-4 rounded-2xl font-bold text-lg transition">ยกเลิก</button>
+                <button onclick="submitFinishJob()" id="btnSubmitFinish" class="flex-[2] bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-green-200 transition active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fas fa-check-circle"></i> ยืนยันปิดงาน
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Inventory Picker Modal -->
-    <div id="invModal" class="fixed inset-0 bg-white z-[60] hidden flex flex-col animate-fade-in">
-        <div class="px-5 py-4 border-b flex justify-between items-center bg-white shadow-sm z-10">
-            <h3 class="font-bold text-xl text-gray-800">คลังอะไหล่</h3>
-            <button onclick="closeInventory()" class="w-9 h-9 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-gray-200 transition"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="p-3 border-b overflow-x-auto whitespace-nowrap bg-gray-50 no-scrollbar" id="catContainer"></div>
-        <div class="flex-1 overflow-y-auto p-4 bg-gray-50" id="invList"></div>
-        <div class="p-5 bg-white border-t shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-safe">
-            <div class="flex flex-col gap-3">
-                <div class="flex justify-between items-center"><div class="text-sm text-gray-500">เลือก:</div><div id="partSelectorText" class="font-bold text-gray-800 text-right truncate max-w-[200px]">-</div></div>
-                <div class="flex gap-3 h-12">
-                    <div class="flex items-center bg-gray-100 rounded-xl px-2 w-32 shrink-0">
-                        <button onclick="adjQty(-1)" class="w-8 h-full font-bold text-gray-500">-</button>
-                        <input type="number" id="partQty" class="w-full text-center font-bold text-xl bg-transparent border-0 p-0 focus:ring-0" value="1" readonly>
-                        <button onclick="adjQty(1)" class="w-8 h-full font-bold text-gray-500">+</button>
-                    </div>
-                    <button onclick="addPart()" class="flex-1 bg-gray-900 text-white rounded-xl font-bold shadow-lg active:scale-95 transition">เพิ่ม</button>
+    <div id="invModal" class="fixed inset-0 bg-gray-900/80 z-[60] hidden flex flex-col animate-fade-in sm:items-center sm:justify-center">
+        <div class="bg-white w-full h-full sm:h-[85vh] sm:w-[600px] sm:rounded-2xl flex flex-col shadow-2xl relative">
+            
+            <!-- Header -->
+            <div class="px-6 py-5 border-b flex justify-between items-center bg-white shadow-sm z-10">
+                <div>
+                    <h3 class="font-bold text-2xl text-gray-800">คลังอะไหล่</h3>
+                    <p class="text-sm text-gray-500">เลือกรายการที่ต้องการเบิก</p>
+                </div>
+                <button onclick="closeInventory()" class="w-11 h-11 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-gray-200 transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <!-- Search & Categories -->
+            <div class="bg-gray-50 p-4 space-y-4 border-b">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-4 top-3.5 text-gray-400 text-lg"></i>
+                    <input type="text" id="invSearch" onkeyup="filterInventory()" placeholder="ค้นหาชื่ออะไหล่..." class="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-gray-300 text-base focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition shadow-sm font-medium">
+                </div>
+                <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2" id="catContainer">
+                    <!-- Categories injected here -->
+                </div>
+            </div>
+
+            <!-- List Area -->
+            <div class="flex-1 overflow-y-auto p-4 bg-gray-100 space-y-3" id="invList">
+                <!-- Items injected here -->
+            </div>
+            
+            <!-- Bottom Cart Bar -->
+            <div class="p-5 bg-white border-t shadow-[0_-4px_30px_rgba(0,0,0,0.1)] pb-safe z-20">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-base font-bold text-gray-700">รายการที่เลือก: <span id="cartCount" class="text-blue-600 text-xl">0</span></span>
+                    <button onclick="clearCart()" class="text-sm text-red-500 font-bold hover:bg-red-50 px-3 py-1 rounded-lg transition">ล้างทั้งหมด</button>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeInventory()" class="flex-1 py-4 rounded-2xl bg-gray-100 text-gray-700 font-bold text-lg hover:bg-gray-200">กลับ</button>
+                    <button onclick="confirmSelectParts()" class="flex-[2] py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold text-lg shadow-xl shadow-blue-200 active:scale-95 transition">
+                        ยืนยันการเบิก
+                    </button>
                 </div>
             </div>
         </div>
@@ -165,14 +202,8 @@
     
     <!-- Image Viewer -->
     <div id="imageViewerModal" class="image-preview-modal fixed inset-0 z-[70] bg-black/95 hidden flex items-center justify-center touch-none" onclick="closeImageViewer()">
-        <button class="absolute top-4 right-4 text-white/80 hover:text-white text-3xl p-2 z-10"><i class="fas fa-times"></i></button>
+        <button class="absolute top-6 right-6 text-white/80 hover:text-white text-4xl p-4 z-10"><i class="fas fa-times"></i></button>
         <img id="fullImage" class="max-w-full max-h-full object-contain p-2 transition-transform duration-200" src="" alt="Full size">
-    </div>
-
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-white/80 z-[80] hidden flex flex-col items-center justify-center backdrop-blur-sm">
-        <div class="animate-spin rounded-full h-10 w-10 border-4 border-orange-500 border-t-transparent"></div>
-        <p class="mt-3 text-sm font-bold text-gray-600 animate-pulse">กำลังบันทึก...</p>
     </div>
 
     <script>
@@ -200,14 +231,15 @@
         let currentUser = null;
         let currentTab = 'OPEN';
         let tickets = [];
-        let partsList = [];
-        let mediaList = []; // New: For storing After photos
+        let partsList = []; // Final parts for job
+        let cart = {}; // Temporary cart inside modal {id: qty}
         let inventory = [];
         let assetsMap = {};
-        let selectedPart = null;
+        let mediaList = []; // For storing After photos
         let recognition = null;
         let isListening = false;
         let lastTicketCount = 0;
+        let currentCategory = 'ALL';
 
         document.addEventListener('DOMContentLoaded', async () => { 
             currentUser = Auth.requireRole(['technician', 'admin', 'manager']);
@@ -216,7 +248,7 @@
             try { const { data } = await supabaseClient.from('assets').select('id, name'); if(data) data.forEach(a => assetsMap[a.id] = a.name); } catch(e) {}
             await fetchInventory(); 
             fetchJobs(); 
-            setInterval(fetchJobs, 10000);
+            setInterval(fetchJobs, 15000);
             initVoiceRecognition();
         });
         
@@ -233,40 +265,66 @@
                     area.value = area.value ? area.value + ' ' + text : text;
                 };
                 recognition.onend = () => { isListening = false; updateMicUI(); };
-            }
+            } else { document.getElementById('btnVoice').style.display = 'none'; }
         }
         function toggleVoiceType() {
-            if (!recognition) return alert('ไม่รองรับเสียง');
+            if (!recognition) return alert('ไม่รองรับ');
             if (isListening) { recognition.stop(); isListening = false; } else { recognition.start(); isListening = true; }
             updateMicUI();
         }
         function updateMicUI() {
-            const ind = document.getElementById('micStatusIndicator');
-            if (isListening) { ind.classList.add('text-red-500', 'animate-pulse'); ind.classList.remove('text-gray-300'); } 
-            else { ind.classList.remove('text-red-500', 'animate-pulse'); ind.classList.add('text-gray-300'); }
+            const btn = document.getElementById('btnVoice');
+            if (isListening) { btn.classList.add('mic-listening'); btn.innerHTML = '<i class="fas fa-stop text-red-500"></i>'; } 
+            else { btn.classList.remove('mic-listening'); btn.innerHTML = '<i class="fas fa-microphone text-xl"></i>'; }
         }
 
         // --- DATA ---
         async function fetchJobs() {
-            const { data, error } = await supabaseClient.from('tickets').select('*').order('incident_time', {ascending: false});
-            if (!error) { 
-                const openJobs = data.filter(t => t.status === 'OPEN').length;
-                if (openJobs > lastTicketCount && lastTicketCount !== 0) triggerNewJobAlert();
-                lastTicketCount = openJobs;
-                tickets = data || []; renderJobs(); updateBadges(openJobs);
-            }
+            try {
+                const { data: ticketData, error: ticketError } = await supabaseClient.from('tickets').select('*').order('incident_time', {ascending: false});
+                if (ticketError) throw ticketError;
+                
+                if(ticketData && ticketData.length > 0) {
+                    const ticketIds = ticketData.map(t => t.id);
+                    const { data: mediaData } = await supabaseClient.from('media').select('ticket_id, url').in('ticket_id', ticketIds);
+                    
+                    const mediaMap = {};
+                    if(mediaData) {
+                        mediaData.forEach(m => {
+                            if(!mediaMap[m.ticket_id]) mediaMap[m.ticket_id] = [];
+                            mediaMap[m.ticket_id].push(m.url);
+                        });
+                    }
+
+                    tickets = ticketData.map(t => {
+                        let imgs = mediaMap[t.id] || [];
+                        if(t.photo_url && !imgs.includes(t.photo_url)) imgs.unshift(t.photo_url); 
+                        return { ...t, all_images: imgs };
+                    });
+
+                    const openJobs = tickets.filter(t => t.status === 'OPEN').length;
+                    if (openJobs > lastTicketCount && lastTicketCount !== 0) triggerNewJobAlert();
+                    lastTicketCount = openJobs;
+                    
+                    renderJobs(); 
+                    updateBadges(openJobs);
+                } else {
+                    tickets = [];
+                    renderJobs();
+                }
+            } catch (e) { console.error("Fetch Error:", e); }
         }
         
         function triggerNewJobAlert() { document.getElementById('tab-open').classList.add('wiggle-alert'); setTimeout(() => { document.getElementById('tab-open').classList.remove('wiggle-alert'); }, 3000); }
-        function updateBadges(count) { const badge = document.getElementById('badge-open'); if (count > 0) badge.classList.add('show'); else badge.classList.remove('show'); }
+        function updateBadges(count) { const badge = document.getElementById('badge-open'); if (count > 0) badge.classList.remove('hidden'); else badge.classList.add('hidden'); }
         async function fetchInventory() { const { data } = await supabaseClient.from('spare_parts').select('*').order('name'); inventory = data || []; }
 
         // --- UI ---
         function switchTab(t) { 
             currentTab = t; 
             const btns = { 'OPEN': 'tab-open', 'MY_JOBS': 'tab-my', 'HISTORY': 'tab-history' };
-            Object.values(btns).forEach(id => { document.getElementById(id).className = "flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 transition-all border border-transparent relative"; });
-            document.getElementById(btns[t]).className = "flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-slate-800 shadow-md transform scale-105 transition-all border border-slate-800 relative";
+            Object.values(btns).forEach(id => { document.getElementById(id).className = "flex-1 py-3 rounded-xl text-base font-bold text-gray-500 hover:bg-gray-100 transition-all border border-transparent relative"; });
+            document.getElementById(btns[t]).className = "flex-1 py-3 rounded-xl text-base font-bold text-white bg-slate-800 shadow-md transform scale-105 transition-all border border-slate-800 relative";
             renderJobs(); 
         }
         
@@ -279,7 +337,7 @@
                 return ['CLOSED', 'PENDING_INSPECTION'].includes(t.status) && t.technician_id === currentUser.id;
             });
 
-            if (filtered.length === 0) { container.innerHTML = `<div class="flex flex-col items-center justify-center h-80 text-gray-400 opacity-60"><i class="fas fa-clipboard-check text-5xl mb-4 text-gray-300"></i><p class="text-base font-medium">ไม่มีงาน</p></div>`; return; }
+            if (filtered.length === 0) { container.innerHTML = `<div class="flex flex-col items-center justify-center h-80 text-gray-400 opacity-60"><i class="fas fa-clipboard-check text-6xl mb-4 text-gray-300"></i><p class="text-lg font-medium">ไม่มีรายการในหน้านี้</p></div>`; return; }
 
             filtered.forEach(t => {
                 let statusBadge = '', borderColor = 'border-gray-200', actionBtn = '';
@@ -287,31 +345,36 @@
                 const assetName = assetsMap[t.asset_id] || 'ไม่ระบุ';
 
                 if (t.status === 'OPEN') { 
-                    statusBadge = '<span class="bg-red-50 text-red-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase border border-red-100">🔥 รอรับ</span>'; borderColor = 'border-red-500';
-                    actionBtn = `<button onclick="acceptJob('${t.id}')" class="w-full mt-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-2"><i class="fas fa-hand-paper"></i> รับงาน</button>`;
+                    statusBadge = '<span class="bg-red-50 text-red-600 px-3 py-1 rounded-lg text-xs font-bold uppercase border border-red-100">🔥 รอรับ</span>'; borderColor = 'border-red-500';
+                    actionBtn = `<button onclick="acceptJob('${t.id}')" class="w-full mt-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-base font-bold rounded-xl shadow-md active:scale-95 flex items-center justify-center gap-2 transition"><i class="fas fa-hand-paper"></i> กดรับงานซ่อม</button>`;
                 } else if (t.status === 'IN_PROGRESS') { 
-                    statusBadge = '<span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase border border-blue-100">🛠️ กำลังทำ</span>'; borderColor = 'border-blue-500';
-                    actionBtn = `<button onclick="openFinish('${t.id}')" class="w-full mt-3 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-lg shadow-sm active:scale-95 flex items-center justify-center gap-2"><i class="fas fa-check-circle"></i> ปิดงาน</button>`;
-                } else if (t.status === 'PENDING_INSPECTION') { statusBadge = '<span class="bg-purple-50 text-purple-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase border border-purple-100">🔍 รอตรวจ</span>'; } 
-                else if (t.status === 'CLOSED') { statusBadge = '<span class="bg-green-50 text-green-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase border border-green-100">✅ เสร็จ</span>'; }
+                    statusBadge = '<span class="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-xs font-bold uppercase border border-blue-100">🛠️ กำลังทำ</span>'; borderColor = 'border-blue-500';
+                    actionBtn = `<button onclick="openFinish('${t.id}')" class="w-full mt-4 py-3 bg-green-600 hover:bg-green-700 text-white text-base font-bold rounded-xl shadow-md active:scale-95 flex items-center justify-center gap-2 transition"><i class="fas fa-check-circle"></i> แจ้งปิดงาน</button>`;
+                } else if (t.status === 'PENDING_INSPECTION') { statusBadge = '<span class="bg-purple-50 text-purple-600 px-3 py-1 rounded-lg text-xs font-bold uppercase border border-purple-100">🔍 รอตรวจ</span>'; } 
+                else if (t.status === 'CLOSED') { statusBadge = '<span class="bg-green-50 text-green-600 px-3 py-1 rounded-lg text-xs font-bold uppercase border border-green-100">✅ เสร็จ</span>'; }
 
-                let imgHtml = t.photo_url ? `<div class="w-20 h-20 rounded-lg bg-gray-100 border border-gray-100 overflow-hidden shrink-0 cursor-pointer shadow-sm ml-3 relative group" onclick="viewImage('${t.photo_url}')"><img src="${t.photo_url}" class="w-full h-full object-cover"></div>` : '';
+                let imgHtml = '';
+                if (t.all_images && t.all_images.length > 0) {
+                    imgHtml = `<div class="flex gap-2 overflow-x-auto pb-2 mt-4 no-scrollbar snap-x">`;
+                    t.all_images.forEach(url => {
+                         imgHtml += `<div class="flex-shrink-0 w-32 h-32 rounded-xl bg-gray-100 border border-gray-200 overflow-hidden cursor-pointer snap-start relative group" onclick="viewImage('${url}')"><img src="${url}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500"></div>`;
+                    });
+                    imgHtml += `</div>`;
+                }
 
                 container.innerHTML += `
-                    <div class="job-card bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden">
-                        <div class="absolute top-0 left-0 bottom-0 w-1 ${borderColor.replace('border', 'bg')}"></div>
-                        <div class="flex justify-between items-center mb-2 pl-2">
-                            <div class="flex items-center gap-2"><span class="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">#${t.id.substring(0,4)}</span><span class="text-[10px] text-gray-400">${dateStr}</span></div>${statusBadge}
+                    <div class="job-card bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden mb-4">
+                        <div class="absolute top-0 left-0 bottom-0 w-1.5 ${borderColor.replace('border', 'bg')}"></div>
+                        <div class="flex justify-between items-center mb-3 pl-3">
+                            <div class="flex items-center gap-2"><span class="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">#${t.id.substring(0,4)}</span><span class="text-xs text-gray-500 font-medium">${dateStr}</span></div>${statusBadge}
                         </div>
-                        <div class="flex pl-2">
-                            <div class="flex-1 min-w-0">
-                                <h3 class="text-base font-bold text-gray-800 leading-tight mb-1 truncate">${t.issue_text}</h3>
-                                <div class="flex items-center gap-1 text-xs font-bold text-blue-600 mb-2"><i class="fas fa-industry text-[10px]"></i> <span class="truncate">${assetName}</span></div>
-                                ${t.description ? `<div class="text-xs text-gray-600 bg-gray-50 p-2 rounded-lg border border-gray-100 leading-relaxed line-clamp-2">${t.description}</div>` : ''}
-                            </div>
+                        <div class="pl-3">
+                            <h3 class="text-xl font-bold text-gray-800 leading-tight mb-2 truncate">${t.issue_text}</h3>
+                            <div class="flex items-center gap-2 text-sm font-bold text-blue-600 mb-3"><i class="fas fa-industry"></i> <span class="truncate">${assetName}</span></div>
+                            ${t.description ? `<div class="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100 leading-relaxed line-clamp-3">${t.description}</div>` : ''}
                             ${imgHtml}
                         </div>
-                        <div class="pl-2">${actionBtn}</div>
+                        <div class="pl-3">${actionBtn}</div>
                     </div>`;
             });
         }
@@ -320,90 +383,200 @@
         function closeImageViewer() { document.getElementById('imageViewerModal').classList.add('hidden'); }
 
         async function acceptJob(id) { 
-            if(!confirm('ยืนยันรับงาน?')) return;
+            if(!confirm('ยืนยันรับงานซ่อมนี้?')) return;
             const { error } = await supabaseClient.from('tickets').update({ status: 'IN_PROGRESS', technician_id: currentUser.id }).eq('id', id);
             if(error) alert('Error: ' + error.message); else fetchJobs(); 
         }
 
-        // --- FINISH JOB & MEDIA LOGIC ---
+        // --- FINISH JOB & MEDIA ---
         function openFinish(id) { 
             const ticket = tickets.find(t => t.id === id);
             const assetName = assetsMap[ticket.asset_id] || 'Unknown';
             document.getElementById('finishTicketId').value = id; 
-            document.getElementById('finishJobTitle').innerText = `#${id.substring(0,4)} - ${assetName} (${ticket.issue_text})`;
             document.getElementById('finishModal').classList.remove('hidden'); 
             document.getElementById('repairDetails').value = ''; 
             partsList = []; 
             mediaList = []; // Reset photos
+            cart = {}; // Reset cart
             renderParts(); 
             renderMedia();
         }
-        
         function closeFinishModal() { document.getElementById('finishModal').classList.add('hidden'); if(isListening && recognition) { recognition.stop(); isListening=false; updateMicUI(); } }
 
-        // Media Handlers
+        // Camera Logic
         async function handleFileSelect(input) {
             if (mediaList.length + input.files.length > 5) return alert("สูงสุด 5 รูป");
-            const loader = document.getElementById('loadingOverlay');
-            loader.classList.remove('hidden');
+            
+            // Show loader in button
+            const lbl = input.nextElementSibling;
+            const originalText = lbl.innerHTML;
+            lbl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
             
             for (const f of input.files) {
                 try {
-                    const compressed = await compressImage(f);
-                    mediaList.push({ type: 'IMAGE', data: compressed });
+                    const url = await uploadFileToSupabase(f); 
+                    mediaList.push({ type: 'IMAGE', url: url });
                 } catch(e) { console.error(e); }
             }
             renderMedia();
-            loader.classList.add('hidden');
-            input.value = ''; // Reset input
+            lbl.innerHTML = originalText;
+            input.value = '';
+        }
+
+        async function uploadFileToSupabase(file) {
+            const fileName = `after_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+            const { data, error } = await supabaseClient.storage.from('repair-files').upload(fileName, file, { cacheControl: '3600', upsert: false });
+            if (error) throw error;
+            const { data: publicData } = supabaseClient.storage.from('repair-files').getPublicUrl(fileName);
+            return publicData.publicUrl;
         }
 
         function renderMedia() {
-            const z = document.getElementById('mediaDropZone');
-            z.innerHTML = '';
+            const z = document.getElementById('mediaDropZone'); z.innerHTML = '';
             mediaList.forEach((m, i) => {
                 const d = document.createElement('div');
                 d.className = 'media-item';
-                d.innerHTML = `<img src="${m.data}"><div class="delete-btn" onclick="removeMedia(${i})">&times;</div>`;
+                d.innerHTML = `<img src="${m.url}"><div class="delete-btn" onclick="removeMedia(${i})">&times;</div>`;
                 z.appendChild(d);
             });
             document.getElementById('mediaCount').innerText = `${mediaList.length}/5`;
         }
 
         function removeMedia(i) { mediaList.splice(i, 1); renderMedia(); }
-
-        function compressImage(f) {
-            return new Promise(resolve => {
-                const reader = new FileReader();
-                reader.readAsDataURL(f);
-                reader.onload = e => {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const maxDim = 800;
-                        let w = img.width, h = img.height;
-                        if(w > h && w > maxDim) { h *= maxDim/w; w = maxDim; }
-                        else if(h > maxDim) { w *= maxDim/h; h = maxDim; }
-                        canvas.width = w; canvas.height = h;
-                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
-                    }
-                }
-            });
+        
+        // --- INVENTORY NEW UI ---
+        function openInventory() { 
+            document.getElementById('invModal').classList.remove('hidden'); 
+            cart = {};
+            partsList.forEach(p => cart[p.id] = p.qty); 
+            renderInventory(); 
         }
         
-        // Inventory Handlers
-        function openInventory() { document.getElementById('invModal').classList.remove('hidden'); const cats = ['ALL', ...new Set(inventory.map(i => i.category || 'ทั่วไป'))]; document.getElementById('catContainer').innerHTML = cats.map(c => `<button class="px-3 py-1.5 rounded-full text-xs font-bold mr-2 border transition ${c==='ALL'?'bg-slate-700 text-white border-slate-700':'bg-white text-gray-600 border-gray-200'}" onclick="renderInv('${c}')">${c === 'ALL' ? 'ทั้งหมด' : c}</button>`).join(''); renderInv('ALL'); resetPartSelection(); }
         function closeInventory() { document.getElementById('invModal').classList.add('hidden'); }
-        function renderInv(cat) { const c = document.getElementById('invList'); c.innerHTML = ''; let f = inventory; if (cat && cat !== 'ALL') f = f.filter(i => (i.category || 'ทั่วไป') === cat); f.forEach(i => { const isLow = i.stock <= (i.min_stock || 0); c.innerHTML += `<div class="p-3 border border-gray-100 bg-white flex justify-between items-center active:bg-blue-50 rounded-lg mb-2 shadow-sm" onclick="selectPart('${i.id}','${i.name}',${i.stock})"><div><div class="font-bold text-gray-800 text-sm mb-0.5">${i.name}</div><div class="text-[10px] text-gray-400 font-mono">ID: ${i.part_no || '-'}</div></div><div class="text-right"><span class="text-sm font-bold ${i.stock>0 ? 'text-green-600' : 'text-red-500'} block">${i.stock}</span>${isLow ? '<span class="text-[10px] text-red-400"><i class="fas fa-exclamation-triangle"></i> หมด</span>' : ''}</div></div>`; }); }
-        function selectPart(id, name, stock) { selectedPart = { id, name, stock }; document.getElementById('partSelectorText').innerText = name; document.getElementById('partQty').value = 1; }
-        function adjQty(delta) { let v = parseInt(document.getElementById('partQty').value) + delta; if(v < 1) v = 1; document.getElementById('partQty').value = v; }
-        function resetPartSelection() { selectedPart = null; document.getElementById('partSelectorText').innerText = '-'; document.getElementById('partQty').value = 1; }
-        function addPart() { if (!selectedPart) return alert('เลือกอะไหล่ก่อน'); const qty = parseInt(document.getElementById('partQty').value); if (qty > selectedPart.stock) return alert('สต็อกไม่พอ'); const exist = partsList.find(p => p.id === selectedPart.id); if (exist) { if (exist.qty + qty > selectedPart.stock) return alert('เกินสต็อก'); exist.qty += qty; } else { partsList.push({ ...selectedPart, qty }); } closeInventory(); renderParts(); }
-        function renderParts() { document.getElementById('partsList').innerHTML = partsList.map((p, index) => `<div class="flex justify-between items-center border-b border-gray-100 p-2 last:border-0"><span class="text-gray-700 text-xs font-medium flex items-center gap-1"><i class="fas fa-check-circle text-green-500 text-[10px]"></i> ${p.name} <span class="bg-gray-100 text-gray-600 px-1.5 rounded font-bold">x${p.qty}</span></span><button onclick="partsList.splice(${index}, 1); renderParts();" class="text-red-400 w-6 h-6 flex items-center justify-center"><i class="fas fa-trash-alt text-xs"></i></button></div>`).join('') || '<div class="text-center text-gray-400 py-3 text-xs italic">ไม่มีการใช้อะไหล่</div>'; }
+        
+        function renderInventory() {
+            const categories = ['ALL', ...new Set(inventory.map(i => i.category || 'ทั่วไป'))];
+            const catContainer = document.getElementById('catContainer');
+            
+            catContainer.innerHTML = categories.map(c => 
+                `<button class="cat-chip px-5 py-2.5 rounded-full text-sm font-bold border transition ${c === currentCategory ? 'active' : 'bg-white text-gray-600 border-gray-200'}" onclick="setCategory('${c}')">${c === 'ALL' ? 'ทั้งหมด' : c}</button>`
+            ).join('');
 
-        // --- SUBMIT ---
+            filterInventory();
+        }
+        
+        function setCategory(cat) {
+            currentCategory = cat;
+            renderInventory();
+        }
+
+        function filterInventory() {
+            const term = document.getElementById('invSearch').value.toLowerCase();
+            const list = document.getElementById('invList');
+            list.innerHTML = '';
+            
+            let filtered = inventory.filter(p => 
+                (currentCategory === 'ALL' || (p.category || 'ทั่วไป') === currentCategory) &&
+                (p.name.toLowerCase().includes(term) || (p.part_no && p.part_no.toLowerCase().includes(term)))
+            );
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="text-center py-12 text-gray-400 text-lg">ไม่พบข้อมูล</div>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                const inCart = cart[p.id] || 0;
+                const isOutOfStock = p.stock <= 0;
+                const cardClass = inCart > 0 ? 'part-card selected shadow-md' : 'part-card bg-white shadow-sm hover:shadow-md';
+                
+                list.innerHTML += `
+                <div class="relative rounded-2xl p-4 mb-3 flex justify-between items-center ${cardClass} ${isOutOfStock ? 'opacity-60 grayscale' : ''}">
+                    <div class="flex items-center gap-4 flex-1 min-w-0">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-gray-100 text-gray-500 font-bold text-xl">
+                           ${getIcon(p.category)}
+                        </div>
+                        <div class="truncate">
+                            <div class="font-bold text-base text-gray-800 truncate">${p.name}</div>
+                            <div class="text-xs text-gray-500 font-mono mt-0.5">Stock: <span class="${isOutOfStock?'text-red-500':'text-green-600'} font-bold">${p.stock}</span> ${p.unit||'ชิ้น'}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        ${inCart > 0 ? `
+                        <button onclick="updateCart('${p.id}', -1)" class="qty-btn bg-red-100 text-red-600 hover:bg-red-200"><i class="fas fa-minus text-xs"></i></button>
+                        <span class="text-lg font-bold w-6 text-center">${inCart}</span>
+                        ` : ''}
+                        <button onclick="updateCart('${p.id}', 1)" class="qty-btn bg-blue-100 text-blue-600 hover:bg-blue-200" ${isOutOfStock ? 'disabled' : ''}>
+                            <i class="fas fa-plus text-xs"></i>
+                        </button>
+                    </div>
+                </div>`;
+            });
+            updateCartUI();
+        }
+        
+        function getIcon(cat) {
+            if(!cat) return '<i class="fas fa-box"></i>';
+            if(cat.includes('ไฟ')) return '<i class="fas fa-bolt text-yellow-500"></i>';
+            if(cat.includes('เครื่องมือ')) return '<i class="fas fa-wrench text-gray-500"></i>';
+            if(cat.includes('ประปา')) return '<i class="fas fa-tint text-blue-500"></i>';
+            return '<i class="fas fa-box text-orange-500"></i>';
+        }
+
+        function updateCart(id, delta) {
+            const part = inventory.find(p => p.id === id);
+            if (!part) return;
+            
+            let currentQty = cart[id] || 0;
+            let newQty = currentQty + delta;
+            
+            if (newQty > part.stock) return alert('เกินจำนวนสต็อกที่มี');
+            if (newQty <= 0) delete cart[id];
+            else cart[id] = newQty;
+            
+            filterInventory(); 
+        }
+
+        function updateCartUI() {
+            const totalItems = Object.keys(cart).length;
+            document.getElementById('cartCount').innerText = totalItems + ' รายการ';
+        }
+        
+        function clearCart() {
+            if(confirm('ล้างรายการที่เลือกทั้งหมด?')) {
+                cart = {};
+                filterInventory();
+            }
+        }
+        
+        function confirmSelectParts() {
+            partsList = Object.keys(cart).map(id => {
+                const p = inventory.find(x => x.id === id);
+                return { ...p, qty: cart[id] };
+            });
+            renderParts();
+            closeInventory();
+        }
+
+        function renderParts() { 
+            const html = partsList.map((p, index) => `
+                <div class="flex justify-between items-center border-b border-gray-100 p-3 last:border-0 bg-white hover:bg-gray-50 transition">
+                    <span class="text-gray-700 text-base font-medium flex items-center gap-2">
+                        <i class="fas fa-check-circle text-green-500 text-sm"></i> 
+                        ${p.name} <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full font-bold">x${p.qty}</span>
+                    </span>
+                    <button onclick="removePartItem(${index})" class="text-red-400 w-8 h-8 flex items-center justify-center hover:bg-red-50 rounded-full transition"><i class="fas fa-times"></i></button>
+                </div>`).join(''); 
+            
+            document.getElementById('partsList').innerHTML = html || '<div class="text-center text-gray-400 py-6 text-sm italic">ยังไม่มีการเลือกอะไหล่</div>'; 
+        }
+        
+        function removePartItem(index) {
+            partsList.splice(index, 1);
+            renderParts();
+        }
+
         async function submitFinishJob() {
             const id = document.getElementById('finishTicketId').value;
             const det = document.getElementById('repairDetails').value;
@@ -411,7 +584,9 @@
             if (!det) return alert('กรุณาระบุรายละเอียดการซ่อม');
             if (!confirm('ยืนยันการปิดงาน?')) return;
             
-            document.getElementById('loadingOverlay').classList.remove('hidden');
+            const btn = document.getElementById('btnSubmitFinish');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...';
 
             try {
                 // 1. Update Ticket
@@ -425,11 +600,10 @@
                     if (currentP) await supabaseClient.from('spare_parts').update({ stock: currentP.stock - p.qty }).eq('id', p.id);
                 }
 
-                // 3. Insert Photos (After Repair)
+                // 3. Insert Photos
                 if (mediaList.length > 0) {
-                    const rows = mediaList.map(m => ({ ticket_id: id, type: 'AFTER_IMAGE', url: m.data }));
-                    const { error: mError } = await supabaseClient.from('media').insert(rows);
-                    if (mError) console.error("Media Upload Error", mError);
+                    const rows = mediaList.map(m => ({ ticket_id: id, type: 'AFTER_IMAGE', url: m.url }));
+                    await supabaseClient.from('media').insert(rows);
                 }
                 
                 closeFinishModal();
@@ -442,7 +616,10 @@
                 setTimeout(() => { alert('🎉 เยี่ยมมาก! ปิดงานสำเร็จแล้ว'); fetchJobs(); fetchInventory(); }, 500);
 
             } catch (e) { alert('Error: ' + e.message); }
-            finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
+            finally { 
+                btn.disabled = false;
+                btn.innerHTML = 'ยืนยันปิดงาน';
+            }
         }
     </script>
 </body>
