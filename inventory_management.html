@@ -17,7 +17,7 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Sidebar Transition Logic (Fixed) */
+        /* Sidebar Transition Logic */
         #mobileSidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         
         @media (max-width: 768px) {
@@ -37,7 +37,7 @@
         .menu-btn.active i { color: white !important; }
 
         /* Content Gradients */
-        .hero-gradient { background: linear-gradient(135deg, #f97316 0%, #db2777 100%); } /* Orange to Pink */
+        .hero-gradient { background: linear-gradient(135deg, #f97316 0%, #db2777 100%); } 
         
         .card-stock-ok { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
         .card-stock-low { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
@@ -173,7 +173,6 @@
                 
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 max-w-7xl mx-auto">
-                    <!-- Value -->
                     <div class="card-value rounded-2xl p-5 text-white shadow-xl hover-lift relative overflow-hidden group">
                         <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:scale-110 transition"><i class="fas fa-coins text-7xl"></i></div>
                         <div class="relative z-10">
@@ -182,7 +181,6 @@
                             <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded backdrop-blur-sm mt-2 inline-block">บาท (THB)</span>
                         </div>
                     </div>
-                    <!-- Items -->
                     <div class="card-stock-ok rounded-2xl p-5 text-white shadow-xl hover-lift relative overflow-hidden group">
                         <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:scale-110 transition"><i class="fas fa-box-open text-7xl"></i></div>
                         <div class="relative z-10">
@@ -191,7 +189,6 @@
                             <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded backdrop-blur-sm mt-2 inline-block">Items</span>
                         </div>
                     </div>
-                    <!-- Low Stock -->
                     <div class="card-stock-low rounded-2xl p-5 text-white shadow-xl hover-lift relative overflow-hidden group">
                         <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:scale-110 transition"><i class="fas fa-exclamation-triangle text-7xl"></i></div>
                         <div class="absolute top-4 right-4 w-3 h-3 bg-white rounded-full animate-ping opacity-75"></div>
@@ -218,6 +215,7 @@
                                     <th class="px-6 py-5 pl-8">Item Info</th>
                                     <th class="px-6 py-5">หมวดหมู่</th>
                                     <th class="px-6 py-5 text-center">คงเหลือ</th>
+                                    <th class="px-6 py-5 text-center">Min / Max</th>
                                     <th class="px-6 py-5 text-right">ราคา/หน่วย</th>
                                     <th class="px-6 py-5 text-center">สถานะ</th>
                                     <th class="px-6 py-5 text-right pr-8">จัดการ</th>
@@ -266,6 +264,8 @@
                         <option value="ความปลอดภัย">🦺 ความปลอดภัย</option>
                     </select>
                 </div>
+                
+                <!-- Stock & Unit -->
                 <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">คงเหลือ</label>
@@ -276,16 +276,23 @@
                         <input type="text" id="partUnit" class="w-full border-gray-200 rounded-lg text-center text-sm outline-none" placeholder="ชิ้น">
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+
+                <!-- Min / Max / Price -->
+                <div class="grid grid-cols-3 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-red-500 uppercase mb-1">Min Alert</label>
-                        <input type="number" id="partMin" class="w-full border-red-100 bg-red-50 rounded-lg text-center text-sm font-bold text-red-600 outline-none" value="0">
+                        <label class="block text-xs font-bold text-red-500 uppercase mb-1">Min (ต่ำสุด)</label>
+                        <input type="number" id="partMin" class="w-full border-red-100 bg-red-50 rounded-lg text-center text-sm font-bold text-red-600 outline-none p-2" value="0">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-green-600 uppercase mb-1">Max (สูงสุด)</label>
+                        <input type="number" id="partMax" class="w-full border-green-100 bg-green-50 rounded-lg text-center text-sm font-bold text-green-600 outline-none p-2" value="0">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">ราคา/หน่วย</label>
-                        <input type="number" id="partPrice" class="w-full border-gray-200 bg-gray-50 rounded-lg text-right text-sm outline-none" placeholder="0.00">
+                        <input type="number" id="partPrice" class="w-full border-gray-200 bg-white rounded-lg text-right text-sm outline-none p-2" placeholder="0.00">
                     </div>
                 </div>
+
                 <button onclick="savePart()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl font-bold shadow-lg transition transform active:scale-95 mt-2 flex items-center justify-center gap-2">
                     <i class="fas fa-save"></i> บันทึกข้อมูล
                 </button>
@@ -433,6 +440,7 @@
                         </td>
                         <td class="px-6 py-4"><span class="bg-gray-50 text-gray-500 px-2 py-1 rounded text-xs border border-gray-100 font-medium">${p.category}</span></td>
                         <td class="px-6 py-4 text-center"><span class="${stockColor} px-3 py-1 rounded-full text-xs font-bold shadow-sm">${p.stock}</span></td>
+                        <td class="px-6 py-4 text-center text-xs text-gray-500">${p.min_stock || 0} / ${p.max_stock || 0}</td>
                         <td class="px-6 py-4 text-right font-mono text-gray-600">${(p.price||0).toLocaleString()}</td>
                         <td class="px-6 py-4 text-center">${isLow ? '<span class="text-xs text-red-500 font-bold flex items-center justify-center gap-1 animate-pulse"><i class="fas fa-bell"></i> เติมของ</span>' : '<span class="text-xs text-green-500 font-medium"><i class="fas fa-check"></i> ปกติ</span>'}</td>
                         <td class="px-6 py-4 text-right pr-8">
@@ -492,6 +500,7 @@
                 document.getElementById('partUnit').value = p.unit;
                 document.getElementById('partPrice').value = p.price;
                 document.getElementById('partMin').value = p.min_stock || 0;
+                document.getElementById('partMax').value = p.max_stock || 0;
             } else {
                 document.getElementById('modalTitle').innerText = "เพิ่มอะไหล่ใหม่";
                 document.getElementById('partId').value = '';
@@ -502,6 +511,7 @@
                 document.getElementById('partUnit').value = '';
                 document.getElementById('partPrice').value = '';
                 document.getElementById('partMin').value = '0';
+                document.getElementById('partMax').value = '0';
             }
         }
 
@@ -515,6 +525,7 @@
                 unit: document.getElementById('partUnit').value,
                 price: parseFloat(document.getElementById('partPrice').value)||0,
                 min_stock: parseInt(document.getElementById('partMin').value)||0,
+                max_stock: parseInt(document.getElementById('partMax').value)||0,
             };
             if(!data.name) return alert('กรุณาระบุชื่ออะไหล่');
             try {

@@ -20,19 +20,15 @@
     </script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap');
-        body { font-family: 'Sarabun', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #f3f4f6; } /* Cool Gray BG */
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #f3f4f6; }
         
-        /* --- TEEN POP THEME (Vibrant & Modern) --- */
-        .header-gradient { background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); } /* Violet to Pink */
-        .btn-gradient-scan { background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%); } /* Blue to Cyan */
-        .btn-gradient-submit { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); } /* Emerald to Teal */
+        /* --- TEEN POP THEME --- */
+        .header-gradient { background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); }
+        .btn-gradient-scan { background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%); }
+        .btn-gradient-submit { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
         
-        /* Accents */
-        .text-theme-primary { color: #8b5cf6; } /* Violet Text */
-        .text-theme-secondary { color: #ec4899; } /* Pink Text */
-        .border-theme-focus { border-color: #8b5cf6; }
-        .ring-theme-focus { --tw-ring-color: #c4b5fd; }
+        .text-theme-primary { color: #8b5cf6; }
         
         .touch-card { transition: transform 0.1s; cursor: pointer; }
         .touch-card:active { transform: scale(0.96); }
@@ -44,27 +40,34 @@
         .media-item img { width: 100%; height: 100%; object-fit: cover; }
         .delete-btn { position: absolute; top: 4px; right: 4px; background: rgba(236, 72, 153, 0.9); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         
-        /* Floating History Button */
-        .fab-history { position: fixed; bottom: 24px; right: 24px; background: #8b5cf6; color: white; padding: 14px 24px; border-radius: 50px; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5); font-weight: bold; display: flex; align-items: center; gap: 10px; z-index: 40; transition: all 0.2s; border: 3px solid rgba(255,255,255,0.4); backdrop-filter: blur(5px); }
+        /* Floating History Button (Enhanced) */
+        .fab-history { position: fixed; bottom: 24px; right: 24px; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; padding: 14px 24px; border-radius: 50px; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5); font-weight: bold; display: flex; align-items: center; gap: 10px; z-index: 40; transition: all 0.2s; border: 3px solid rgba(255,255,255,0.4); backdrop-filter: blur(5px); }
         .fab-history:active { transform: scale(0.95); }
-        
-        /* Step Indicators */
-        .step-badge { width: 32px; height: 32px; background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3); border: 2px solid white; }
         
         /* Cards */
         .modern-card { background: white; border-radius: 24px; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.8); }
+        .step-badge { width: 32px; height: 32px; background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3); border: 2px solid white; }
         
+        /* Issue Card */
         .issue-card { border: 2px solid #f3f4f6; border-radius: 20px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100px; transition: all 0.2s; background: #fff; position: relative; }
         .issue-card:active { transform: scale(0.95); }
         .issue-card.selected { border-color: #8b5cf6; background-color: #f5f3ff; color: #7c3aed; box-shadow: 0 8px 20px -5px rgba(139, 92, 246, 0.3); transform: translateY(-2px); }
         .issue-card i { transition: color 0.2s; }
         .issue-card.selected i { color: #8b5cf6 !important; }
         
-        /* Priority Styles (Pop Colors) */
+        /* Tracking Button */
+        .track-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 16px; border-radius: 20px; transition: all 0.2s; width: 100%; border: 2px solid transparent; }
+        .track-btn:active { transform: scale(0.96); }
+        .track-btn-scan { background: #eff6ff; color: #2563eb; border-color: #dbeafe; }
+        .track-btn-scan i { font-size: 24px; color: #3b82f6; }
+        .track-btn-search { background: #fdf4ff; color: #c026d3; border-color: #f0abfc; }
+        .track-btn-search i { font-size: 24px; color: #d946ef; }
+
+        /* Priority Styles */
         .priority-btn { border: 2px solid #f3f4f6; border-radius: 16px; padding: 12px; text-align: center; font-size: 12px; font-weight: bold; color: #64748b; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 5px; background: white; }
-        .priority-btn.active-normal { background-color: #ecfdf5; color: #10b981; border-color: #34d399; box-shadow: 0 4px 15px -3px rgba(16, 185, 129, 0.3); } 
-        .priority-btn.active-urgent { background-color: #fff7ed; color: #f97316; border-color: #fb923c; box-shadow: 0 4px 15px -3px rgba(249, 115, 22, 0.3); } 
-        .priority-btn.active-emergency { background-color: #fef2f2; color: #ef4444; border-color: #f87171; box-shadow: 0 4px 15px -3px rgba(239, 68, 68, 0.3); animation: pulse-border 2s infinite; }
+        .priority-btn.active-normal { background-color: #ecfdf5; color: #10b981; border-color: #34d399; } 
+        .priority-btn.active-urgent { background-color: #fff7ed; color: #f97316; border-color: #fb923c; } 
+        .priority-btn.active-emergency { background-color: #fef2f2; color: #ef4444; border-color: #f87171; animation: pulse-border 2s infinite; }
         @keyframes pulse-border { 0% { border-color: #f87171; } 50% { border-color: #fee2e2; } 100% { border-color: #f87171; } }
 
         /* Toast */
@@ -79,10 +82,9 @@
     <!-- Toast -->
     <div id="toast-container"></div>
 
-    <!-- Header (Violet-Pink Gradient) -->
+    <!-- Header -->
     <header class="header-gradient px-6 py-6 shadow-xl shadow-purple-200/50 z-30 flex justify-between items-center sticky top-0 shrink-0 text-white rounded-b-[35px] mx-[-2px]">
         <div class="flex items-center gap-3">
-            <!-- Home/Reset Button -->
             <button onclick="confirmReset()" class="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition backdrop-blur-md shadow-inner border-2 border-white/20 active:scale-95">
                 <i class="fas fa-home text-white"></i>
             </button>
@@ -91,20 +93,18 @@
                 <p class="text-xs font-bold opacity-90 mt-1 ml-1 bg-white/20 inline-block px-3 py-0.5 rounded-full backdrop-blur-sm border border-white/20" id="userDisplayName">User</p>
             </div>
         </div>
-        <!-- Logout Button -->
         <button onclick="handleLogout()" class="px-4 py-2 rounded-2xl bg-white/20 border border-white/20 flex items-center gap-2 hover:bg-white/30 transition active:scale-95 shadow-sm">
-            <span class="text-xs font-bold">Log out</span>
+            <span class="text-xs font-bold">ออก</span>
             <i class="fas fa-sign-out-alt text-sm"></i>
         </button>
     </header>
 
     <main class="flex-1 overflow-y-auto p-5 pb-32 relative scroll-smooth no-scrollbar" id="mainContainer">
         
-        <!-- Fun Decoration -->
+        <!-- Decoration -->
         <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0 opacity-60">
             <div class="absolute top-[-50px] right-[-50px] w-72 h-72 bg-purple-200 rounded-full blur-[90px] mix-blend-multiply"></div>
             <div class="absolute top-[300px] left-[-50px] w-60 h-60 bg-blue-200 rounded-full blur-[90px] mix-blend-multiply"></div>
-            <div class="absolute bottom-[-20px] right-[20px] w-48 h-48 bg-pink-200 rounded-full blur-[70px] mix-blend-multiply"></div>
         </div>
 
         <div class="relative z-10 space-y-8">
@@ -116,7 +116,7 @@
                 </div>
                 
                 <div class="modern-card p-6 border-t-8 border-[#3b82f6]">
-                    <!-- Scan Button (Electric Blue) -->
+                    <!-- Scan Button -->
                     <button onclick="startScanner('ASSET')" class="w-full btn-gradient-scan text-white rounded-3xl py-6 shadow-xl shadow-blue-200 touch-card flex flex-col items-center justify-center gap-2 mb-5 active:scale-95 transition relative overflow-hidden group border-b-8 border-[#0284c7]">
                         <div class="absolute inset-0 bg-white/20 group-hover:bg-white/30 transition"></div>
                         <i class="fas fa-qrcode text-4xl drop-shadow-md text-white animate-bounce"></i>
@@ -237,10 +237,10 @@
         </div>
     </main>
 
-    <!-- Floating History Button -->
+    <!-- Floating Tracking Button -->
     <button onclick="openHistoryModal()" class="fab-history touch-card hover:scale-110 active:scale-90">
-        <i class="fas fa-clipboard-list text-2xl"></i>
-        <span>ติดตามงาน</span>
+        <i class="fas fa-search-location text-2xl animate-pulse"></i>
+        <span>ติดตามสถานะ</span>
     </button>
 
     <!-- Asset Modal -->
@@ -260,20 +260,33 @@
         </div>
     </div>
     
-    <!-- History Modal -->
+    <!-- Tracking Modal (Improved) -->
     <div id="historyModal" class="fixed inset-0 bg-slate-900/60 z-[60] hidden flex items-end sm:items-center justify-center backdrop-blur-sm transition-opacity duration-300">
         <div class="bg-slate-50 w-full sm:w-[480px] h-[95vh] sm:h-[85vh] sm:rounded-2xl rounded-t-3xl flex flex-col shadow-2xl transform transition-transform duration-300 translate-y-full" id="historyModalContent">
-            <div class="bg-white p-6 rounded-t-3xl border-b border-slate-100 sticky top-0 z-10 flex justify-between items-center shadow-sm">
-                <div><h3 class="font-bold text-2xl text-slate-800 flex items-center gap-2"><i class="fas fa-history text-purple-500"></i> ประวัติงานซ่อม</h3></div>
-                <button onclick="closeHistoryModal()" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 active:bg-slate-300 transition"><i class="fas fa-times text-lg"></i></button>
-            </div>
-            <div class="bg-white px-6 py-4 border-b border-slate-100 flex gap-3">
-                <div class="relative flex-1">
-                    <i class="fas fa-search absolute left-4 top-3 text-slate-400 text-xs"></i>
-                    <input type="text" id="historySearchInput" onkeyup="filterHistory()" placeholder="ค้นหา Ticket ID..." class="w-full bg-slate-50 border-none rounded-2xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-100 outline-none transition font-medium">
+            
+            <div class="bg-white p-6 rounded-t-3xl border-b border-slate-100 sticky top-0 z-10">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="font-bold text-2xl text-slate-800 flex items-center gap-2"><i class="fas fa-satellite-dish text-purple-500 animate-pulse"></i> ติดตามงาน</h3>
+                        <p class="text-xs text-slate-400 mt-1">ตรวจสอบสถานะการซ่อม</p>
+                    </div>
+                    <button onclick="closeHistoryModal()" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 active:bg-slate-300 transition"><i class="fas fa-times text-lg"></i></button>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="grid grid-cols-2 gap-3 mb-2">
+                    <button onclick="startScanner('HISTORY')" class="track-btn track-btn-scan bg-blue-50 hover:bg-blue-100">
+                        <i class="fas fa-qrcode"></i>
+                        <span class="text-xs font-bold">สแกนใบงาน</span>
+                    </button>
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-4 top-3.5 text-slate-400"></i>
+                        <input type="text" id="historySearchInput" onkeyup="filterHistory()" placeholder="กรอกเลขงาน..." class="w-full h-full pl-10 pr-4 rounded-2xl border-2 border-slate-100 bg-white focus:ring-2 focus:ring-purple-200 focus:border-purple-300 text-sm outline-none transition font-bold text-slate-700">
+                    </div>
                 </div>
             </div>
-            <div class="overflow-y-auto p-4 flex-1 pb-safe" id="historyListContainer"></div>
+
+            <div class="overflow-y-auto p-4 flex-1 pb-safe bg-slate-50" id="historyListContainer"></div>
         </div>
     </div>
 
@@ -281,7 +294,7 @@
     <div id="imageViewerModal" class="fixed inset-0 bg-black/95 z-[70] hidden flex items-center justify-center touch-none" onclick="closeImageViewer()"><button class="absolute top-6 right-6 text-white/80 hover:text-white text-4xl p-4 z-10 active:scale-90 transition"><i class="fas fa-times"></i></button><img id="fullImage" class="max-w-full max-h-full object-contain p-2 transition-transform duration-200" src="" alt="Full size"></div>
     
     <!-- Scanner -->
-    <div id="scannerModal" class="fixed inset-0 bg-black z-[70] hidden flex flex-col"><div class="flex justify-between items-center p-6 pt-safe bg-black/80 text-white backdrop-blur-md absolute top-0 w-full z-10"><span class="font-bold text-xl tracking-wide"><i class="fas fa-qrcode mr-2 text-blue-400"></i>สแกน QR</span><button onclick="stopScanner()" class="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/30 active:scale-90 transition"><i class="fas fa-times text-xl"></i></button></div><div class="flex-1 flex items-center justify-center bg-black relative"><div id="reader" class="w-full h-full"></div><div class="absolute inset-0 pointer-events-none flex items-center justify-center"><div class="w-72 h-72 border-4 border-blue-400 rounded-3xl relative shadow-[0_0_80px_rgba(59,130,246,0.5)]"><div class="absolute inset-0 animate-pulse bg-blue-500/10"></div></div></div></div><div class="p-8 pb-12 bg-black text-center text-white"><p class="text-slate-300 text-base" id="scannerInstruction">ส่อง QR Code ที่ติดอยู่กับเครื่องจักร</p></div></div>
+    <div id="scannerModal" class="fixed inset-0 bg-black z-[70] hidden flex flex-col"><div class="flex justify-between items-center p-6 pt-safe bg-black/80 text-white backdrop-blur-md absolute top-0 w-full z-10"><span class="font-bold text-xl tracking-wide"><i class="fas fa-qrcode mr-2 text-blue-400"></i>สแกน QR</span><button onclick="stopScanner()" class="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/30 active:scale-90 transition"><i class="fas fa-times text-xl"></i></button></div><div class="flex-1 flex items-center justify-center bg-black relative"><div id="reader" class="w-full h-full"></div><div class="absolute inset-0 pointer-events-none flex items-center justify-center"><div class="w-72 h-72 border-4 border-blue-400 rounded-3xl relative shadow-[0_0_80px_rgba(59,130,246,0.5)]"><div class="absolute inset-0 animate-pulse bg-blue-500/10"></div></div></div></div><div class="p-8 pb-12 bg-black text-center text-white"><p class="text-slate-300 text-base" id="scannerInstruction">ส่อง QR Code / Barcode</p></div></div>
     
     <!-- Loading -->
     <div id="loadingOverlay" class="fixed inset-0 bg-white/90 z-[80] hidden flex flex-col items-center justify-center backdrop-blur-sm"><div class="loader mb-4 border-t-purple-500"></div><p class="text-slate-800 font-bold text-sm animate-pulse">กำลังบันทึกข้อมูล...</p></div>

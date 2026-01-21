@@ -24,6 +24,7 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+        /* Sidebar Transition Logic */
         #mobileSidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         @media (max-width: 768px) { #mobileSidebar.closed { transform: translateX(-100%); } }
         #sidebarOverlay { transition: opacity 0.3s ease; }
@@ -41,7 +42,14 @@
         .menu-btn:hover { background-color: rgba(255,255,255,0.1); transform: translateX(5px); }
         .menu-btn.active { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); border: none; }
 
+        .glass-icon { background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.3); }
+        .hover-scale { transition: transform 0.2s; }
+        .hover-scale:hover { transform: translateY(-4px); }
         .glass-panel { background: white; border-radius: 1.5rem; box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05); }
+
+        /* Filter Inputs */
+        .filter-input { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.5rem 1rem; font-size: 0.875rem; transition: all 0.2s; outline: none; width: 100%; font-family: 'Sarabun'; }
+        .filter-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); background: white; }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden bg-gray-100 text-gray-800">
@@ -76,7 +84,6 @@
                     </a>
                 </div>
             </div>
-            
             <div>
                 <div class="px-2 mb-3 text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"><span class="w-8 h-[1px] bg-slate-700"></span> System</div>
                 <div class="space-y-1">
@@ -130,6 +137,7 @@
 
             <!-- CONTENT SECTION -->
             <div class="px-4 sm:px-8 -mt-24 pb-20 w-full relative z-20">
+                
                 <!-- Stats Cards Grid -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 fade-in-up">
                     <div class="card-gradient-blue rounded-3xl p-5 text-white shadow-xl shadow-blue-200 hover-scale relative overflow-hidden group">
@@ -142,7 +150,7 @@
                         <p class="text-orange-100 text-xs font-bold uppercase tracking-wider mb-1">กำลังซ่อม</p>
                         <h3 class="text-3xl font-extrabold" id="statWIP">-</h3>
                     </div>
-                    <div class="card-gradient-purple rounded-3xl p-5 text-white shadow-xl shadow-purple-200 hover-scale cursor-pointer relative overflow-hidden group ring-4 ring-white/30" onclick="scrollToSection('ticketSection')">
+                    <div class="card-gradient-purple rounded-3xl p-5 text-white shadow-xl shadow-purple-200 hover-scale cursor-pointer relative overflow-hidden group ring-4 ring-white/30" onclick="filterByStatus('PENDING_INSPECTION')">
                         <div class="glass-icon w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-check-double"></i></div>
                         <p class="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">รอตรวจสอบ</p>
                         <h3 class="text-3xl font-extrabold" id="statVerify">-</h3>
@@ -155,7 +163,7 @@
                 </div>
 
                 <!-- Charts Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10 fade-in-up" style="animation-delay: 0.1s;">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 fade-in-up" style="animation-delay: 0.1s;">
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                         <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><span class="w-1.5 h-6 bg-blue-500 rounded-full"></span> สัดส่วนอาการเสีย</h3>
                         <div class="h-64 relative"><canvas id="issueChart"></canvas></div>
@@ -166,20 +174,40 @@
                     </div>
                 </div>
 
-                <!-- Ticket List Section -->
-                <div id="ticketSection" class="glass-panel overflow-hidden fade-in-up" style="animation-delay: 0.2s;">
-                    <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50/30">
-                        <div>
-                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><i class="fas fa-list-alt text-blue-500"></i> รายการแจ้งซ่อมล่าสุด</h3>
-                            <p class="text-gray-500 text-sm mt-1">อัปเดตข้อมูลแบบ Real-time</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wide bg-gray-100 px-3 py-1 rounded-lg">Last 20 items</span>
-                        </div>
+                <!-- Search & Filter Toolbar -->
+                <div class="bg-white rounded-2xl shadow-lg p-5 mb-6 flex flex-col md:flex-row gap-4 items-center animate-fade-in-up" style="animation-delay: 0.2s;">
+                    <div class="flex-1 w-full relative">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        <input type="text" id="searchInput" onkeyup="applyFilters()" placeholder="ค้นหาใบงาน, ชื่อเครื่อง, ชื่อช่าง..." class="filter-input pl-10">
+                    </div>
+                    <div class="w-full md:w-48">
+                        <select id="statusFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
+                            <option value="ALL">สถานะ: ทั้งหมด</option>
+                            <option value="OPEN">🔴 รอรับงาน</option>
+                            <option value="IN_PROGRESS">🟠 กำลังซ่อม</option>
+                            <option value="PENDING_INSPECTION">🟣 รอตรวจสอบ</option>
+                            <option value="CLOSED">🟢 เสร็จสิ้น</option>
+                        </select>
+                    </div>
+                    <div class="w-full md:w-48">
+                        <input type="month" id="monthFilter" onchange="applyFilters()" class="filter-input cursor-pointer text-blue-600 font-bold">
+                    </div>
+                    <div class="w-full md:w-auto">
+                        <button onclick="resetFilters()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-bold transition flex items-center justify-center gap-2">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Ticket List -->
+                <div id="ticketSection" class="glass-panel overflow-hidden fade-in-up" style="animation-delay: 0.3s;">
+                    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
+                        <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><i class="fas fa-list-alt text-blue-500"></i> รายการแจ้งซ่อม</h3>
+                        <span class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100" id="filterCount">Loading...</span>
                     </div>
 
                     <!-- Desktop Table -->
-                    <div class="hidden md:block overflow-x-auto w-full">
+                    <div class="hidden md:block overflow-x-auto w-full min-h-[300px]">
                         <table class="w-full text-left border-collapse">
                             <thead class="bg-gray-50 text-gray-500 uppercase text-xs font-bold border-b border-gray-200">
                                 <tr>
@@ -193,83 +221,53 @@
                             </thead>
                             <tbody id="ticketTableBody" class="divide-y divide-gray-100 text-sm"></tbody>
                         </table>
+                        <div id="noDataDesk" class="hidden text-center py-10 text-gray-400">ไม่พบข้อมูลตามเงื่อนไข</div>
                     </div>
 
                     <!-- Mobile Cards List -->
-                    <div class="md:hidden p-4 space-y-3" id="mobileTicketCards"></div>
+                    <div class="md:hidden p-4 space-y-3 min-h-[300px]" id="mobileTicketCards"></div>
+                    <div id="noDataMob" class="hidden md:hidden text-center py-10 text-gray-400">ไม่พบข้อมูลตามเงื่อนไข</div>
                 </div>
 
             </div>
         </div>
     </main>
     
-    <!-- Verify Modal (Fixed Height & Scroll) -->
-    <div id="verifyModal" class="fixed inset-0 bg-gray-900/80 z-[60] hidden flex items-end sm:items-center justify-center backdrop-blur-sm transition-opacity p-0 sm:p-4">
-        <!-- Adjusted Max Height to fit screen -->
-        <div class="bg-white w-full max-h-[95vh] sm:max-h-[85vh] sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up sm:animate-none">
-            
-            <!-- Header -->
+    <!-- Verify Modal -->
+    <div id="verifyModal" class="fixed inset-0 bg-gray-900/80 z-[60] hidden flex items-end sm:items-center justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-white w-full h-[95vh] sm:h-auto sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up sm:animate-none">
             <div class="px-6 py-5 border-b bg-white flex justify-between items-center shrink-0">
-                <div>
-                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">รายละเอียดงาน</h3>
-                    <p class="text-xs text-gray-500">Ticket Details</p>
-                </div>
+                <div><h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">รายละเอียดงาน</h3><p class="text-xs text-gray-500">Ticket Details</p></div>
                 <div class="flex gap-2">
-                    <button onclick="openPrintPage()" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-2 rounded-lg font-bold text-sm transition flex items-center gap-2 shadow-sm border border-blue-100 cursor-pointer" title="พิมพ์ใบงาน">
-                        <i class="fas fa-print"></i> <span class="hidden sm:inline">พิมพ์ใบงาน</span>
-                    </button>
-                    <button onclick="closeVerifyModal()" class="w-10 h-10 rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition flex items-center justify-center cursor-pointer"><i class="fas fa-times text-lg"></i></button>
+                    <button onclick="openPrintPage()" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-2 rounded-lg font-bold text-sm transition flex items-center gap-2 shadow-sm border border-blue-100 cursor-pointer"><i class="fas fa-print"></i> <span class="hidden sm:inline">พิมพ์</span></button>
+                    <button onclick="closeVerifyModal()" class="w-10 h-10 rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 flex items-center justify-center cursor-pointer"><i class="fas fa-times text-lg"></i></button>
                 </div>
             </div>
             
-            <!-- Scrollable Content -->
-            <div class="p-6 overflow-y-auto flex-1 bg-gray-50/50 space-y-5 custom-scroll">
+            <div class="p-6 overflow-y-auto flex-1 bg-gray-50/50 space-y-5">
                 <input type="hidden" id="verifyTicketId">
-                
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-blue-100 relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
                     <div class="relative z-10">
                         <div class="flex items-center gap-2 text-blue-600 font-bold mb-1"><i class="fas fa-robot"></i> <span id="verifyAssetName">-</span></div>
                         <div class="text-sm text-gray-500 mb-3 ml-6"><i class="far fa-clock mr-1"></i> <span id="verifyDate">-</span></div>
-                        <div class="bg-blue-50 text-blue-800 px-4 py-2.5 rounded-xl text-sm border border-blue-100 flex items-start gap-2">
-                            <i class="fas fa-info-circle mt-1"></i> <div><span class="font-bold">อาการ:</span> <span id="verifyIssue">-</span></div>
-                        </div>
+                        <div class="bg-blue-50 text-blue-800 px-4 py-2.5 rounded-xl text-sm border border-blue-100 flex items-start gap-2"><i class="fas fa-info-circle mt-1"></i> <div><span class="font-bold">อาการ:</span> <span id="verifyIssue">-</span></div></div>
                     </div>
                 </div>
-
-                <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-                    <label class="text-xs font-bold text-gray-400 uppercase mb-2 block flex items-center gap-2"><i class="fas fa-wrench"></i> รายงานการซ่อม</label>
-                    <div class="text-gray-700 text-sm leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-100" id="verifyRepairDetails">-</div>
-                </div>
-
-                <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-                    <label class="text-xs font-bold text-gray-400 uppercase mb-2 block flex items-center gap-2"><i class="fas fa-box-open"></i> อะไหล่ที่ใช้</label>
-                    <div id="verifyPartsList" class="space-y-1">-</div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-bold text-gray-400 uppercase mb-2 block pl-1">รูปภาพประกอบ</label>
-                    <div class="grid grid-cols-3 gap-2" id="verifyMediaContainer"></div>
-                </div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm"><label class="text-xs font-bold text-gray-400 uppercase mb-2 block flex items-center gap-2"><i class="fas fa-wrench"></i> รายงานการซ่อม</label><div class="text-gray-700 text-sm leading-relaxed" id="verifyRepairDetails">-</div></div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm"><label class="text-xs font-bold text-gray-400 uppercase mb-2 block flex items-center gap-2"><i class="fas fa-box-open"></i> อะไหล่ที่ใช้</label><div id="verifyPartsList" class="space-y-1">-</div></div>
+                <div><label class="text-xs font-bold text-gray-400 uppercase mb-2 block pl-1">รูปภาพประกอบ</label><div class="grid grid-cols-3 gap-2" id="verifyMediaContainer"></div></div>
             </div>
 
-            <!-- Footer (Approval Actions) -->
             <div id="modalFooter" class="p-5 bg-white border-t border-gray-100 flex gap-3 shrink-0 pb-safe">
-                <button onclick="handleVerify('REJECT')" class="flex-1 bg-white border-2 border-red-100 text-red-600 hover:bg-red-50 py-3.5 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm cursor-pointer">
-                    <i class="fas fa-reply"></i> แก้ไข
-                </button>
-                <button onclick="handleVerify('APPROVE')" class="flex-[2] bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-green-200 transition flex items-center justify-center gap-2 cursor-pointer">
-                    <i class="fas fa-check-circle"></i> อนุมัติ / ปิดงาน
-                </button>
+                <button onclick="handleVerify('REJECT')" class="flex-1 bg-white border-2 border-red-100 text-red-600 hover:bg-red-50 py-3.5 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm cursor-pointer"><i class="fas fa-reply"></i> แก้ไข</button>
+                <button onclick="handleVerify('APPROVE')" class="flex-[2] bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-green-200 transition flex items-center justify-center gap-2 cursor-pointer"><i class="fas fa-check-circle"></i> อนุมัติ</button>
             </div>
         </div>
     </div>
     
     <!-- Image Viewer -->
-    <div id="imageViewerModal" class="fixed inset-0 z-[70] bg-black/95 hidden flex items-center justify-center touch-none" onclick="document.getElementById('imageViewerModal').classList.add('hidden')">
-        <button class="absolute top-4 right-4 text-white/80 hover:text-white text-3xl p-2 z-10 cursor-pointer"><i class="fas fa-times"></i></button>
-        <img id="fullImage" class="max-w-full max-h-full object-contain p-2" src="" alt="Full size">
-    </div>
+    <div id="imageViewerModal" class="fixed inset-0 z-[70] bg-black/95 hidden flex items-center justify-center touch-none" onclick="document.getElementById('imageViewerModal').classList.add('hidden')"><button class="absolute top-4 right-4 text-white/80 hover:text-white text-3xl p-2 z-10 cursor-pointer"><i class="fas fa-times"></i></button><img id="fullImage" class="max-w-full max-h-full object-contain p-2" src="" alt="Full size"></div>
 
     <script>
         // --- EMBEDDED CONFIG & AUTH ---
@@ -296,14 +294,17 @@
         };
 
         // --- MAIN LOGIC ---
-        let issueChartInstance = null;
-        let assetChartInstance = null;
         let currentTickets = [];
+        let allTickets = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             const user = Auth.requireRole(['admin', 'manager']);
             if(!user) return;
             document.getElementById('userName').innerText = user.full_name || user.username;
+            
+            // Default Month Filter
+            document.getElementById('monthFilter').value = dayjs().format('YYYY-MM');
+            
             fetchData();
         });
         
@@ -316,21 +317,22 @@
 
         async function fetchData() {
             try {
-                let { data: tickets, error } = await supabaseClient.from('tickets').select('*').order('incident_time', { ascending: false });
+                let { data: tickets, error } = await supabaseClient.from('tickets').select('*').order('incident_time', { ascending: false }).limit(500);
                 if (error) throw error;
                 tickets = tickets || [];
 
+                // Fetch Relations
                 const assetIds = [...new Set(tickets.map(t => t.asset_id).filter(id => id))];
                 const userIds = [...new Set(tickets.map(t => t.requester_id).filter(id => id))];
                 const techIds = [...new Set(tickets.map(t => t.technician_id).filter(id => id))];
                 const allUserIds = [...new Set([...userIds, ...techIds])];
                 const ticketIds = tickets.map(t => t.id);
 
-                let assetsMap = {}, profilesMap = {}, partsMap = {};
+                let assetsMap = {}, profilesMap = {}, partsMap = {}, assetCodes = {};
 
                 if (assetIds.length > 0) { 
-                    const { data } = await supabaseClient.from('assets').select('id, name').in('id', assetIds); 
-                    if(data) data.forEach(a => assetsMap[a.id] = a.name); 
+                    const { data } = await supabaseClient.from('assets').select('id, name, asset_code').in('id', assetIds); 
+                    if(data) data.forEach(a => { assetsMap[a.id] = a.name; assetCodes[a.id] = a.asset_code || '-'; }); 
                 }
                 if (allUserIds.length > 0) { 
                     const { data } = await supabaseClient.from('profiles').select('id, full_name, username').in('id', allUserIds); 
@@ -338,25 +340,65 @@
                 }
                 if (ticketIds.length > 0) { 
                     const { data } = await supabaseClient.from('spare_parts_requests').select('*').in('ticket_id', ticketIds); 
-                    if(data) data.forEach(p => { 
-                        if(!partsMap[p.ticket_id]) partsMap[p.ticket_id] = []; 
-                        partsMap[p.ticket_id].push(p); 
-                    }); 
+                    if(data) data.forEach(p => { if(!partsMap[p.ticket_id]) partsMap[p.ticket_id] = []; partsMap[p.ticket_id].push(p); }); 
                 }
 
-                currentTickets = tickets.map(t => ({
+                allTickets = tickets.map(t => ({
                     ...t,
                     asset_name: assetsMap[t.asset_id] || 'ไม่ระบุ',
+                    asset_code: assetCodes[t.asset_id] || '-',
                     requester_name: profilesMap[t.requester_id] || 'Unknown',
                     technician_name: profilesMap[t.technician_id] || '-',
                     parts_data: partsMap[t.id] || []
                 }));
                 
-                updateStats(currentTickets);
-                renderCharts(currentTickets);
-                renderData(currentTickets);
+                applyFilters(); // Filter Initial Data
 
-            } catch (err) { console.error(err); alert('Failed to load data: ' + err.message); }
+            } catch (err) { alert('Failed to load data: ' + err.message); }
+        }
+
+        // --- FILTER & SEARCH ---
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const monthFilter = document.getElementById('monthFilter').value;
+
+            currentTickets = allTickets.filter(t => {
+                const matchSearch = t.id.toLowerCase().includes(searchTerm) || 
+                                    t.asset_name.toLowerCase().includes(searchTerm) ||
+                                    t.requester_name.toLowerCase().includes(searchTerm) ||
+                                    t.technician_name.toLowerCase().includes(searchTerm);
+                const matchStatus = statusFilter === 'ALL' || t.status === statusFilter;
+                
+                let matchDate = true;
+                if(monthFilter) {
+                    const ticketMonth = dayjs(t.incident_time).format('YYYY-MM');
+                    matchDate = ticketMonth === monthFilter;
+                }
+
+                return matchSearch && matchStatus && matchDate;
+            });
+
+            // Ensure element exists before setting innerText
+            const countEl = document.getElementById('filterCount');
+            if(countEl) countEl.innerText = `${currentTickets.length} รายการ`;
+
+            updateStats(currentTickets);
+            renderCharts(currentTickets);
+            renderData(currentTickets);
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = 'ALL';
+            document.getElementById('monthFilter').value = dayjs().format('YYYY-MM');
+            applyFilters();
+        }
+        
+        function filterByStatus(status) {
+            document.getElementById('statusFilter').value = status;
+            applyFilters();
+            scrollToSection('ticketSection');
         }
 
         function updateStats(tickets) {
@@ -379,85 +421,51 @@
              });
 
              const ctxIssue = document.getElementById('issueChart').getContext('2d');
-             if(issueChartInstance) issueChartInstance.destroy();
-             issueChartInstance = new Chart(ctxIssue, { type: 'doughnut', data: { labels: Object.keys(issueCounts), datasets: [{ data: Object.values(issueCounts), backgroundColor: ['#3b82f6', '#f97316', '#a855f7', '#22c55e', '#6366f1'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11, family: 'Sarabun' } } } } } });
+             if (window.myIssueChart instanceof Chart) window.myIssueChart.destroy();
+             window.myIssueChart = new Chart(ctxIssue, { type: 'doughnut', data: { labels: Object.keys(issueCounts), datasets: [{ data: Object.values(issueCounts), backgroundColor: ['#3b82f6', '#f97316', '#a855f7', '#22c55e', '#6366f1'] }] }, options: { responsive: true, maintainAspectRatio: false } });
 
              const ctxAsset = document.getElementById('assetChart').getContext('2d');
-             if(assetChartInstance) assetChartInstance.destroy();
+             if (window.myAssetChart instanceof Chart) window.myAssetChart.destroy();
              const sorted = Object.entries(assetCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-             assetChartInstance = new Chart(ctxAsset, { type: 'bar', data: { labels: sorted.map(i=>i[0]), datasets: [{ label: 'จำนวนครั้ง', data: sorted.map(i=>i[1]), backgroundColor: '#f97316', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } } } });
+             window.myAssetChart = new Chart(ctxAsset, { type: 'bar', data: { labels: sorted.map(i=>i[0]), datasets: [{ label: 'จำนวนครั้ง', data: sorted.map(i=>i[1]), backgroundColor: '#f97316', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false } });
         }
 
         function renderData(tickets) {
-            const list = tickets.slice(0, 20);
-            renderTable(list);
-            renderMobileCards(list);
-        }
-
-        function renderTable(tickets) {
             const tbody = document.getElementById('ticketTableBody');
+            const mList = document.getElementById('mobileTicketCards');
+            
             tbody.innerHTML = '';
+            mList.innerHTML = '';
+            
+            if (tickets.length === 0) {
+                document.getElementById('noDataDesk').classList.remove('hidden');
+                document.getElementById('noDataMob').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('noDataDesk').classList.add('hidden');
+                document.getElementById('noDataMob').classList.add('hidden');
+            }
+
             tickets.forEach(t => {
                 const btn = getActionBtn(t, false);
                 const badge = getStatusBadge(t.status);
-                tbody.innerHTML += `
-                    <tr class="bg-white border-b hover:bg-indigo-50/30 transition-colors group">
-                        <td class="px-6 py-4 pl-8 text-xs font-mono text-blue-600 font-bold group-hover:text-blue-700">#${t.id.substring(0,4)}</td>
-                        <td class="px-6 py-4 text-sm text-gray-500">${Utils.formatDate(t.incident_time)}</td>
-                        <td class="px-6 py-4 font-bold text-gray-700">${t.asset_name}</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">${t.issue_text}</td>
-                        <td class="px-6 py-4 text-center">${badge}</td>
-                        <td class="px-6 py-4 pr-8 text-right">${btn}</td>
-                    </tr>`;
-            });
-        }
-
-        function renderMobileCards(tickets) {
-            const container = document.getElementById('mobileTicketCards');
-            container.innerHTML = '';
-            if(tickets.length === 0) { container.innerHTML = '<div class="text-center text-gray-400 py-10">ไม่พบรายการ</div>'; return; }
-            
-            tickets.forEach(t => {
-                const btn = getActionBtn(t, true); 
-                const badge = getStatusBadge(t.status);
-                const isVerify = t.status === 'PENDING_INSPECTION';
+                tbody.innerHTML += `<tr class="bg-white border-b hover:bg-indigo-50/30 transition-colors group"><td class="px-6 py-4 pl-8 text-xs font-mono text-blue-600 font-bold">#${t.id.substring(0,4)}</td><td class="px-6 py-4 text-sm text-gray-500">${Utils.formatDate(t.incident_time)}</td><td class="px-6 py-4 font-bold text-gray-700">${t.asset_name}</td><td class="px-6 py-4 text-sm text-gray-600">${t.issue_text}</td><td class="px-6 py-4 text-center">${badge}</td><td class="px-6 py-4 pr-8 text-right">${btn}</td></tr>`;
                 
-                container.innerHTML += `
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 ${isVerify ? 'ring-2 ring-purple-100' : ''} active:scale-98 transition-transform">
-                        <div class="flex justify-between items-start mb-3">
-                            <span class="text-xs font-mono bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-bold">#${t.id.substring(0,4)}</span>
-                            ${badge}
-                        </div>
-                        <div class="mb-4">
-                            <h4 class="font-bold text-gray-800 text-lg mb-1 leading-snug">${t.issue_text}</h4>
-                            <div class="flex items-center gap-1.5 text-sm text-indigo-600 font-bold"><i class="fas fa-industry"></i> ${t.asset_name}</div>
-                            <div class="text-xs text-gray-400 mt-2 flex items-center gap-1"><i class="far fa-clock"></i> ${Utils.formatDate(t.incident_time)}</div>
-                        </div>
-                        <div class="flex items-center justify-between pt-3 border-t border-gray-50">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold border border-gray-200">${t.requester_name.charAt(0)}</div>
-                                <span class="text-xs text-gray-500 font-medium">${t.requester_name}</span>
-                            </div>
-                            ${btn}
-                        </div>
-                    </div>
-                `;
+                const mBtn = getActionBtn(t, true);
+                mList.innerHTML += `<div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-3"><div class="flex justify-between items-start mb-3"><span class="text-xs font-mono bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-bold">#${t.id.substring(0,4)}</span>${badge}</div><div class="mb-4"><h4 class="font-bold text-gray-800 text-lg mb-1 leading-snug">${t.issue_text}</h4><div class="flex items-center gap-1.5 text-sm text-indigo-600 font-bold"><i class="fas fa-industry"></i> ${t.asset_name}</div><div class="text-xs text-gray-400 mt-2 flex items-center gap-1"><i class="far fa-clock"></i> ${Utils.formatDate(t.incident_time)}</div></div><div class="flex items-center justify-between pt-3 border-t border-gray-50"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold border border-gray-200">${t.requester_name.charAt(0)}</div><span class="text-xs text-gray-500 font-medium">${t.requester_name}</span></div>${mBtn}</div></div>`;
             });
         }
 
         function getStatusBadge(status) {
-            if(status === 'PENDING_INSPECTION') return '<span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1 mx-auto w-max"><i class="fas fa-circle text-[6px]"></i> รอตรวจ</span>';
-            if(status === 'CLOSED') return '<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1 mx-auto w-max"><i class="fas fa-check text-[8px]"></i> เสร็จสิ้น</span>';
-            return `<span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[10px] font-bold">${status}</span>`;
+            if(status === 'PENDING_INSPECTION') return '<span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-[10px] font-bold">รอตรวจ</span>';
+            if(status === 'CLOSED') return '<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold">เสร็จสิ้น</span>';
+            if(status === 'IN_PROGRESS') return '<span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-[10px] font-bold">กำลังซ่อม</span>';
+            return `<span class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-[10px] font-bold">รอรับงาน</span>`;
         }
 
         function getActionBtn(t, isMobile) {
-            if(t.status === 'PENDING_INSPECTION') {
-                return `<button onclick="openVerifyModal('${t.id}')" class="bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'px-5 py-2.5 w-full' : 'px-4 py-2'} rounded-xl font-bold shadow-lg shadow-purple-200 transition flex items-center justify-center gap-2 text-xs hover-scale"><i class="fas fa-search-plus"></i> ตรวจสอบ</button>`;
-            }
-            if(t.status === 'CLOSED') {
-                return `<button onclick="openVerifyModal('${t.id}')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 ${isMobile ? 'px-5 py-2.5 w-full' : 'px-3 py-1.5'} rounded-xl font-bold transition flex items-center justify-center gap-2 text-xs border border-gray-200"><i class="fas fa-print"></i> ดู/พิมพ์</button>`;
-            }
+            if(t.status === 'PENDING_INSPECTION') return `<button onclick="openVerifyModal('${t.id}')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg">ตรวจสอบ</button>`;
+            if(t.status === 'CLOSED') return `<button onclick="openVerifyModal('${t.id}')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-xs font-bold border border-gray-200">ดู/พิมพ์</button>`;
             return '';
         }
 
@@ -468,51 +476,33 @@
             document.getElementById('verifyAssetName').innerText = ticket.asset_name;
             document.getElementById('verifyDate').innerText = Utils.formatDate(ticket.incident_time);
             document.getElementById('verifyIssue').innerText = ticket.issue_text;
-            document.getElementById('verifyRepairDetails').innerText = ticket.repair_details || '- ไม่มีรายละเอียด -';
+            document.getElementById('verifyRepairDetails').innerText = ticket.repair_details || '-';
             
             const pList = document.getElementById('verifyPartsList');
             if(ticket.parts_data && ticket.parts_data.length > 0) {
                 pList.innerHTML = `<ul class="space-y-2">${ticket.parts_data.map(p => `<li class="flex justify-between items-center text-gray-600 bg-gray-50 px-3 py-2 rounded-lg border border-gray-100"><span class="flex items-center gap-2"><i class="fas fa-cog text-gray-400 text-xs"></i> ${p.part_name}</span><span class="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">x${p.quantity}</span></li>`).join('')}</ul>`;
             } else {
-                pList.innerHTML = '<span class="text-gray-400 italic text-xs bg-gray-50 px-3 py-2 rounded-lg block border border-dashed border-gray-200 text-center">- ไม่มีการเบิกอะไหล่ -</span>';
+                pList.innerHTML = '<span class="text-gray-400 italic text-xs">- ไม่มีอะไหล่ -</span>';
             }
             
             const mContainer = document.getElementById('verifyMediaContainer');
-            mContainer.innerHTML = '<div class="col-span-3 text-center py-4 text-gray-400 text-xs">Loading...</div>';
-            
+            mContainer.innerHTML = 'Loading...';
             try {
                 const { data: media } = await supabaseClient.from('media').select('*').eq('ticket_id', id);
                 mContainer.innerHTML = '';
-                let hasImage = false;
-                if(media && media.length > 0) {
-                    hasImage = true;
-                    media.forEach(m => {
-                        mContainer.innerHTML += `<div class="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-pointer hover:opacity-90 transition shadow-sm relative group" onclick="viewImage('${m.url}')"><img src="${m.url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition"></div></div>`;
-                    });
-                } 
-                if(!hasImage && ticket.photo_url) {
-                    mContainer.innerHTML = `<div class="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-pointer hover:opacity-90 transition shadow-sm relative group" onclick="viewImage('${ticket.photo_url}')"><img src="${ticket.photo_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110"><div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition"></div></div>`;
-                } else if (!hasImage) {
-                    mContainer.innerHTML = '<div class="col-span-3 text-center py-6 text-gray-400 text-xs italic border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 flex flex-col items-center gap-2"><i class="fas fa-image text-xl opacity-50"></i><span>- ไม่มีรูปภาพ -</span></div>';
-                }
+                if(ticket.photo_url) mContainer.innerHTML += `<img src="${ticket.photo_url}" class="w-full h-24 object-cover rounded cursor-pointer" onclick="viewImage('${ticket.photo_url}')">`;
+                if(media) media.forEach(m => mContainer.innerHTML += `<img src="${m.url}" class="w-full h-24 object-cover rounded cursor-pointer" onclick="viewImage('${m.url}')">`);
+                if(!ticket.photo_url && (!media || media.length === 0)) mContainer.innerHTML = '<span class="text-xs text-gray-400 italic col-span-3 text-center">- ไม่มีรูปภาพ -</span>';
             } catch(e) { mContainer.innerHTML = 'Error'; }
-            
+
             const footer = document.getElementById('modalFooter');
             if(ticket.status === 'CLOSED') footer.classList.add('hidden'); else footer.classList.remove('hidden');
             document.getElementById('verifyModal').classList.remove('hidden');
         }
 
-        // --- NEW PRINT FUNCTION ---
         function openPrintPage() {
             const id = document.getElementById('verifyTicketId').value;
-            if(id) {
-                // Use a proper relative path. In Vercel deployment, files are usually at root.
-                // Adding a timestamp to force reload is optional but helpful for debugging
-                const url = `print_job_sheet.html?id=${id}`;
-                window.open(url, '_blank');
-            } else {
-                alert("ไม่พบ ID งานซ่อม");
-            }
+            if(id) window.open(`print_job_sheet.html?id=${id}`, '_blank');
         }
 
         function closeVerifyModal() { document.getElementById('verifyModal').classList.add('hidden'); }
@@ -521,14 +511,11 @@
         async function handleVerify(action) {
              const id = document.getElementById('verifyTicketId').value;
              const status = action === 'APPROVE' ? 'CLOSED' : 'IN_PROGRESS';
-             if(!confirm(action === 'APPROVE' ? 'ยืนยันอนุมัติปิดงาน?' : 'ยืนยันส่งกลับแก้ไข?')) return;
-             
+             if(!confirm('ยืนยัน?')) return;
              try {
-                 const { error } = await supabaseClient.from('tickets').update({ status }).eq('id', id);
-                 if(error) throw error;
-                 alert(action === 'APPROVE' ? '✅ อนุมัติเรียบร้อย' : '↩️ ส่งกลับแล้ว');
-                 closeVerifyModal(); fetchData();
-             } catch(err) { alert('Error: ' + err.message); }
+                 await supabaseClient.from('tickets').update({ status }).eq('id', id);
+                 alert('บันทึกสำเร็จ'); closeVerifyModal(); fetchData();
+             } catch(err) { alert(err.message); }
         }
         
         function scrollToSection(id) { document.getElementById(id).scrollIntoView({behavior:'smooth'}); }
