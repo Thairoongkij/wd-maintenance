@@ -23,13 +23,12 @@
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
         body { font-family: 'Sarabun', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #fff9f9; }
         
-        /* --- FUN RED & YELLOW THEME --- */
-        .header-gradient { background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); }
-        .btn-gradient-scan { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); }
-        .btn-gradient-submit { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        /* --- TEEN POP THEME --- */
+        .header-gradient { background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); }
+        .btn-gradient-scan { background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%); }
+        .btn-gradient-submit { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
         
-        .text-theme-primary { color: #dc2626; }
-        .text-theme-secondary { color: #ca8a04; }
+        .text-theme-primary { color: #8b5cf6; }
         
         .touch-card { transition: transform 0.1s; cursor: pointer; }
         .touch-card:active { transform: scale(0.96); }
@@ -37,81 +36,76 @@
         
         /* Media Grid */
         .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; margin-top: 10px; }
-        .media-item { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; border: 2px solid white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .media-item { position: relative; aspect-ratio: 1; border-radius: 16px; overflow: hidden; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .media-item img { width: 100%; height: 100%; object-fit: cover; }
-        .delete-btn { position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; border: 2px solid white; }
+        .delete-btn { position: absolute; top: 4px; right: 4px; background: rgba(236, 72, 153, 0.9); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         
         /* Floating History Button */
-        .fab-history { position: fixed; bottom: 24px; right: 24px; background: #ef4444; color: white; padding: 14px 24px; border-radius: 50px; box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.5); font-weight: bold; display: flex; align-items: center; gap: 10px; z-index: 40; transition: all 0.2s; border: 2px solid rgba(255,255,255,0.3); }
+        .fab-history { position: fixed; bottom: 24px; right: 24px; background: #8b5cf6; color: white; padding: 14px 24px; border-radius: 50px; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5); font-weight: bold; display: flex; align-items: center; gap: 10px; z-index: 40; transition: all 0.2s; border: 3px solid rgba(255,255,255,0.4); backdrop-filter: blur(5px); }
         .fab-history:active { transform: scale(0.95); }
         
-        /* Step Indicators */
-        .step-badge { width: 30px; height: 30px; background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3); border: 2px solid white; }
-        
         /* Cards */
-        .modern-card { background: white; border-radius: 24px; box-shadow: 0 15px 35px -5px rgba(239, 68, 68, 0.1); border: 1px solid rgba(255,255,255,0.8); }
+        .modern-card { background: white; border-radius: 24px; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.8); }
+        .step-badge { width: 32px; height: 32px; background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3); border: 2px solid white; }
         
-        .issue-card { border: 2px solid #fff1f2; border-radius: 16px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 90px; transition: all 0.2s; background: #fff; position: relative; }
+        /* Issue Card */
+        .issue-card { border: 2px solid #f3f4f6; border-radius: 20px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100px; transition: all 0.2s; background: #fff; position: relative; }
         .issue-card:active { transform: scale(0.95); }
-        .issue-card.selected { border-color: #ef4444; background-color: #fef2f2; color: #b91c1c; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2); }
+        .issue-card.selected { border-color: #8b5cf6; background-color: #f5f3ff; color: #7c3aed; box-shadow: 0 8px 20px -5px rgba(139, 92, 246, 0.3); transform: translateY(-2px); }
         .issue-card i { transition: color 0.2s; }
-        .issue-card.selected i { color: #ef4444 !important; }
+        .issue-card.selected i { color: #8b5cf6 !important; }
         
         /* Priority Styles */
         .priority-btn { border: 2px solid #f3f4f6; border-radius: 16px; padding: 10px; text-align: center; font-size: 12px; font-weight: bold; color: #64748b; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 5px; background: white; }
-        .priority-btn.active-normal { background-color: #ecfdf5; color: #059669; border-color: #34d399; box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.2); } 
-        .priority-btn.active-urgent { background-color: #fffbeb; color: #d97706; border-color: #fb923c; box-shadow: 0 4px 6px -1px rgba(234, 88, 12, 0.2); } 
-        .priority-btn.active-emergency { background-color: #fef2f2; color: #ef4444; border-color: #f87171; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.2); } 
+        .priority-btn.active-normal { background-color: #ecfdf5; color: #10b981; border-color: #34d399; } 
+        .priority-btn.active-urgent { background-color: #fffbeb; color: #d97706; border-color: #fb923c; } 
+        .priority-btn.active-emergency { background-color: #fef2f2; color: #ef4444; border-color: #f87171; animation: pulse-border 2s infinite; }
+        @keyframes pulse-border { 0% { border-color: #f87171; } 50% { border-color: #fee2e2; } 100% { border-color: #f87171; } }
 
         /* Toast */
         #toast-container { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none; }
-        .toast { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 12px 16px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; animation: slideIn 0.3s ease-out; pointer-events: auto; border: 1px solid rgba(0,0,0,0.05); }
+        .toast { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); padding: 14px 18px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; animation: slideIn 0.3s ease-out; pointer-events: auto; border: 1px solid rgba(255,255,255,0.5); font-weight: 600; }
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden text-gray-800 bg-[#fff1f2]">
+<body class="h-screen flex flex-col overflow-hidden text-gray-700 bg-[#f3f4f6]">
 
-    <!-- Toast -->
     <div id="toast-container"></div>
 
-    <!-- Header -->
-    <header class="header-gradient px-6 py-6 shadow-xl shadow-red-200/50 z-30 flex justify-between items-center sticky top-0 shrink-0 text-white rounded-b-[30px] mx-[-2px]">
+    <header class="header-gradient px-6 py-6 shadow-xl shadow-purple-200/50 z-30 flex justify-between items-center sticky top-0 shrink-0 text-white rounded-b-[35px] mx-[-2px]">
         <div class="flex items-center gap-3">
             <button onclick="confirmReset()" class="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition backdrop-blur-md shadow-inner border-2 border-white/20 active:scale-95">
                 <i class="fas fa-home text-white"></i>
             </button>
             <div>
                 <h1 class="text-2xl font-black flex items-center gap-2 drop-shadow-md tracking-tight leading-none italic">แจ้งซ่อม <i class="fas fa-bolt text-yellow-300 animate-pulse"></i></h1>
-                <p class="text-xs font-bold opacity-90 mt-1 ml-1 bg-black/20 inline-block px-3 py-0.5 rounded-full backdrop-blur-sm border border-white/20" id="userDisplayName">User</p>
+                <p class="text-xs font-bold opacity-90 mt-1 ml-1 bg-white/20 inline-block px-3 py-0.5 rounded-full backdrop-blur-sm border border-white/20" id="userDisplayName">User</p>
             </div>
         </div>
         <button onclick="handleLogout()" class="px-4 py-2 rounded-2xl bg-white/20 border border-white/20 flex items-center gap-2 hover:bg-white/30 transition active:scale-95 shadow-sm">
-            <span class="text-xs font-bold">ออก</span>
+            <span class="text-xs font-bold">Log out</span>
             <i class="fas fa-sign-out-alt text-sm"></i>
         </button>
     </header>
 
     <main class="flex-1 overflow-y-auto p-5 pb-32 relative scroll-smooth no-scrollbar" id="mainContainer">
         
-        <!-- Decoration -->
         <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0 opacity-50">
-            <div class="absolute top-[-50px] right-[-50px] w-64 h-64 bg-orange-300 rounded-full blur-[80px] mix-blend-multiply"></div>
-            <div class="absolute top-[200px] left-[-50px] w-52 h-52 bg-red-300 rounded-full blur-[80px] mix-blend-multiply"></div>
-            <div class="absolute bottom-[-20px] right-[20px] w-40 h-40 bg-yellow-200 rounded-full blur-[60px] mix-blend-multiply"></div>
+            <div class="absolute top-[-50px] right-[-50px] w-72 h-72 bg-purple-200 rounded-full blur-[90px] mix-blend-multiply"></div>
+            <div class="absolute top-[300px] left-[-50px] w-60 h-60 bg-blue-200 rounded-full blur-[90px] mix-blend-multiply"></div>
+            <div class="absolute bottom-[-20px] right-[20px] w-48 h-48 bg-pink-200 rounded-full blur-[70px] mix-blend-multiply"></div>
         </div>
 
         <div class="relative z-10 space-y-6">
-            <!-- STEP 1: ASSET -->
             <section>
                 <div class="flex items-center gap-3 mb-4 px-2">
                     <div class="step-badge">1</div>
                     <h2 class="text-xl font-bold text-slate-800">ระบุรายการแจ้งซ่อม</h2>
                 </div>
                 
-                <div class="modern-card p-6 border-t-8 border-[#facc15]">
-                    <button onclick="startScanner('ASSET')" class="w-full btn-gradient-scan text-white rounded-3xl py-6 shadow-xl shadow-yellow-200 touch-card flex flex-col items-center justify-center gap-2 mb-5 active:scale-95 transition relative overflow-hidden group border-b-8 border-[#ca8a04]">
-                        <div class="absolute inset-0 bg-white/20 group-hover:bg-white/30 transition"></div>
+                <div class="modern-card p-6 border-t-8 border-[#3b82f6]">
+                    <button onclick="startScanner('ASSET')" class="w-full btn-gradient-scan text-white rounded-3xl py-6 shadow-xl shadow-blue-200 touch-card flex flex-col items-center justify-center gap-2 mb-5 active:scale-95 transition relative overflow-hidden group border-b-8 border-[#0284c7]">
                         <i class="fas fa-qrcode text-4xl drop-shadow-md text-white animate-bounce"></i>
                         <span class="text-base font-extrabold tracking-widest text-white uppercase">สแกน QR Code</span>
                     </button>
@@ -122,16 +116,16 @@
                         </button>
                     </div>
 
-                    <div id="selectedAssetCard" class="hidden bg-gradient-to-br from-yellow-50 to-white border-2 border-yellow-200 rounded-3xl p-5 relative animate-fadeIn shadow-lg mt-5">
+                    <div id="selectedAssetCard" class="hidden bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-3xl p-5 relative animate-fadeIn shadow-lg mt-5">
                         <button onclick="clearAsset()" class="absolute top-3 right-3 text-slate-400 hover:text-red-500 bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md transition active:scale-90 border border-slate-100 z-10">
                             <i class="fas fa-times text-lg"></i>
                         </button>
                         <div class="pr-8">
-                            <div class="text-[10px] font-bold text-yellow-600 uppercase tracking-wider mb-2 bg-yellow-100 inline-block px-3 py-1 rounded-lg">Selected</div>
-                            <div class="font-extrabold text-gray-800 text-xl leading-tight mb-2" id="assetNameDisplay">-</div>
+                            <div class="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-2 bg-blue-100 inline-block px-3 py-1 rounded-lg">Selected</div>
+                            <div class="font-extrabold text-slate-800 text-xl leading-tight mb-2" id="assetNameDisplay">-</div>
                             <div class="flex flex-wrap gap-2 text-[11px] font-medium text-slate-500">
-                                <span class="bg-white px-3 py-1.5 rounded-xl border border-yellow-100 font-mono text-yellow-600 shadow-sm"><i class="fas fa-tag mr-1"></i> <span id="assetSerialDisplay">-</span></span>
-                                <span class="bg-white px-3 py-1.5 rounded-xl border border-yellow-100 shadow-sm"><i class="fas fa-map-marker-alt text-red-400 mr-1"></i> <span id="assetLocationDisplay">-</span></span>
+                                <span class="bg-white px-3 py-1.5 rounded-xl border border-blue-100 font-mono text-blue-600 shadow-sm"><i class="fas fa-tag mr-1"></i> <span id="assetSerialDisplay">-</span></span>
+                                <span class="bg-white px-3 py-1.5 rounded-xl border border-blue-100 shadow-sm"><i class="fas fa-map-marker-alt text-red-400 mr-1"></i> <span id="assetLocationDisplay">-</span></span>
                             </div>
                         </div>
                     </div>
@@ -140,15 +134,14 @@
                     <div class="relative mt-8 pt-6 border-t-2 border-dashed border-slate-200">
                         <div class="absolute top-[-14px] left-1/2 transform -translate-x-1/2 bg-white px-4 py-1 text-xs text-slate-400 font-bold uppercase tracking-widest rounded-full border border-slate-200 shadow-sm">Manual</div>
                         <label class="text-xs font-bold text-slate-500 block mb-3 mt-2 flex items-center gap-2"><div class="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center text-orange-500"><i class="fas fa-pen text-xs"></i></div> ซ่อมทั่วไป (ไม่มี QR)</label>
-                        <input type="text" id="manualAssetInput" oninput="handleManualInput(this)" class="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-sm focus:ring-4 focus:ring-orange-100 focus:border-orange-400 focus:bg-white outline-none transition placeholder-slate-400 font-bold text-slate-700" placeholder="พิมพ์ชื่ออุปกรณ์ที่นี่...">
+                        <input type="text" id="manualAssetInput" oninput="handleManualInput(this)" class="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-sm focus:ring-4 focus:ring-purple-100 focus:border-purple-400 focus:bg-white outline-none transition placeholder-slate-400 font-bold text-slate-700" placeholder="พิมพ์ชื่ออุปกรณ์ที่นี่...">
                         <div id="manualLocationField" class="hidden mt-3 animate-fadeIn">
-                             <input type="text" id="manualLocationInput" class="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-sm focus:ring-4 focus:ring-orange-100 focus:border-orange-400 focus:bg-white outline-none transition placeholder-slate-400 font-medium" placeholder="ระบุสถานที่ (ชั้น/ห้อง/บริเวณ)...">
+                             <input type="text" id="manualLocationInput" class="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-sm focus:ring-4 focus:ring-purple-100 focus:border-purple-400 focus:bg-white outline-none transition placeholder-slate-400 font-medium" placeholder="ระบุสถานที่ (ชั้น/ห้อง/บริเวณ)...">
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- STEP 2: ISSUE -->
             <section class="opacity-50 pointer-events-none transition-all duration-500" id="step2">
                 <div class="flex items-center gap-3 mb-4 px-2">
                     <div class="step-badge">2</div>
@@ -184,7 +177,6 @@
                 </div>
             </section>
 
-            <!-- STEP 3: PHOTO & SUBMIT -->
             <section class="opacity-50 pointer-events-none transition-all duration-500 pb-8" id="step3">
                 <div class="flex items-center justify-between mb-4 px-2">
                     <div class="flex items-center gap-3">
@@ -218,7 +210,7 @@
         </div>
 
         <div class="text-center pt-4 relative z-10">
-            <button onclick="openHistoryModal()" class="text-red-500 text-xs font-bold py-2 px-6 rounded-full bg-white/50 hover:bg-white transition active:scale-95 shadow-sm border border-red-100">
+            <button onclick="openHistoryModal()" class="text-purple-500 text-xs font-bold py-3 px-6 rounded-full bg-white/60 hover:bg-white transition active:scale-95 shadow-sm border border-purple-100 backdrop-blur-sm">
                 ดูประวัติการแจ้งซ่อมทั้งหมด <i class="fas fa-chevron-right text-[10px] ml-1"></i>
             </button>
         </div>
@@ -226,8 +218,8 @@
 
     <!-- Floating Tracking Button -->
     <button onclick="openHistoryModal()" class="fab-history touch-card hover:scale-110 active:scale-90">
-        <i class="fas fa-clipboard-list text-2xl"></i>
-        <span>ติดตามงาน</span>
+        <i class="fas fa-search-location text-2xl animate-pulse"></i>
+        <span>ติดตามสถานะ</span>
     </button>
 
     <!-- Asset Modal -->
@@ -238,7 +230,7 @@
             </button>
             <div class="relative flex-1">
                 <i class="fas fa-search absolute left-4 top-3.5 text-slate-400"></i>
-                <input type="text" id="assetSearch" onkeyup="filterAssets()" placeholder="ค้นหาชื่อเครื่องจักร..." class="w-full pl-11 pr-5 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-orange-100 focus:border-orange-400 outline-none text-sm font-bold transition text-slate-700">
+                <input type="text" id="assetSearch" onkeyup="filterAssets()" placeholder="ค้นหาชื่อเครื่องจักร..." class="w-full pl-11 pr-5 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-purple-100 focus:border-purple-400 outline-none text-sm font-bold transition text-slate-700">
             </div>
         </div>
         <div class="flex-1 overflow-y-auto p-2" id="assetListContainer">
@@ -250,83 +242,153 @@
     <div id="historyModal" class="fixed inset-0 bg-slate-900/60 z-[60] hidden flex items-end sm:items-center justify-center backdrop-blur-sm transition-opacity duration-300">
         <div class="bg-slate-50 w-full sm:w-[480px] h-[95vh] sm:h-[85vh] sm:rounded-2xl rounded-t-3xl flex flex-col shadow-2xl transform transition-transform duration-300 translate-y-full" id="historyModalContent">
             <div class="bg-white p-6 rounded-t-3xl border-b border-slate-100 sticky top-0 z-10 flex justify-between items-center shadow-sm">
-                <div><h3 class="font-bold text-2xl text-slate-800 flex items-center gap-2"><i class="fas fa-history text-red-500"></i> ประวัติงานซ่อม</h3></div>
+                <div><h3 class="font-bold text-2xl text-slate-800 flex items-center gap-2"><i class="fas fa-history text-purple-500"></i> ประวัติงานซ่อม</h3></div>
                 <button onclick="closeHistoryModal()" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 active:bg-slate-300 transition"><i class="fas fa-times text-lg"></i></button>
             </div>
             <div class="bg-white px-6 py-4 border-b border-slate-100 flex gap-3">
                 <div class="relative flex-1">
                     <i class="fas fa-search absolute left-4 top-3 text-slate-400 text-xs"></i>
-                    <input type="text" id="historySearchInput" onkeyup="filterHistory()" placeholder="ค้นหา Ticket ID..." class="w-full bg-slate-50 border-none rounded-2xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-red-100 outline-none transition font-medium">
+                    <input type="text" id="historySearchInput" onkeyup="filterHistory()" placeholder="ค้นหา Ticket ID..." class="w-full bg-slate-50 border-none rounded-2xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-100 outline-none transition font-medium">
                 </div>
             </div>
             <div class="overflow-y-auto p-4 flex-1 pb-safe" id="historyListContainer"></div>
         </div>
     </div>
 
+    <!-- Detail Modal (Fixed Images) -->
+    <div id="ticketDetailModal" class="fixed inset-0 bg-slate-900/80 z-[70] hidden flex items-center justify-center backdrop-blur-sm transition-opacity p-4">
+        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
+            <div class="px-6 py-4 border-b bg-white flex justify-between items-center shrink-0">
+                <h3 class="text-xl font-bold text-slate-800">รายละเอียดงาน</h3>
+                <button onclick="closeTicketDetail()" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 bg-slate-50/50 space-y-4">
+                
+                <!-- Status Banner -->
+                <div id="detailStatusBanner" class="p-4 rounded-2xl text-center font-bold text-lg mb-2 shadow-sm"></div>
+
+                <!-- Info -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="mb-4">
+                        <label class="text-xs font-bold text-slate-400 uppercase">เครื่องจักร / ทรัพย์สิน</label>
+                        <div id="detailAssetName" class="text-lg font-bold text-slate-800"></div>
+                        <div id="detailAssetCode" class="text-xs font-mono text-slate-500 bg-slate-100 inline-block px-2 py-0.5 rounded mt-1"></div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase">อาการที่แจ้ง</label>
+                        <div id="detailIssue" class="text-base font-medium text-slate-700"></div>
+                        <div id="detailDesc" class="text-sm text-slate-500 mt-1"></div>
+                    </div>
+                </div>
+
+                <!-- Technician Report -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                     <label class="text-xs font-bold text-slate-400 uppercase mb-2 block"><i class="fas fa-wrench"></i> การแก้ไขโดยช่าง</label>
+                     <div id="detailRepairNote" class="text-sm text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100"></div>
+                </div>
+
+                <!-- Images (Gallery with Labels) -->
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">รูปภาพประกอบ</label>
+                    <div id="detailImageGallery" class="grid grid-cols-2 gap-3"></div>
+                </div>
+            </div>
+            <div class="p-4 bg-white border-t flex justify-center">
+                 <button onclick="closeTicketDetail()" class="w-full py-3 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200">ปิด</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Fullscreen Image -->
-    <div id="imageViewerModal" class="fixed inset-0 bg-black/95 z-[70] hidden flex items-center justify-center touch-none" onclick="closeImageViewer()"><button class="absolute top-4 right-4 text-white/80 hover:text-white text-3xl p-2 z-10 cursor-pointer"><i class="fas fa-times"></i></button><img id="fullImage" class="max-w-full max-h-full object-contain p-2 transition-transform duration-200" src="" alt="Full size"></div>
+    <div id="imageViewerModal" class="fixed inset-0 bg-black/95 z-[80] hidden flex items-center justify-center touch-none" onclick="closeImageViewer()"><button class="absolute top-4 right-4 text-white/80 hover:text-white text-3xl p-2 z-10 cursor-pointer"><i class="fas fa-times"></i></button><img id="fullImage" class="max-w-full max-h-full object-contain p-2 transition-transform duration-200" src="" alt="Full size"></div>
     
     <!-- Scanner -->
     <div id="scannerModal" class="fixed inset-0 bg-black z-[70] hidden flex flex-col"><div class="flex justify-between items-center p-6 pt-safe bg-black/80 text-white backdrop-blur-md absolute top-0 w-full z-10"><span class="font-bold text-xl tracking-wide"><i class="fas fa-qrcode mr-2 text-blue-400"></i>สแกน QR</span><button onclick="stopScanner()" class="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center hover:bg-white/30 active:scale-90 transition"><i class="fas fa-times text-xl"></i></button></div><div class="flex-1 flex items-center justify-center bg-black relative"><div id="reader" class="w-full h-full"></div><div class="absolute inset-0 pointer-events-none flex items-center justify-center"><div class="w-72 h-72 border-4 border-blue-400 rounded-3xl relative shadow-[0_0_80px_rgba(59,130,246,0.5)]"><div class="absolute inset-0 animate-pulse bg-blue-500/10"></div></div></div></div><div class="p-8 pb-12 bg-black text-center text-white"><p class="text-slate-300 text-base" id="scannerInstruction">ส่อง QR Code / Barcode</p></div></div>
     
     <!-- Loading -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-white/90 z-[80] hidden flex flex-col items-center justify-center backdrop-blur-sm"><div class="loader mb-4 border-t-red-500"></div><p class="text-slate-800 font-bold text-sm animate-pulse">กำลังบันทึกข้อมูล...</p></div>
+    <div id="loadingOverlay" class="fixed inset-0 bg-white/90 z-[80] hidden flex flex-col items-center justify-center backdrop-blur-sm"><div class="loader mb-4 border-t-purple-500"></div><p class="text-slate-800 font-bold text-sm animate-pulse">กำลังบันทึกข้อมูล...</p></div>
 
     <script>
-        // --- CONFIG & AUTH ---
+        // --- EMBEDDED CONFIG & AUTH ---
         const SUPABASE_URL = 'https://nmezqexpvhdozpdzxxek.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tZXpxZXhwdmhkb3pwZHp4eGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5OTAwNTEsImV4cCI6MjA4MjU2NjA1MX0.N1OjCh1sp0xx0DGFjR6yX2hix5oIX7suzrnvQk8qPWU';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const Auth = {
-            requireRole: () => { const s = localStorage.getItem('cmms_user_session'); if (!s) { window.location.href = 'index.html'; return null; } return JSON.parse(s); },
-            logout: () => { localStorage.removeItem('cmms_user_session'); window.location.href = 'index.html'; }
+            requireRole: (allowedRoles = []) => {
+                const session = localStorage.getItem('cmms_user_session');
+                if (!session) { window.location.href = 'index.html'; return null; }
+                const user = JSON.parse(session);
+                return user;
+            },
+            logout: () => { if(confirm('ออกจากระบบ?')) { localStorage.removeItem('cmms_user_session'); window.location.href = 'index.html'; } },
         };
 
-        const Utils = { formatDate: (d) => d ? dayjs(d).fromNow() : '-' };
+        const Utils = {
+            formatDate: (d) => d ? dayjs(d).format('DD MMM • HH:mm') : '-',
+            safeRedirect: (url) => { try { window.location.href = url; } catch(e) { console.error(e); } }
+        };
 
-        let currentUser = null, html5QrCode = null, allAssets = [], selectedIssue = null, mediaList = [], ticketsCache = [];
+        // --- GLOBAL VARIABLES ---
+        let currentUser = null;
+        let html5QrCode = null;
+        let allAssets = [];
+        let selectedIssue = null;
+        let mediaList = [];
+        let ticketsCache = [];
+        let scannerMode = 'ASSET';
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            currentUser = Auth.requireRole(); 
-            if (!currentUser) return;
-            document.getElementById('userDisplayName').innerText = currentUser.full_name || currentUser.username;
-            setTimeout(() => { const h = document.getElementById('historyModalContent'); if(h) h.classList.remove('translate-y-full'); }, 100);
-            
-            // Handle Android Back Button (History State)
-            window.history.pushState(null, null, window.location.href);
-            window.onpopstate = function () {
-                if(!document.getElementById('assetModal').classList.contains('hidden')) { closeAssetModal(); window.history.pushState(null, null, window.location.href); }
-                else if(!document.getElementById('historyModal').classList.contains('hidden')) { closeHistoryModal(); window.history.pushState(null, null, window.location.href); }
-                else if(!document.getElementById('imageViewerModal').classList.contains('hidden')) { closeImageViewer(); window.history.pushState(null, null, window.location.href); }
-                else if(!document.getElementById('scannerModal').classList.contains('hidden')) { stopScanner(); window.history.pushState(null, null, window.location.href); }
-            };
+        // --- GLOBAL FUNCTIONS (WINDOW BINDING) ---
+        window.confirmReset = function() { if(confirm('รีเซ็ตหน้าจอ?')) location.reload(); }
+        window.handleLogout = function() { Auth.logout(); }
+        
+        window.openHistoryModal = function() { 
+            document.getElementById('historyModal').classList.remove('hidden'); 
+            setTimeout(()=>document.getElementById('historyModalContent').classList.remove('translate-y-full'),10); 
+            fetchHistory(); 
+        }
+        window.closeHistoryModal = function() { 
+            document.getElementById('historyModalContent').classList.add('translate-y-full'); 
+            setTimeout(()=>document.getElementById('historyModal').classList.add('hidden'),300); 
+        }
+        
+        window.openAssetModal = function() { 
+            const c = document.getElementById('assetListContainer'); c.innerHTML=''; 
+            allAssets.forEach(a => {
+                c.innerHTML += `<div class="p-5 border-b border-slate-100 hover:bg-slate-50 cursor-pointer flex justify-between items-center transition" onclick='confirmAsset(${JSON.stringify(a)})'><div><div class="font-bold text-sm text-slate-800">${a.name}</div><div class="text-xs text-slate-400 font-mono mt-0.5">${a.asset_code||'-'}</div></div><div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400"><i class="fas fa-chevron-right text-xs"></i></div></div>`;
+            });
+            document.getElementById('assetModal').classList.remove('hidden'); 
+        }
+        window.closeAssetModal = function() { document.getElementById('assetModal').classList.add('hidden'); }
 
-            await Promise.all([fetchAssets(), fetchIssueOptions(), fetchHistory()]);
-        });
-
-        // --- HANDLERS ---
-        function confirmReset() {
-            if(confirm('ต้องการรีเซ็ตหน้าจอเพื่อเริ่มใหม่หรือไม่?')) location.reload();
+        window.closeImageViewer = function() { document.getElementById('imageViewerModal').classList.add('hidden'); }
+        window.viewImage = function(url) { document.getElementById('fullImage').src=url; document.getElementById('imageViewerModal').classList.remove('hidden'); }
+        
+        window.stopScanner = function() { document.getElementById('scannerModal').classList.add('hidden'); if(html5QrCode) html5QrCode.stop(); }
+        window.startScanner = function(mode) { 
+            scannerMode = mode;
+            document.getElementById('scannerModal').classList.remove('hidden');
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({facingMode:"environment"}, {fps:10}, (txt)=>{ 
+                if(scannerMode==='ASSET'){
+                    confirmAsset(allAssets.find(a=>a.asset_code===txt)||{id:null,name:'Unknown',asset_code:txt});
+                } else {
+                    document.getElementById('historySearchInput').value = txt;
+                    filterHistory();
+                    stopScanner();
+                }
+            }, ()=>{});
         }
 
-        function handleLogout() {
-            if(confirm('ต้องการออกจากระบบใช่หรือไม่?')) {
-                window.location.href = 'index.html'; 
-            }
-        }
-
-        function showToast(msg, type='info') {
+        window.showToast = function(msg, type='info') {
             const box = document.getElementById('toast-container');
-            const el = document.createElement('div');
-            el.className = `toast ${type}`;
+            const el = document.createElement('div'); el.className = `toast ${type}`;
             let icon = type==='success'?'fa-check-circle text-green-500':(type==='error'?'fa-exclamation-circle text-red-500':'fa-info-circle text-blue-500');
             el.innerHTML = `<i class="fas ${icon} text-2xl"></i><span class="text-sm font-bold text-slate-700">${msg}</span>`;
-            box.appendChild(el);
-            setTimeout(() => { el.style.animation='fadeOut 0.3s forwards'; setTimeout(()=>el.remove(),300); }, 3000);
+            box.appendChild(el); setTimeout(() => { el.style.animation='fadeOut 0.3s forwards'; setTimeout(()=>el.remove(),300); }, 3000);
         }
 
-        function setPriority(level) {
+        window.setPriority = function(level) {
             document.querySelectorAll('.priority-btn').forEach(b => b.className = 'priority-btn');
             const btn = document.getElementById(`prio-${level}`);
             let val = 'ปกติ';
@@ -336,92 +398,31 @@
             document.getElementById('priorityInput').value = val;
         }
 
-        // --- DATA ---
-        async function fetchAssets() { try { const {data}=await supabaseClient.from('assets').select('*').or('status.eq.active,status.eq.ACTIVE'); allAssets=data||[]; } catch(e){} }
-        async function fetchIssueOptions() {
-            try {
-                const {data}=await supabaseClient.from('issue_options').select('*').eq('is_active',true).order('sort_order');
-                const c=document.getElementById('issueOptionsContainer'); c.innerHTML='';
-                (data||[]).forEach(o => {
-                    c.innerHTML += `<div class="issue-card cursor-pointer touch-card" onclick="selectIssue(this,'${o.label}')"><div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-1 shadow-sm"><i class="fas ${o.icon_class} text-xl text-slate-400"></i></div><span class="text-[11px] font-bold text-slate-600 text-center leading-tight px-1">${o.label}</span></div>`;
-                });
-            } catch(e){}
-        }
-
-        function selectIssue(el, label) {
+        window.selectIssue = function(el, label) {
             selectedIssue = label;
             document.querySelectorAll('.issue-card').forEach(c => { c.classList.remove('selected'); c.querySelector('i').classList.replace('text-purple-600','text-slate-400'); });
             el.classList.add('selected'); el.querySelector('i').classList.replace('text-slate-400','text-purple-600');
             setTimeout(() => document.getElementById('step3').scrollIntoView({behavior:'smooth',block:'center'}), 300);
         }
 
-        async function fetchHistory() {
-            try {
-                const { data } = await supabaseClient.from('tickets').select('*').eq('requester_id', currentUser.id).order('incident_time', { ascending: false });
-                const ids = [...new Set(data.map(t=>t.asset_id).filter(Boolean))];
-                let assetMap = {};
-                if(ids.length) { const {data:a} = await supabaseClient.from('assets').select('id,name').in('id',ids); a?.forEach(x=>assetMap[x.id]=x.name); }
-                ticketsCache = data.map(t => ({...t, asset_name: assetMap[t.asset_id]||'ไม่ระบุ'}));
-                renderHistory();
-            } catch(e){}
-        }
-
-        function renderHistory() {
-            const list = document.getElementById('historyListContainer');
-            if(!ticketsCache.length) { list.innerHTML='<div class="text-center py-12 text-slate-400 text-sm font-medium">ยังไม่มีประวัติการแจ้งซ่อม</div>'; return; }
-            list.innerHTML = ticketsCache.map(t => {
-                let stClass='bg-slate-100 text-slate-600', stLabel=t.status;
-                if(t.status==='OPEN') { stClass='bg-red-50 text-red-600 border border-red-100'; stLabel='รอรับงาน'; }
-                if(t.status==='IN_PROGRESS') { stClass='bg-blue-50 text-blue-600 border border-blue-100'; stLabel='กำลังซ่อม'; }
-                if(t.status==='CLOSED') { stClass='bg-green-50 text-green-600 border border-green-100'; stLabel='เสร็จสิ้น'; }
-                return `
-                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm mb-3 relative hover:shadow-md transition">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <h4 class="font-bold text-slate-800 text-base">${t.asset_name}</h4>
-                            <div class="text-xs text-slate-500 mt-0.5 line-clamp-1">${t.issue_text}</div>
-                        </div>
-                        <span class="${stClass} px-3 py-1 rounded-xl text-[10px] font-extrabold shadow-sm">${stLabel}</span>
-                    </div>
-                    <div class="flex justify-between items-center pt-3 border-t border-slate-50">
-                        <div class="text-[10px] text-slate-400 font-medium"><i class="far fa-clock mr-1"></i> ${Utils.formatDate(t.incident_time)}</div>
-                        <button onclick="window.open('print_job_sheet.html?id=${t.id}','_blank')" class="text-slate-400 hover:text-blue-600 p-2 rounded-full hover:bg-blue-50 transition"><i class="fas fa-print text-lg"></i></button>
-                    </div>
-                </div>`;
-            }).join('');
-        }
-
-        // --- ASSET LOGIC ---
-        function openAssetModal() { 
-            const c = document.getElementById('assetListContainer'); c.innerHTML=''; 
-            allAssets.forEach(a => {
-                c.innerHTML += `<div class="p-5 border-b border-slate-100 hover:bg-slate-50 cursor-pointer flex justify-between items-center transition" onclick='confirmAsset(${JSON.stringify(a)})'><div><div class="font-bold text-sm text-slate-800">${a.name}</div><div class="text-xs text-slate-400 font-mono mt-0.5">${a.asset_code||'-'}</div></div><div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400"><i class="fas fa-chevron-right text-xs"></i></div></div>`;
-            });
-            document.getElementById('assetModal').classList.remove('hidden'); 
-        }
-        function closeAssetModal() { document.getElementById('assetModal').classList.add('hidden'); }
-        
-        function confirmAsset(a) {
+        window.confirmAsset = function(a) {
             document.getElementById('assetId').value = a.id;
             document.getElementById('manualAssetInput').value = '';
             document.getElementById('manualLocationField').classList.add('hidden');
             document.getElementById('assetNameDisplay').innerText = a.name;
             document.getElementById('assetSerialDisplay').innerText = `ID: ${a.asset_code||'-'}`;
             document.getElementById('assetLocationDisplay').innerText = a.location||'-';
-            
-            const card = document.getElementById('selectedAssetCard');
-            card.classList.remove('hidden');
-            closeAssetModal(); stopScanner();
-            unlockSteps();
+            document.getElementById('selectedAssetCard').classList.remove('hidden');
+            closeAssetModal(); stopScanner(); unlockSteps();
         }
         
-        function clearAsset() {
+        window.clearAsset = function() {
             document.getElementById('assetId').value = '';
             document.getElementById('selectedAssetCard').classList.add('hidden');
             if(!document.getElementById('manualAssetInput').value) lockSteps();
         }
 
-        function handleManualInput(el) {
+        window.handleManualInput = function(el) {
             if(el.value.trim()) {
                 document.getElementById('assetId').value = '';
                 document.getElementById('selectedAssetCard').classList.add('hidden');
@@ -433,45 +434,106 @@
             }
         }
 
-        function unlockSteps(scroll=true) {
+        window.unlockSteps = function(scroll=true) {
             document.getElementById('step2').classList.remove('opacity-50','pointer-events-none');
             document.getElementById('step3').classList.remove('opacity-50','pointer-events-none');
             if(scroll) setTimeout(()=>document.getElementById('step2').scrollIntoView({behavior:'smooth'}),300);
         }
-        function lockSteps() {
+        window.lockSteps = function() {
             document.getElementById('step2').classList.add('opacity-50','pointer-events-none');
             document.getElementById('step3').classList.add('opacity-50','pointer-events-none');
         }
 
-        // --- CAMERA & SUBMIT ---
-        async function handleFileSelect(input) {
+        window.handleFileSelect = async function(input) {
             if(mediaList.length+input.files.length > 5) return showToast("สูงสุด 5 รูป", 'error');
             document.getElementById('loadingOverlay').classList.remove('hidden');
             for(const f of input.files) {
                 try {
-                    const data = await uploadFileToSupabase(f); // Use Upload Logic
-                    mediaList.push({type:'IMAGE', url: data}); // Store URL directly
-                } catch(e){showToast(e.message, 'error')} } renderMedia(); document.getElementById('loadingOverlay').classList.add('hidden'); input.value=''; }
-        
-        // --- NEW: UPLOAD TO STORAGE ---
-        async function uploadFileToSupabase(file) {
-            const fileName = `job_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
-            const { data, error } = await supabaseClient.storage.from('repair-files').upload(fileName, file, { cacheControl: '3600', upsert: false });
-            if (error) throw error;
-            const { data: publicData } = supabaseClient.storage.from('repair-files').getPublicUrl(fileName);
-            return publicData.publicUrl;
+                    const url = await uploadFileToSupabase(f); 
+                    mediaList.push({type:'IMAGE', url: url});
+                } catch(e){showToast(e.message, 'error')} 
+            } 
+            renderMedia(); 
+            document.getElementById('loadingOverlay').classList.add('hidden'); 
+            input.value=''; 
         }
 
-        function renderMedia() { const z=document.getElementById('mediaDropZone'); z.innerHTML=''; mediaList.forEach((m,i)=>{ const d=document.createElement('div'); d.className='media-item'; d.innerHTML=m.type==='IMAGE'?`<img src="${m.url}">`:`<video src="${m.url}"></video><div class="video-indicator">VIDEO</div>`; d.innerHTML+=`<div class="delete-btn" onclick="removeMedia(${i})">&times;</div>`; z.appendChild(d); }); document.getElementById('mediaCount').innerText=mediaList.length+'/5'; }
-        function removeMedia(i) { mediaList.splice(i,1); renderMedia(); }
+        window.removeMedia = function(i) { mediaList.splice(i,1); renderMedia(); }
         
-        async function submitTicket() {
+        window.filterHistory = function() { 
+            const t=document.getElementById('historySearchInput').value.toLowerCase(); 
+            const f=ticketsCache.filter(x=>x.id.toLowerCase().includes(t)||x.asset_name.toLowerCase().includes(t)); 
+            renderHistory(f); 
+        }
+        
+        window.filterAssets = function() { 
+            const t=document.getElementById('assetSearch').value.toLowerCase(); 
+            Array.from(document.getElementById('assetListContainer').children).forEach(el=>{ 
+                el.style.display=el.innerText.toLowerCase().includes(t)?'flex':'none'; 
+            }); 
+        }
+
+        window.openTicketDetail = function(index) {
+            const t = ticketsCache[index];
+            if(!t) return;
+            
+            // Status
+            const banner = document.getElementById('detailStatusBanner');
+            if(t.status==='OPEN') { banner.className='p-4 rounded-2xl text-center font-bold text-lg mb-2 shadow-sm bg-red-50 text-red-600 border border-red-100'; banner.innerHTML='<i class="fas fa-clock"></i> รอช่างรับงาน'; }
+            else if(t.status==='IN_PROGRESS') { banner.className='p-4 rounded-2xl text-center font-bold text-lg mb-2 shadow-sm bg-blue-50 text-blue-600 border border-blue-100'; banner.innerHTML='<i class="fas fa-tools"></i> กำลังซ่อมแซม'; }
+            else if(t.status==='PENDING_INSPECTION') { banner.className='p-4 rounded-2xl text-center font-bold text-lg mb-2 shadow-sm bg-purple-50 text-purple-600 border border-purple-100'; banner.innerHTML='<i class="fas fa-check-circle"></i> ซ่อมเสร็จแล้ว (รอตรวจ)'; }
+            else { banner.className='p-4 rounded-2xl text-center font-bold text-lg mb-2 shadow-sm bg-green-50 text-green-600 border border-green-100'; banner.innerHTML='<i class="fas fa-check-double"></i> ปิดงานเรียบร้อย'; }
+
+            // Info
+            document.getElementById('detailAssetName').innerText = t.asset_name;
+            document.getElementById('detailAssetCode').innerText = `ID: ${t.asset_code || '-'}`;
+            document.getElementById('detailIssue').innerText = t.issue_text;
+            document.getElementById('detailDesc').innerText = t.description || '-';
+            document.getElementById('detailRepairNote').innerText = t.repair_details || '- ยังไม่มีรายละเอียดการซ่อม -';
+            
+            // Images Gallery (Full Logic)
+            const gal = document.getElementById('detailImageGallery');
+            gal.innerHTML = '';
+            
+            // 1. Cover (Before)
+            if(t.photo_url) {
+                gal.innerHTML += `
+                <div class="relative rounded-xl overflow-hidden aspect-square border border-slate-200 cursor-pointer group" onclick="viewImage('${t.photo_url}')">
+                    <img src="${t.photo_url}" class="w-full h-full object-cover">
+                    <div class="absolute bottom-0 left-0 bg-black/60 text-white text-[10px] px-2 py-1 w-full text-center font-bold">BEFORE</div>
+                </div>`;
+            }
+            
+            // 2. Additional Media (After/More)
+            if(t.media && t.media.length > 0) {
+                t.media.forEach(m => {
+                    // Check type if available, otherwise guess based on context (usually after)
+                    const isAfter = m.type === 'AFTER_IMAGE';
+                    const label = isAfter ? 'AFTER' : 'IMG';
+                    const color = isAfter ? 'bg-green-600/80' : 'bg-blue-600/80';
+                    
+                    gal.innerHTML += `
+                    <div class="relative rounded-xl overflow-hidden aspect-square border border-slate-200 cursor-pointer group" onclick="viewImage('${m.url}')">
+                        <img src="${m.url}" class="w-full h-full object-cover">
+                        <div class="absolute bottom-0 left-0 ${color} text-white text-[10px] px-2 py-1 w-full text-center font-bold">${label}</div>
+                    </div>`;
+                });
+            }
+            
+            if(gal.innerHTML === '') gal.innerHTML = '<div class="col-span-2 text-center text-slate-400 text-sm py-4">- ไม่มีรูปภาพ -</div>';
+            
+            document.getElementById('ticketDetailModal').classList.remove('hidden');
+        }
+
+        window.closeTicketDetail = function() { document.getElementById('ticketDetailModal').classList.add('hidden'); }
+
+        window.submitTicket = async function() {
             const aid = document.getElementById('assetId').value;
             const man = document.getElementById('manualAssetInput').value.trim();
             const loc = document.getElementById('manualLocationInput').value.trim();
             const desc = document.getElementById('issueDescription').value;
             const prio = document.getElementById('priorityInput').value;
-            const tel = document.getElementById('contactNumber').value;
+            const tel = document.getElementById('contactNumber') ? document.getElementById('contactNumber').value : '';
 
             if(!aid && !man) return showToast("กรุณาระบุรายการแจ้งซ่อม", 'error');
             if(!selectedIssue) return showToast("กรุณาเลือกอาการเสีย", 'error');
@@ -484,48 +546,134 @@
                 if(prio !== 'ปกติ') meta.push(`[ความเร่งด่วน: ${prio}]`);
                 if(tel) meta.push(`[ติดต่อ: ${tel}]`);
                 if(!aid && man) { meta.push(`[ซ่อมทั่วไป: ${man}]`); if(loc) meta.push(`[สถานที่: ${loc}]`); }
-                
                 if(meta.length) fullDesc = meta.join(' ') + '\n\n' + desc;
 
-                const cover = mediaList.length > 0 ? mediaList[0].url : null; // Use URL
+                const cover = mediaList.length > 0 ? mediaList[0].url : null; 
                 
-                const {data, error} = await supabaseClient.from('tickets').insert([{
-                    asset_id: aid || null,
-                    requester_id: currentUser.id,
-                    issue_text: selectedIssue,
-                    description: fullDesc,
-                    photo_url: cover,
-                    status: 'OPEN',
-                    incident_time: new Date().toISOString()
-                }]).select();
-
+                const {data, error} = await supabaseClient.from('tickets').insert([{ asset_id: aid || null, requester_id: currentUser.id, issue_text: selectedIssue, description: fullDesc, photo_url: cover, status: 'OPEN', incident_time: new Date().toISOString() }]).select();
                 if(error) throw error;
                 const tid = data[0].id;
-
-                if(mediaList.length) {
-                    // Use URLs directly
-                    const rows = mediaList.map(m => ({ticket_id: tid, type: 'IMAGE', url: m.url}));
-                    await supabaseClient.from('media').insert(rows);
+                
+                if(mediaList.length) { 
+                    const rows = mediaList.map(m => ({ticket_id: tid, type: 'IMAGE', url: m.url})); 
+                    await supabaseClient.from('media').insert(rows); 
                 }
 
                 showToast("ส่งแจ้งซ่อมสำเร็จ!", 'success');
-                if(confirm("ส่งงานเรียบร้อย! ต้องการพิมพ์ใบแจ้งซ่อมเลยไหม?")) {
-                    window.open(`print_job_sheet.html?id=${tid}`, '_blank');
-                }
+                if(confirm("ส่งงานเรียบร้อย! ต้องการพิมพ์ใบแจ้งซ่อมเลยไหม?")) window.open(`print_job_sheet.html?id=${tid}`, '_blank');
                 setTimeout(() => location.reload(), 500);
-
             } catch(e) { showToast(e.message, 'error'); document.getElementById('loadingOverlay').classList.add('hidden'); }
         }
+
+        // --- INTERNAL LOGIC ---
+        async function fetchAssets() { try { const {data}=await supabaseClient.from('assets').select('*').or('status.eq.active,status.eq.ACTIVE'); allAssets=data||[]; } catch(e){} }
         
-        function openHistoryModal() { document.getElementById('historyModal').classList.remove('hidden'); setTimeout(()=>document.getElementById('historyModalContent').classList.remove('translate-y-full'),10); fetchHistory(); }
-        function closeHistoryModal() { document.getElementById('historyModalContent').classList.add('translate-y-full'); setTimeout(()=>document.getElementById('historyModal').classList.add('hidden'),300); }
-        function closeImageViewer() { document.getElementById('imageViewerModal').classList.add('hidden'); }
-        function stopScanner() { document.getElementById('scannerModal').classList.add('hidden'); if(html5QrCode) html5QrCode.stop(); }
-        function startScanner() { 
-            document.getElementById('scannerModal').classList.remove('hidden');
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({facingMode:"environment"}, {fps:10}, (txt)=>{ confirmAsset(allAssets.find(a=>a.asset_code===txt)||{id:null,name:'Unknown',asset_code:txt}); }, ()=>{});
+        async function fetchIssueOptions() {
+            try {
+                const {data}=await supabaseClient.from('issue_options').select('*').eq('is_active',true).order('sort_order');
+                const c=document.getElementById('issueOptionsContainer'); c.innerHTML='';
+                (data||[]).forEach(o => { c.innerHTML += `<div class="issue-card cursor-pointer touch-card" onclick="selectIssue(this,'${o.label}')"><div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-1 shadow-sm"><i class="fas ${o.icon_class} text-xl text-slate-400"></i></div><span class="text-[11px] font-bold text-slate-600 text-center leading-tight px-1">${o.label}</span></div>`; });
+            } catch(e){}
         }
+
+        async function fetchHistory() {
+            try {
+                // Fetch Tickets
+                const { data: tickets } = await supabaseClient.from('tickets').select('*').eq('requester_id', currentUser.id).order('incident_time', { ascending: false });
+                if(!tickets) return;
+                
+                const ticketIds = tickets.map(t => t.id);
+                
+                // Get Assets Info
+                const assetIds = [...new Set(tickets.map(t=>t.asset_id).filter(Boolean))];
+                let assetMap = {};
+                let assetCodeMap = {};
+                if(assetIds.length) { 
+                    const {data:a} = await supabaseClient.from('assets').select('id,name,asset_code').in('id',assetIds); 
+                    a?.forEach(x=>{ assetMap[x.id]=x.name; assetCodeMap[x.id]=x.asset_code; }); 
+                }
+
+                // Get Media (Images) - FIX: Fetch all fields to get 'type'
+                let mediaMap = {};
+                if(ticketIds.length) {
+                    const {data:m} = await supabaseClient.from('media').select('*').in('ticket_id', ticketIds);
+                    m?.forEach(x => {
+                        if(!mediaMap[x.ticket_id]) mediaMap[x.ticket_id] = [];
+                        mediaMap[x.ticket_id].push(x); // Store full object to get 'type'
+                    });
+                }
+
+                ticketsCache = tickets.map(t => ({
+                    ...t, 
+                    asset_name: assetMap[t.asset_id]||'ไม่ระบุ',
+                    asset_code: assetCodeMap[t.asset_id]||'-',
+                    // Use photo_url OR first image from media
+                    cover: t.photo_url || (mediaMap[t.id] && mediaMap[t.id][0] ? mediaMap[t.id][0].url : null),
+                    media: mediaMap[t.id] || []
+                }));
+                renderHistory(ticketsCache);
+            } catch(e){ console.error(e); }
+        }
+
+        function renderHistory(data) {
+            const list = document.getElementById('historyListContainer');
+            if(!data || !data.length) { list.innerHTML='<div class="text-center py-12 text-slate-400 text-sm font-medium">ไม่มีข้อมูล</div>'; return; }
+            list.innerHTML = data.map((t, idx) => {
+                let stClass='bg-slate-100 text-slate-600', stLabel=t.status;
+                if(t.status==='OPEN') { stClass='bg-red-50 text-red-600 border border-red-100'; stLabel='รอรับงาน'; }
+                if(t.status==='IN_PROGRESS') { stClass='bg-blue-50 text-blue-600 border border-blue-100'; stLabel='กำลังซ่อม'; }
+                if(t.status==='CLOSED') { stClass='bg-green-50 text-green-600 border border-green-100'; stLabel='เสร็จสิ้น'; }
+                
+                let imgHtml = `<div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center text-slate-300 text-2xl flex-shrink-0"><i class="fas fa-image"></i></div>`;
+                if(t.cover) imgHtml = `<img src="${t.cover}" class="w-16 h-16 rounded-lg object-cover border border-slate-100 flex-shrink-0" onclick="viewImage('${t.cover}')">`;
+
+                return `
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm mb-3 relative hover:shadow-md transition cursor-pointer" onclick="openTicketDetail(${idx})">
+                    <div class="flex gap-4">
+                        ${imgHtml}
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-start mb-1">
+                                <h4 class="font-bold text-slate-800 text-base truncate">${t.asset_name}</h4>
+                                <span class="${stClass} px-2 py-0.5 rounded-lg text-[10px] font-bold whitespace-nowrap inline-block">${stLabel}</span>
+                            </div>
+                            <div class="text-xs text-slate-500 line-clamp-1 mb-2">${t.issue_text}</div>
+                            <div class="flex justify-between items-end border-t border-slate-50 pt-2">
+                                <div class="text-[10px] text-slate-400 font-medium"><i class="far fa-clock mr-1"></i> ${Utils.formatDate(t.incident_time)}</div>
+                                <button onclick="event.stopPropagation(); window.open('print_job_sheet.html?id=${t.id}','_blank')" class="text-slate-400 hover:text-blue-600 p-1"><i class="fas fa-print text-lg"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function uploadFileToSupabase(file) {
+            const fileName = `job_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+            const { data, error } = await supabaseClient.storage.from('repair-files').upload(fileName, file, { cacheControl: '3600', upsert: false });
+            if (error) throw error;
+            const { data: publicData } = supabaseClient.storage.from('repair-files').getPublicUrl(fileName);
+            return publicData.publicUrl;
+        }
+
+        function renderMedia() { const z=document.getElementById('mediaDropZone'); z.innerHTML=''; mediaList.forEach((m,i)=>{ const d=document.createElement('div'); d.className='media-item'; d.innerHTML=`<img src="${m.url}"><div class="delete-btn" onclick="removeMedia(${i})">&times;</div>`; z.appendChild(d); }); document.getElementById('mediaCount').innerText=mediaList.length+'/5'; }
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentUser = Auth.requireRole(); 
+            if (!currentUser) return;
+            document.getElementById('userDisplayName').innerText = currentUser.full_name || currentUser.username;
+            
+            // Fix history state to support Android Back Button
+            window.history.pushState(null, null, window.location.href);
+            window.onpopstate = function () {
+                if(!document.getElementById('assetModal').classList.contains('hidden')) { closeAssetModal(); window.history.pushState(null, null, window.location.href); }
+                else if(!document.getElementById('historyModal').classList.contains('hidden')) { closeHistoryModal(); window.history.pushState(null, null, window.location.href); }
+                else if(!document.getElementById('imageViewerModal').classList.contains('hidden')) { closeImageViewer(); window.history.pushState(null, null, window.location.href); }
+                else if(!document.getElementById('scannerModal').classList.contains('hidden')) { stopScanner(); window.history.pushState(null, null, window.location.href); }
+            };
+
+            await Promise.all([fetchAssets(), fetchIssueOptions(), fetchHistory()]);
+        });
     </script>
 </body>
 </html>
