@@ -13,6 +13,10 @@
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/th.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- ExcelJS & FileSaver (Required for Image Export) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
     <script> dayjs.locale('th'); </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700;800&display=swap');
@@ -21,12 +25,10 @@
         .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Custom Scrollbar */
-        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+        /* Sidebar Transition Logic */
         #mobileSidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         @media (max-width: 768px) { #mobileSidebar.closed { transform: translateX(-100%); } }
         #sidebarOverlay { transition: opacity 0.3s ease; }
@@ -55,6 +57,13 @@
 </head>
 <body class="h-screen flex overflow-hidden bg-gray-100 text-gray-800">
 
+    <!-- Loading Overlay for Export -->
+    <div id="exportLoading" class="fixed inset-0 bg-black/80 z-[100] hidden flex flex-col items-center justify-center text-white backdrop-blur-sm">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mb-4"></div>
+        <h3 class="text-xl font-bold">กำลังสร้างรายงาน Excel...</h3>
+        <p class="text-sm text-gray-300 mt-2">กำลังดาวน์โหลดและฝังรูปภาพ (ขั้นตอนนี้อาจใช้เวลา)</p>
+    </div>
+
     <!-- Sidebar Overlay -->
     <div id="sidebarOverlay" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm md:hidden" onclick="toggleSidebar()"></div>
 
@@ -73,7 +82,7 @@
             <button onclick="toggleSidebar()" class="md:hidden ml-auto text-slate-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
         </div>
         
-        <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-6 custom-scroll">
+        <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-6">
             <div>
                 <div class="px-2 mb-3 text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"><span class="w-8 h-[1px] bg-slate-700"></span> Dashboards</div>
                 <div class="space-y-1">
@@ -105,7 +114,8 @@
 
     <!-- Main Content -->
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative w-full bg-slate-50">
-        <div class="flex-1 overflow-y-auto custom-scroll scroll-smooth">
+        <!-- Scrollable Area -->
+        <div class="flex-1 overflow-y-auto no-scrollbar scroll-smooth">
             
             <!-- HERO HEADER -->
             <div class="hero-gradient pt-8 pb-32 px-6 sm:px-10 relative overflow-hidden">
@@ -125,9 +135,16 @@
                             </div>
                         </div>
                     </div>
-                    <button onclick="fetchData()" class="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-xl text-sm font-bold shadow-lg transition flex items-center gap-2 active:scale-95 cursor-pointer">
-                        <i class="fas fa-sync-alt animate-spin-hover"></i> <span class="hidden sm:inline">รีเฟรชข้อมูล</span>
-                    </button>
+                    <div class="flex gap-2">
+                        <!-- Excel Export Button -->
+                        <button onclick="exportToExcel()" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg transition flex items-center gap-2 active:scale-95 cursor-pointer border border-green-400">
+                            <i class="fas fa-file-excel"></i> <span class="hidden sm:inline">Export Excel (แบบฟอร์ม)</span>
+                        </button>
+                        
+                        <button onclick="fetchData()" class="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-xl text-sm font-bold shadow-lg transition flex items-center gap-2 active:scale-95 cursor-pointer">
+                            <i class="fas fa-sync-alt animate-spin-hover"></i> <span class="hidden sm:inline">รีเฟรช</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="relative z-10 w-full">
@@ -138,29 +155,50 @@
 
             <!-- CONTENT SECTION -->
             <div class="px-4 sm:px-8 -mt-24 pb-20 w-full relative z-20">
+                
+                <!-- Filter Bar -->
+                <div class="bg-white rounded-2xl shadow-lg p-4 mb-6 flex flex-col md:flex-row gap-4 items-center animate-fade-in-up">
+                    <div class="flex-1 w-full relative">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400 text-sm"></i>
+                        <input type="text" id="searchInput" onkeyup="applyFilters()" placeholder="ค้นหา ID, ชื่อเครื่อง, อาการ..." class="filter-input pl-10">
+                    </div>
+                    <div class="w-full md:w-48">
+                        <select id="statusFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
+                            <option value="ALL">สถานะ: ทั้งหมด</option>
+                            <option value="PENDING_INSPECTION">🟣 รอตรวจสอบ</option>
+                            <option value="CLOSED">🟢 เสร็จสิ้น</option>
+                            <option value="OPEN">🔴 รอรับงาน</option>
+                            <option value="IN_PROGRESS">🟠 กำลังซ่อม</option>
+                        </select>
+                    </div>
+                    <div class="w-full md:w-48">
+                        <input type="month" id="monthFilter" onchange="applyFilters()" class="filter-input cursor-pointer text-blue-600 font-bold">
+                    </div>
+                    <div class="w-full md:w-auto">
+                        <button onclick="resetFilters()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm border border-slate-200">
+                            <i class="fas fa-undo"></i> รีเซ็ต
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Stats Cards Grid -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 fade-in-up">
                     <div class="card-gradient-blue rounded-3xl p-5 text-white shadow-xl shadow-blue-200 hover-scale relative overflow-hidden group">
-                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:scale-110 transition duration-500"><i class="fas fa-folder-open text-6xl"></i></div>
                         <div class="glass-icon w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-clipboard-list"></i></div>
                         <p class="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">งานทั้งหมด</p>
                         <h3 class="text-3xl font-extrabold" id="statTotal">-</h3>
                     </div>
                     <div class="card-gradient-orange rounded-3xl p-5 text-white shadow-xl shadow-orange-200 hover-scale relative overflow-hidden group">
-                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:scale-110 transition duration-500"><i class="fas fa-cogs text-6xl"></i></div>
                         <div class="glass-icon w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-tools"></i></div>
                         <p class="text-orange-100 text-xs font-bold uppercase tracking-wider mb-1">กำลังซ่อม</p>
                         <h3 class="text-3xl font-extrabold" id="statWIP">-</h3>
                     </div>
                     <div class="card-gradient-purple rounded-3xl p-5 text-white shadow-xl shadow-purple-200 hover-scale cursor-pointer relative overflow-hidden group ring-4 ring-white/30" onclick="filterByStatus('PENDING_INSPECTION')">
-                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:scale-110 transition duration-500"><i class="fas fa-search text-6xl"></i></div>
-                        <div class="absolute top-4 right-4 w-3 h-3 bg-red-400 rounded-full animate-ping"></div>
                         <div class="glass-icon w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-check-double"></i></div>
                         <p class="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">รอตรวจสอบ</p>
                         <h3 class="text-3xl font-extrabold" id="statVerify">-</h3>
                     </div>
                     <div class="card-gradient-green rounded-3xl p-5 text-white shadow-xl shadow-green-200 hover-scale relative overflow-hidden group">
-                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:scale-110 transition duration-500"><i class="fas fa-trophy text-6xl"></i></div>
                         <div class="glass-icon w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-xl"><i class="fas fa-thumbs-up"></i></div>
                         <p class="text-green-100 text-xs font-bold uppercase tracking-wider mb-1">เสร็จสิ้น</p>
                         <h3 class="text-3xl font-extrabold" id="statDone">-</h3>
@@ -179,48 +217,18 @@
                     </div>
                 </div>
 
-                <!-- Ticket List Section (With Search & Filter) -->
+                <!-- Ticket List Section -->
                 <div id="ticketSection" class="glass-panel overflow-hidden fade-in-up" style="animation-delay: 0.2s;">
-                    
-                    <!-- Search & Filter Toolbar -->
-                    <div class="p-6 border-b border-gray-100 bg-white">
-                        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
-                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><i class="fas fa-list-alt text-blue-500"></i> รายการแจ้งซ่อม</h3>
-                            <div class="flex gap-2">
+                    <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50/30">
+                        <div>
+                            <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2"><i class="fas fa-list-alt text-blue-500"></i> รายการแจ้งซ่อมล่าสุด</h3>
+                            <div class="flex gap-2 mt-1">
                                 <span class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100" id="filterCount">Loading...</span>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                            <!-- Text Search -->
-                            <div class="md:col-span-4 relative">
-                                <i class="fas fa-search absolute left-3 top-3 text-gray-400 text-sm"></i>
-                                <input type="text" id="searchInput" onkeyup="applyFilters()" placeholder="ค้นหา ID, ชื่อเครื่อง, ช่าง..." class="filter-input pl-10">
-                            </div>
-                            <!-- Status Filter -->
-                            <div class="md:col-span-3">
-                                <select id="statusFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
-                                    <option value="ALL">สถานะ: ทั้งหมด</option>
-                                    <option value="PENDING_INSPECTION">🟣 รอตรวจสอบ</option>
-                                    <option value="OPEN">🔴 รอรับงาน</option>
-                                    <option value="IN_PROGRESS">🟠 กำลังซ่อม</option>
-                                    <option value="CLOSED">🟢 เสร็จสิ้น</option>
-                                </select>
-                            </div>
-                            <!-- Month Filter -->
-                            <div class="md:col-span-3">
-                                <input type="month" id="monthFilter" onchange="applyFilters()" class="filter-input cursor-pointer text-blue-600 font-bold">
-                            </div>
-                            <!-- Reset -->
-                            <div class="md:col-span-2">
-                                <button onclick="resetFilters()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm border border-slate-200">
-                                    <i class="fas fa-undo"></i> ล้างค่า
-                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Desktop Table (Scrollable Container) -->
+                    <!-- Desktop Table -->
                     <div class="hidden md:block overflow-x-auto w-full custom-scroll" style="max-height: 500px;">
                         <table class="w-full text-left border-collapse relative">
                             <thead class="bg-gray-50 text-gray-500 uppercase text-xs font-bold border-b border-gray-200 sticky top-0 z-10">
@@ -248,22 +256,17 @@
     </main>
     
     <!-- Verify Modal -->
+    <!-- (Modal code remains same as before) -->
+    <!-- ... -->
     <div id="verifyModal" class="fixed inset-0 bg-gray-900/80 z-[60] hidden flex items-end sm:items-center justify-center backdrop-blur-sm transition-opacity">
         <div class="bg-white w-full h-[95vh] sm:h-auto sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up sm:animate-none max-h-[90vh]">
-            
             <div class="px-6 py-5 border-b bg-white flex justify-between items-center shrink-0">
-                <div>
-                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">รายละเอียดงาน</h3>
-                    <p class="text-xs text-gray-500">Ticket Details</p>
-                </div>
+                <div><h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">รายละเอียดงาน</h3><p class="text-xs text-gray-500">Ticket Details</p></div>
                 <div class="flex gap-2">
-                    <button onclick="openPrintPage()" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-2 rounded-lg font-bold text-sm transition flex items-center gap-2 shadow-sm border border-blue-100 cursor-pointer" title="พิมพ์ใบงาน">
-                        <i class="fas fa-print"></i> <span class="hidden sm:inline">พิมพ์</span>
-                    </button>
+                    <button onclick="openPrintPage()" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-2 rounded-lg font-bold text-sm transition flex items-center gap-2 shadow-sm border border-blue-100 cursor-pointer" title="พิมพ์ใบงาน"><i class="fas fa-print"></i> <span class="hidden sm:inline">พิมพ์</span></button>
                     <button onclick="closeVerifyModal()" class="w-10 h-10 rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition flex items-center justify-center cursor-pointer"><i class="fas fa-times text-lg"></i></button>
                 </div>
             </div>
-            
             <div class="p-6 overflow-y-auto flex-1 bg-gray-50/50 space-y-5 custom-scroll">
                 <input type="hidden" id="verifyTicketId">
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-blue-100 relative overflow-hidden">
@@ -274,11 +277,10 @@
                         <div class="bg-blue-50 text-blue-800 px-4 py-2.5 rounded-xl text-sm border border-blue-100 flex items-start gap-2"><i class="fas fa-info-circle mt-1"></i> <div><span class="font-bold">อาการ:</span> <span id="verifyIssue">-</span></div></div>
                     </div>
                 </div>
-                <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm"><label class="text-xs font-bold text-gray-400 uppercase mb-2 block flex items-center gap-2"><i class="fas fa-wrench"></i> รายงานการซ่อม</label><div class="text-gray-700 text-sm leading-relaxed" id="verifyRepairDetails">-</div></div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm"><label class="text-xs font-bold text-gray-400 uppercase mb-2 block flex items-center gap-2"><i class="fas fa-wrench"></i> รายงานการซ่อม</label><div class="text-gray-700 text-sm leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-100" id="verifyRepairDetails">-</div></div>
                 <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm"><label class="text-xs font-bold text-gray-400 uppercase mb-2 block flex items-center gap-2"><i class="fas fa-box-open"></i> อะไหล่ที่ใช้</label><div id="verifyPartsList" class="space-y-1">-</div></div>
                 <div><label class="text-xs font-bold text-gray-400 uppercase mb-2 block pl-1">รูปภาพประกอบ</label><div class="grid grid-cols-3 gap-2" id="verifyMediaContainer"></div></div>
             </div>
-
             <div id="modalFooter" class="p-5 bg-white border-t border-gray-100 flex gap-3 shrink-0 pb-safe">
                 <button onclick="handleVerify('REJECT')" class="flex-1 bg-white border-2 border-red-100 text-red-600 hover:bg-red-50 py-3.5 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-sm cursor-pointer"><i class="fas fa-reply"></i> แก้ไข</button>
                 <button onclick="handleVerify('APPROVE')" class="flex-[2] bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-green-200 transition flex items-center justify-center gap-2 cursor-pointer"><i class="fas fa-check-circle"></i> อนุมัติ / ปิดงาน</button>
@@ -286,7 +288,6 @@
         </div>
     </div>
     
-    <!-- Image Viewer -->
     <div id="imageViewerModal" class="fixed inset-0 z-[70] bg-black/95 hidden flex items-center justify-center touch-none" onclick="document.getElementById('imageViewerModal').classList.add('hidden')"><button class="absolute top-4 right-4 text-white/80 hover:text-white text-3xl p-2 z-10 cursor-pointer"><i class="fas fa-times"></i></button><img id="fullImage" class="max-w-full max-h-full object-contain p-2" src="" alt="Full size"></div>
 
     <script>
@@ -314,17 +315,16 @@
         };
 
         // --- MAIN LOGIC ---
-        let currentTickets = [];
+        let issueChartInstance = null;
+        let assetChartInstance = null;
         let allTickets = [];
+        let currentTickets = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             const user = Auth.requireRole(['admin', 'manager']);
             if(!user) return;
             document.getElementById('userName').innerText = user.full_name || user.username;
-            
-            // Set Default Month to Current Month
             document.getElementById('monthFilter').value = dayjs().format('YYYY-MM');
-            
             fetchData();
         });
         
@@ -337,60 +337,87 @@
 
         async function fetchData() {
             try {
-                // Fetch data (Limit to last 1000 for performance, then filter in client)
+                // Fetch ALL relevant tickets
                 let { data: tickets, error } = await supabaseClient.from('tickets').select('*').order('incident_time', { ascending: false }).limit(1000);
                 if (error) throw error;
-                tickets = tickets || [];
+                
+                // Fetch Media (FIXED - Ensure we get media for all tickets)
+                const ticketIds = tickets.map(t => t.id);
+                let mediaMap = {};
+                
+                if (ticketIds.length > 0) {
+                    const { data: media } = await supabaseClient.from('media').select('*').in('ticket_id', ticketIds);
+                    if(media) {
+                        media.forEach(m => {
+                            if(!mediaMap[m.ticket_id]) mediaMap[m.ticket_id] = [];
+                            mediaMap[m.ticket_id].push(m);
+                        });
+                    }
+                }
 
+                // Fetch Other Relations
                 const assetIds = [...new Set(tickets.map(t => t.asset_id).filter(id => id))];
                 const userIds = [...new Set(tickets.map(t => t.requester_id).filter(id => id))];
                 const techIds = [...new Set(tickets.map(t => t.technician_id).filter(id => id))];
                 const allUserIds = [...new Set([...userIds, ...techIds])];
-                const ticketIds = tickets.map(t => t.id);
-
+                
                 let assetsMap = {}, profilesMap = {}, partsMap = {}, assetCodes = {};
 
                 if (assetIds.length > 0) { 
-                    const { data } = await supabaseClient.from('assets').select('id, name, asset_code').in('id', assetIds); 
-                    if(data) data.forEach(a => { assetsMap[a.id] = a.name; assetCodes[a.id] = a.asset_code || '-'; }); 
+                    const { data } = await supabaseClient.from('assets').select('id, name, asset_code, location').in('id', assetIds); 
+                    if(data) data.forEach(a => { 
+                        assetsMap[a.id] = { name: a.name, location: a.location }; 
+                        assetCodes[a.id] = a.asset_code || '-'; 
+                    }); 
                 }
+                
                 if (allUserIds.length > 0) { 
                     const { data } = await supabaseClient.from('profiles').select('id, full_name, username').in('id', allUserIds); 
                     if(data) data.forEach(p => profilesMap[p.id] = p.full_name || p.username); 
                 }
+                
                 if (ticketIds.length > 0) { 
                     const { data } = await supabaseClient.from('spare_parts_requests').select('*').in('ticket_id', ticketIds); 
-                    if(data) data.forEach(p => { if(!partsMap[p.ticket_id]) partsMap[p.ticket_id] = []; partsMap[p.ticket_id].push(p); }); 
+                    if(data) data.forEach(p => { 
+                        if(!partsMap[p.ticket_id]) partsMap[p.ticket_id] = []; 
+                        partsMap[p.ticket_id].push(p); 
+                    }); 
                 }
 
-                allTickets = tickets.map(t => ({
-                    ...t,
-                    asset_name: assetsMap[t.asset_id] || 'ไม่ระบุ',
-                    asset_code: assetCodes[t.asset_id] || '-',
-                    requester_name: profilesMap[t.requester_id] || 'Unknown',
-                    technician_name: profilesMap[t.technician_id] || '-',
-                    parts_data: partsMap[t.id] || []
-                }));
+                allTickets = tickets.map(t => {
+                    const assetInfo = assetsMap[t.asset_id] || { name: 'ไม่ระบุ', location: '-' };
+                    return {
+                        ...t,
+                        asset_name: assetInfo.name,
+                        location: assetInfo.location,
+                        asset_code: assetCodes[t.asset_id] || '-',
+                        requester_name: profilesMap[t.requester_id] || 'Unknown',
+                        technician_name: profilesMap[t.technician_id] || '-',
+                        parts_data: partsMap[t.id] || [],
+                        media_data: mediaMap[t.id] || [] // Store full media objects
+                    };
+                });
                 
-                applyFilters(); // Apply Initial Filter (Current Month)
+                applyFilters();
 
             } catch (err) { alert('Failed to load data: ' + err.message); }
         }
 
-        // --- FILTER & SEARCH ---
+        // --- FILTER LOGIC ---
         function applyFilters() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const statusFilter = document.getElementById('statusFilter').value;
-            const monthFilter = document.getElementById('monthFilter').value; // YYYY-MM
+            const monthFilter = document.getElementById('monthFilter').value;
 
             currentTickets = allTickets.filter(t => {
                 const matchSearch = t.id.toLowerCase().includes(searchTerm) || 
-                                    t.asset_name.toLowerCase().includes(searchTerm) ||
+                                    t.asset_name.toLowerCase().includes(searchTerm) || 
                                     t.technician_name.toLowerCase().includes(searchTerm);
+                
                 const matchStatus = statusFilter === 'ALL' || t.status === statusFilter;
                 
                 let matchDate = true;
-                if(monthFilter) {
+                if (monthFilter) {
                     const ticketMonth = dayjs(t.incident_time).format('YYYY-MM');
                     matchDate = ticketMonth === monthFilter;
                 }
@@ -398,7 +425,6 @@
                 return matchSearch && matchStatus && matchDate;
             });
 
-            // Ensure element exists before setting innerText
             const countEl = document.getElementById('filterCount');
             if(countEl) countEl.innerText = `${currentTickets.length} รายการ`;
 
@@ -420,7 +446,8 @@
             scrollToSection('ticketSection');
         }
 
-        function updateStats(tickets) {
+        // ... (Stats, Charts same as before) ...
+        function updateStats(tickets) { /* Same */ 
              const total = tickets.length;
              const open = tickets.filter(t => t.status === 'OPEN').length;
              const wip = tickets.filter(t => ['IN_PROGRESS', 'PENDING_APPROVAL'].includes(t.status)).length;
@@ -441,66 +468,39 @@
 
              const ctxIssue = document.getElementById('issueChart').getContext('2d');
              if (window.myIssueChart instanceof Chart) window.myIssueChart.destroy();
-             window.myIssueChart = new Chart(ctxIssue, { type: 'doughnut', data: { labels: Object.keys(issueCounts), datasets: [{ data: Object.values(issueCounts), backgroundColor: ['#3b82f6', '#f97316', '#a855f7', '#22c55e', '#6366f1'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+             window.myIssueChart = new Chart(ctxIssue, { type: 'doughnut', data: { labels: Object.keys(issueCounts), datasets: [{ data: Object.values(issueCounts), backgroundColor: ['#3b82f6', '#f97316', '#a855f7', '#22c55e', '#6366f1'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11, family: 'Sarabun' } } } } } });
 
              const ctxAsset = document.getElementById('assetChart').getContext('2d');
              if (window.myAssetChart instanceof Chart) window.myAssetChart.destroy();
              const sorted = Object.entries(assetCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-             window.myAssetChart = new Chart(ctxAsset, { type: 'bar', data: { labels: sorted.map(i=>i[0]), datasets: [{ label: 'จำนวนครั้ง', data: sorted.map(i=>i[1]), backgroundColor: '#f97316', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false } });
+             window.myAssetChart = new Chart(ctxAsset, { type: 'bar', data: { labels: sorted.map(i=>i[0]), datasets: [{ label: 'จำนวนครั้ง', data: sorted.map(i=>i[1]), backgroundColor: '#f97316', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } } } });
         }
 
         function renderData(tickets) {
             const tbody = document.getElementById('ticketTableBody');
             const mList = document.getElementById('mobileTicketCards');
+            const noDataDesk = document.getElementById('noDataDesk');
+            const noDataMob = document.getElementById('noDataMob');
             
             tbody.innerHTML = '';
             mList.innerHTML = '';
             
             if (tickets.length === 0) {
-                document.getElementById('noDataDesk').classList.remove('hidden');
-                document.getElementById('noDataMob').classList.remove('hidden');
+                noDataDesk.classList.remove('hidden');
+                noDataMob.classList.remove('hidden');
                 return;
             } else {
-                document.getElementById('noDataDesk').classList.add('hidden');
-                document.getElementById('noDataMob').classList.add('hidden');
+                noDataDesk.classList.add('hidden');
+                noDataMob.classList.add('hidden');
             }
 
             tickets.forEach(t => {
                 const btn = getActionBtn(t, false);
                 const badge = getStatusBadge(t.status);
+                tbody.innerHTML += `<tr class="bg-white border-b hover:bg-indigo-50/30 transition-colors group"><td class="px-6 py-4 pl-8 text-xs font-mono text-blue-600 font-bold group-hover:text-blue-700">#${t.id.substring(0,4)}</td><td class="px-6 py-4 text-sm text-gray-500">${Utils.formatDate(t.incident_time)}</td><td class="px-6 py-4 font-bold text-gray-700">${t.asset_name}</td><td class="px-6 py-4 text-sm text-gray-600">${t.issue_text}</td><td class="px-6 py-4 text-center">${badge}</td><td class="px-6 py-4 pr-8 text-right">${btn}</td></tr>`;
                 
-                // Desktop Row
-                tbody.innerHTML += `
-                    <tr class="bg-white border-b hover:bg-indigo-50/30 transition-colors group">
-                        <td class="px-6 py-4 pl-8 text-xs font-mono text-blue-600 font-bold group-hover:text-blue-700">#${t.id.substring(0,4)}</td>
-                        <td class="px-6 py-4 text-sm text-gray-500">${Utils.formatDate(t.incident_time)}</td>
-                        <td class="px-6 py-4 font-bold text-gray-700">${t.asset_name}</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">${t.issue_text}</td>
-                        <td class="px-6 py-4 text-center">${badge}</td>
-                        <td class="px-6 py-4 pr-8 text-right">${btn}</td>
-                    </tr>`;
-                
-                // Mobile Card
                 const mBtn = getActionBtn(t, true);
-                mList.innerHTML += `
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-3 hover:shadow-md transition">
-                        <div class="flex justify-between items-start mb-3">
-                            <span class="text-xs font-mono bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-bold">#${t.id.substring(0,4)}</span>
-                            ${badge}
-                        </div>
-                        <div class="mb-4">
-                            <h4 class="font-bold text-gray-800 text-lg mb-1 leading-snug">${t.issue_text}</h4>
-                            <div class="flex items-center gap-1.5 text-sm text-indigo-600 font-bold"><i class="fas fa-industry"></i> ${t.asset_name}</div>
-                            <div class="text-xs text-gray-400 mt-2 flex items-center gap-1"><i class="far fa-clock"></i> ${Utils.formatDate(t.incident_time)}</div>
-                        </div>
-                        <div class="flex items-center justify-between pt-3 border-t border-gray-50">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold border border-gray-200">${t.requester_name.charAt(0)}</div>
-                                <span class="text-xs text-gray-500 font-medium">${t.requester_name}</span>
-                            </div>
-                            ${mBtn}
-                        </div>
-                    </div>`;
+                mList.innerHTML += `<div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-3 active:scale-98 transition-transform"><div class="flex justify-between items-start mb-3"><span class="text-xs font-mono bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-bold">#${t.id.substring(0,4)}</span>${badge}</div><div class="mb-4"><h4 class="font-bold text-gray-800 text-lg mb-1 leading-snug">${t.issue_text}</h4><div class="flex items-center gap-1.5 text-sm text-indigo-600 font-bold"><i class="fas fa-industry"></i> ${t.asset_name}</div><div class="text-xs text-gray-400 mt-2 flex items-center gap-1"><i class="far fa-clock"></i> ${Utils.formatDate(t.incident_time)}</div></div><div class="flex items-center justify-between pt-3 border-t border-gray-50"><div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold border border-gray-200">${t.requester_name.charAt(0)}</div><span class="text-xs text-gray-500 font-medium">${t.requester_name}</span></div>${mBtn}</div></div>`;
             });
         }
 
@@ -512,7 +512,7 @@
         }
 
         function getActionBtn(t, isMobile) {
-            if(t.status === 'PENDING_INSPECTION') return `<button onclick="openVerifyModal('${t.id}')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg">ตรวจสอบ</button>`;
+            if(t.status === 'PENDING_INSPECTION') return `<button onclick="openVerifyModal('${t.id}')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg transition flex items-center justify-center gap-1"><i class="fas fa-search-plus"></i> ตรวจสอบ</button>`;
             if(t.status === 'CLOSED') return `<button onclick="openVerifyModal('${t.id}')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-xl text-xs font-bold border border-gray-200">ดู/พิมพ์</button>`;
             return '';
         }
@@ -524,7 +524,7 @@
             document.getElementById('verifyAssetName').innerText = ticket.asset_name;
             document.getElementById('verifyDate').innerText = Utils.formatDate(ticket.incident_time);
             document.getElementById('verifyIssue').innerText = ticket.issue_text;
-            document.getElementById('verifyRepairDetails').innerText = ticket.repair_details || '-';
+            document.getElementById('verifyRepairDetails').innerText = ticket.repair_details || '- ไม่มีรายละเอียด -';
             
             const pList = document.getElementById('verifyPartsList');
             if(ticket.parts_data && ticket.parts_data.length > 0) {
@@ -534,14 +534,34 @@
             }
             
             const mContainer = document.getElementById('verifyMediaContainer');
-            mContainer.innerHTML = 'Loading...';
-            try {
-                const { data: media } = await supabaseClient.from('media').select('*').eq('ticket_id', id);
-                mContainer.innerHTML = '';
-                if(ticket.photo_url) mContainer.innerHTML += `<div class="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-pointer hover:opacity-90 transition shadow-sm relative group" onclick="viewImage('${ticket.photo_url}')"><img src="${ticket.photo_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110"></div>`;
-                if(media) media.forEach(m => mContainer.innerHTML += `<div class="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-pointer hover:opacity-90 transition shadow-sm relative group" onclick="viewImage('${m.url}')"><img src="${m.url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110"></div>`);
-                if(!ticket.photo_url && (!media || media.length === 0)) mContainer.innerHTML = '<span class="text-xs text-gray-400 italic col-span-3 text-center">- ไม่มีรูปภาพ -</span>';
-            } catch(e) { mContainer.innerHTML = 'Error'; }
+            mContainer.innerHTML = '';
+            
+            // --- IMAGE DISPLAY LOGIC ---
+            // 1. Before Image (Cover from Ticket)
+            if(ticket.photo_url) {
+                mContainer.innerHTML += `
+                <div class="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-pointer hover:opacity-90 transition shadow-sm relative group" onclick="viewImage('${ticket.photo_url}')">
+                    <img src="${ticket.photo_url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">
+                    <div class="absolute bottom-0 left-0 bg-black/60 text-white text-[10px] w-full text-center py-1">Before</div>
+                </div>`;
+            }
+            
+            // 2. After Images (From Media Table)
+            if(ticket.media_data && ticket.media_data.length > 0) {
+                ticket.media_data.forEach(m => {
+                    const label = m.type === 'AFTER_IMAGE' ? 'After' : 'Img';
+                    const color = m.type === 'AFTER_IMAGE' ? 'bg-green-600/80' : 'bg-blue-600/80';
+                    mContainer.innerHTML += `
+                    <div class="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-pointer hover:opacity-90 transition shadow-sm relative group" onclick="viewImage('${m.url}')">
+                        <img src="${m.url}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">
+                        <div class="absolute bottom-0 left-0 ${color} text-white text-[10px] w-full text-center py-1">${label}</div>
+                    </div>`;
+                });
+            }
+            
+            if(!ticket.photo_url && (!ticket.media_data || ticket.media_data.length === 0)) {
+                mContainer.innerHTML = '<span class="text-xs text-gray-400 italic col-span-3 text-center py-4 border border-dashed rounded-lg bg-gray-50">- ไม่มีรูปภาพ -</span>';
+            }
 
             const footer = document.getElementById('modalFooter');
             if(ticket.status === 'CLOSED') footer.classList.add('hidden'); else footer.classList.remove('hidden');
@@ -567,6 +587,119 @@
         }
         
         function scrollToSection(id) { document.getElementById(id).scrollIntoView({behavior:'smooth'}); }
+
+        // --- EXPORT TO EXCEL (WITH IMAGES) ---
+        async function exportToExcel() {
+            try {
+                if (!currentTickets || currentTickets.length === 0) return alert("ไม่มีข้อมูลที่จะ Export");
+
+                document.getElementById('exportLoading').classList.remove('hidden');
+
+                const workbook = new ExcelJS.Workbook();
+                const worksheet = workbook.addWorksheet('Repair Report');
+
+                // 1. Setup Columns (2 Image Columns: Before, After)
+                worksheet.columns = [
+                    { header: 'Job ID', key: 'id', width: 15 },
+                    { header: 'Date', key: 'date', width: 12 },
+                    { header: 'Time Open', key: 'time_open', width: 10 },
+                    { header: 'Time Close', key: 'time_close', width: 10 },
+                    { header: 'Location', key: 'location', width: 20 },
+                    { header: 'Asset', key: 'asset', width: 25 },
+                    { header: 'Issue', key: 'issue', width: 25 },
+                    { header: 'Description', key: 'desc', width: 25 },
+                    { header: 'Solution', key: 'solution', width: 25 },
+                    { header: 'Parts', key: 'parts', width: 25 },
+                    { header: 'Qty', key: 'qty', width: 10 },
+                    { header: 'Technician', key: 'tech', width: 20 },
+                    { header: 'Before Img', key: 'img_before', width: 20 },
+                    { header: 'After Img', key: 'img_after', width: 20 }
+                ];
+
+                // 2. Add Header Info
+                worksheet.insertRow(1, ["FM-MT-01-11 Rev.01", "", "", "", "", "", "", "", "", "Date:", dayjs().format('DD/MM/YYYY')]);
+                worksheet.insertRow(2, ["รายงานการปฏิบัติงานซ่อมบำรุงประจำเดือน " + document.getElementById('monthFilter').value]);
+                worksheet.mergeCells('A2:N2'); // Merge across new column width
+                worksheet.getRow(2).font = { bold: true, size: 14 };
+                worksheet.getRow(2).alignment = { horizontal: 'center' };
+
+                // 3. Add Data Rows
+                let currentRow = 4;
+                
+                // Helper to convert URL to Base64
+                const urlToBase64 = async (url) => {
+                    try {
+                        const response = await fetch(url);
+                        const blob = await response.blob();
+                        return new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                            reader.readAsDataURL(blob);
+                        });
+                    } catch (e) { return null; }
+                };
+
+                for (const t of currentTickets) {
+                    const row = worksheet.addRow({
+                        id: t.id.substring(0, 6).toUpperCase(),
+                        date: dayjs(t.incident_time).format('DD/MM/YYYY'),
+                        time_open: dayjs(t.incident_time).format('HH:mm'),
+                        time_close: t.finished_at ? dayjs(t.finished_at).format('HH:mm') : '-',
+                        location: t.location || '-',
+                        asset: t.asset_name,
+                        issue: t.issue_text,
+                        desc: t.description || '-',
+                        solution: t.repair_details || '-',
+                        parts: t.parts_data.map(p => p.part_name).join(', '),
+                        qty: t.parts_data.map(p => p.quantity).join(', '),
+                        tech: t.technician_name,
+                        img_before: '',
+                        img_after: ''
+                    });
+
+                    row.height = 80; // Default height for images
+
+                    // Embed Before Image (Cover)
+                    if (t.photo_url) {
+                        const base64 = await urlToBase64(t.photo_url);
+                        if (base64) {
+                            const imageId = workbook.addImage({ base64: base64, extension: 'jpeg' });
+                            worksheet.addImage(imageId, { tl: { col: 12, row: currentRow - 1 }, ext: { width: 100, height: 100 } });
+                        }
+                    }
+
+                    // Embed After Image (Find first AFTER_IMAGE)
+                    if (t.media_data && t.media_data.length > 0) {
+                        const afterImg = t.media_data.find(m => m.type === 'AFTER_IMAGE');
+                        if (afterImg) {
+                            const base64 = await urlToBase64(afterImg.url);
+                            if (base64) {
+                                const imageId = workbook.addImage({ base64: base64, extension: 'jpeg' });
+                                worksheet.addImage(imageId, { tl: { col: 13, row: currentRow - 1 }, ext: { width: 100, height: 100 } });
+                            }
+                        }
+                    }
+                    currentRow++;
+                }
+
+                // 4. Footer
+                worksheet.addRow([]);
+                worksheet.addRow([]);
+                worksheet.addRow(["..........................................", "", "..........................................", "", ".........................................."]);
+                worksheet.addRow(["ผู้จัดทำ (ธุรการ)", "", "ผู้ตรวจสอบ (หัวหน้าช่าง)", "", "ผู้อนุมัติ (ผู้จัดการ)"]);
+
+                // 5. Generate & Save
+                const buffer = await workbook.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                saveAs(blob, `Maintenance_Report_${dayjs().format('YYYYMM')}.xlsx`);
+
+            } catch (err) {
+                console.error(err);
+                alert("Export Failed: " + err.message);
+            } finally {
+                document.getElementById('exportLoading').classList.add('hidden');
+            }
+        }
     </script>
 </body>
 </html>
