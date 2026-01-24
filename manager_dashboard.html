@@ -38,6 +38,22 @@
         .glass-panel { background: white; border-radius: 1.5rem; box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05); }
         .filter-input { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.5rem 1rem; font-size: 0.875rem; transition: all 0.2s; outline: none; width: 100%; font-family: 'Sarabun'; }
         .filter-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); background: white; }
+
+        /* Enhanced Card Hover Effects */
+        .card-gradient-blue, .card-gradient-orange, .card-gradient-purple, .card-gradient-green {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s;
+        }
+        .card-gradient-blue:hover, .card-gradient-orange:hover, .card-gradient-purple:hover, .card-gradient-green:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Table Row Animations */
+        tbody tr { transition: all 0.2s ease; }
+        tbody tr:hover { background-color: #f1f5f9 !important; transform: scale(1.005); }
+
+        /* Smooth Scrolling */
+        * { scroll-behavior: smooth; }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden bg-gray-100 text-gray-800">
@@ -103,11 +119,8 @@
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="goToExportPage()" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg transition flex items-center gap-2 active:scale-95 cursor-pointer border border-green-400">
-                            <i class="fas fa-file-excel"></i> <span class="hidden sm:inline">Export Excel</span>
-                        </button>
                         <button onclick="fetchData()" class="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-xl text-sm font-bold shadow-lg transition flex items-center gap-2 active:scale-95 cursor-pointer">
-                            <i class="fas fa-sync-alt animate-spin-hover"></i> <span class="hidden sm:inline">รีเฟรช</span>
+                            <i class="fas fa-sync-alt"></i> <span class="hidden sm:inline">รีเฟรช</span>
                         </button>
                     </div>
                 </div>
@@ -119,13 +132,19 @@
 
             <!-- CONTENT SECTION -->
             <div class="px-4 sm:px-8 -mt-24 pb-20 w-full relative z-20">
-                <!-- Filter Bar -->
-                <div class="bg-white rounded-2xl shadow-lg p-4 mb-6 flex flex-col md:flex-row gap-4 items-center animate-fade-in-up">
-                    <div class="flex-1 w-full relative">
-                        <i class="fas fa-search absolute left-3 top-3 text-gray-400 text-sm"></i>
-                        <input type="text" id="searchInput" onkeyup="applyFilters()" placeholder="ค้นหา ID, ชื่อเครื่อง, อาการ..." class="filter-input pl-10">
+                <!-- Filter Bar (Enhanced) -->
+                <div class="bg-white rounded-2xl shadow-lg p-5 mb-6 space-y-4 animate-fade-in-up">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-filter text-blue-500"></i>
+                        <h3 class="font-bold text-slate-700">ตัวกรองขั้นสูง</h3>
                     </div>
-                    <div class="w-full md:w-48">
+
+                    <!-- Row 1: Search & Status -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400 text-sm"></i>
+                            <input type="text" id="searchInput" onkeyup="applyFilters()" placeholder="ค้นหา ID, ชื่อเครื่อง, อาการ..." class="filter-input pl-10">
+                        </div>
                         <select id="statusFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
                             <option value="ALL">สถานะ: ทั้งหมด</option>
                             <option value="PENDING_INSPECTION">🟣 รอตรวจสอบ</option>
@@ -134,12 +153,36 @@
                             <option value="IN_PROGRESS">🟠 กำลังซ่อม</option>
                         </select>
                     </div>
-                    <div class="w-full md:w-48">
-                        <input type="month" id="monthFilter" onchange="applyFilters()" class="filter-input cursor-pointer text-blue-600 font-bold">
+
+                    <!-- Row 2: Asset & Technician -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <select id="assetFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
+                            <option value="ALL">เครื่องจักร: ทั้งหมด</option>
+                        </select>
+                        <select id="technicianFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
+                            <option value="ALL">ช่าง: ทั้งหมด</option>
+                        </select>
                     </div>
-                    <div class="w-full md:w-auto">
-                        <button onclick="resetFilters()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm border border-slate-200">
-                            <i class="fas fa-undo"></i> รีเซ็ต
+
+                    <!-- Row 3: Date Range -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-xs text-slate-500 font-bold mb-1 block">วันที่เริ่ม</label>
+                            <input type="date" id="dateStartFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 font-bold mb-1 block">วันที่สิ้นสุด</label>
+                            <input type="date" id="dateEndFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Reset Button -->
+                    <div class="flex gap-3">
+                        <button onclick="resetFilters()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm border border-slate-200">
+                            <i class="fas fa-undo"></i> รีเซ็ตฟิลเตอร์
+                        </button>
+                        <button onclick="goToExportPage()" class="flex-1 bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg transition flex items-center justify-center gap-2 active:scale-95 cursor-pointer border border-green-400">
+                            <i class="fas fa-file-excel"></i> Export Excel
                         </button>
                     </div>
                 </div>
@@ -236,7 +279,9 @@
             const user = Auth.requireRole(['admin', 'manager']);
             if(!user) return;
             safeSetText('userName', user.full_name || user.username);
-            document.getElementById('monthFilter').value = dayjs().format('YYYY-MM');
+            // Set default date range to current month
+            document.getElementById('dateStartFilter').value = dayjs().startOf('month').format('YYYY-MM-DD');
+            document.getElementById('dateEndFilter').value = dayjs().endOf('month').format('YYYY-MM-DD');
             fetchData();
         });
         
@@ -248,7 +293,9 @@
         }
 
         function goToExportPage() {
-            const month = document.getElementById('monthFilter').value;
+            // Use date range if available, otherwise default to current month
+            const dateStart = document.getElementById('dateStartFilter').value;
+            const month = dateStart ? dayjs(dateStart).format('YYYY-MM') : dayjs().format('YYYY-MM');
             window.open(`export_report.html?month=${month}`, '_blank');
         }
 
@@ -283,28 +330,58 @@
                     requester_name: profilesMap[t.requester_id] || 'Unknown',
                     technician_name: profilesMap[t.technician_id] || '-'
                 }));
-                
+
+                // Populate filter dropdowns
+                populateFilterDropdowns();
                 applyFilters();
 
             } catch (err) { alert('Failed to load data: ' + err.message); }
         }
 
+        function populateFilterDropdowns() {
+            // Populate Asset Filter
+            const assetFilter = document.getElementById('assetFilter');
+            const uniqueAssets = [...new Set(allTickets.map(t => t.asset_name))].filter(Boolean).sort();
+            assetFilter.innerHTML = '<option value="ALL">เครื่องจักร: ทั้งหมด</option>';
+            uniqueAssets.forEach(a => {
+                assetFilter.innerHTML += `<option value="${a}">${a}</option>`;
+            });
+
+            // Populate Technician Filter
+            const techFilter = document.getElementById('technicianFilter');
+            const uniqueTechs = [...new Set(allTickets.map(t => t.technician_name))].filter(n => n && n !== '-').sort();
+            techFilter.innerHTML = '<option value="ALL">ช่าง: ทั้งหมด</option>';
+            uniqueTechs.forEach(t => {
+                techFilter.innerHTML += `<option value="${t}">${t}</option>`;
+            });
+        }
+
         function applyFilters() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const statusFilter = document.getElementById('statusFilter').value;
-            const monthFilter = document.getElementById('monthFilter').value;
+            const assetFilter = document.getElementById('assetFilter').value;
+            const technicianFilter = document.getElementById('technicianFilter').value;
+            const dateStart = document.getElementById('dateStartFilter').value;
+            const dateEnd = document.getElementById('dateEndFilter').value;
 
             currentTickets = allTickets.filter(t => {
-                const matchSearch = t.id.toLowerCase().includes(searchTerm) || 
-                                    t.asset_name.toLowerCase().includes(searchTerm) || 
+                const matchSearch = t.id.toLowerCase().includes(searchTerm) ||
+                                    t.asset_name.toLowerCase().includes(searchTerm) ||
+                                    t.issue_text.toLowerCase().includes(searchTerm) ||
                                     t.technician_name.toLowerCase().includes(searchTerm);
                 const matchStatus = statusFilter === 'ALL' || t.status === statusFilter;
+                const matchAsset = assetFilter === 'ALL' || t.asset_name === assetFilter;
+                const matchTech = technicianFilter === 'ALL' || t.technician_name === technicianFilter;
+
                 let matchDate = true;
-                if (monthFilter) {
-                    const ticketMonth = dayjs(t.incident_time).format('YYYY-MM');
-                    matchDate = ticketMonth === monthFilter;
+                if(dateStart) {
+                    matchDate = matchDate && dayjs(t.incident_time).isAfter(dayjs(dateStart).subtract(1, 'day'));
                 }
-                return matchSearch && matchStatus && matchDate;
+                if(dateEnd) {
+                    matchDate = matchDate && dayjs(t.incident_time).isBefore(dayjs(dateEnd).add(1, 'day'));
+                }
+
+                return matchSearch && matchStatus && matchAsset && matchTech && matchDate;
             });
 
             // Use SAFE SET TEXT
@@ -318,7 +395,10 @@
         function resetFilters() {
             document.getElementById('searchInput').value = '';
             document.getElementById('statusFilter').value = 'ALL';
-            document.getElementById('monthFilter').value = dayjs().format('YYYY-MM');
+            document.getElementById('assetFilter').value = 'ALL';
+            document.getElementById('technicianFilter').value = 'ALL';
+            document.getElementById('dateStartFilter').value = '';
+            document.getElementById('dateEndFilter').value = '';
             applyFilters();
         }
         
