@@ -9,21 +9,68 @@
     <!-- ExcelJS & FileSaver -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap');
-        body { font-family: 'Sarabun', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #1f2937; color: white; margin: 0; }
-        .loader { width: 64px; height: 64px; border: 5px solid #FFF; border-bottom-color: #3b82f6; border-radius: 50%; animation: rotation 1s linear infinite; margin-bottom: 20px; }
-        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .progress-container { width: 400px; background-color: #374151; border-radius: 10px; overflow: hidden; margin-top: 10px; border: 1px solid #4b5563; }
-        .progress-bar { width: 0%; height: 10px; background-color: #3b82f6; transition: width 0.3s; }
-        #status { margin-top: 15px; font-size: 16px; color: #d1d5db; text-align: center; }
+        body {
+            font-family: 'Sarabun', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+        }
+        .loader {
+            width: 80px;
+            height: 80px;
+            border: 6px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .progress-container {
+            width: 500px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-top: 20px;
+            border: 2px solid rgba(255,255,255,0.2);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }
+        .progress-bar {
+            height: 12px;
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            transition: width 0.5s ease;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+        }
+        #status {
+            margin-top: 25px;
+            font-size: 18px;
+            color: rgba(255,255,255,0.95);
+            text-align: center;
+            font-weight: 600;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        h2 {
+            font-weight: 800;
+            font-size: 28px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            letter-spacing: -0.5px;
+        }
     </style>
 </head>
 <body>
 
     <div class="loader"></div>
-    <h2 style="font-weight: bold; font-size: 24px;">กำลังสร้างรายงาน Excel (FM-MT-01-11)...</h2>
+    <h2>กำลังสร้างรายงาน Excel...</h2>
     <div class="progress-container">
         <div id="progressBar" class="progress-bar"></div>
     </div>
@@ -80,7 +127,7 @@
 
                 // 2. Fetch Related Data (Batch)
                 updateStatus('กำลังรวบรวมข้อมูลประกอบ...', 20);
-                
+
                 const assetIds = [...new Set(tickets.map(t => t.asset_id).filter(id => id))];
                 const userIds = [...new Set(tickets.map(t => t.requester_id).filter(id => id))];
                 const techIds = [...new Set(tickets.map(t => t.technician_id).filter(id => id))];
@@ -90,81 +137,129 @@
                 let assetsMap = {}, profilesMap = {}, partsMap = {};
 
                 const promises = [
-                    assetIds.length ? supabaseClient.from('assets').select('id, name, location').in('id', assetIds) : { data: [] },
-                    allUserIds.length ? supabaseClient.from('profiles').select('id, full_name').in('id', allUserIds) : { data: [] },
+                    assetIds.length ? supabaseClient.from('assets').select('id, name, location, asset_code').in('id', assetIds) : { data: [] },
+                    allUserIds.length ? supabaseClient.from('profiles').select('id, full_name, username').in('id', allUserIds) : { data: [] },
                     ticketIds.length ? supabaseClient.from('spare_parts_requests').select('*').in('ticket_id', ticketIds) : { data: [] }
                 ];
 
                 const [assetsRes, profilesRes, partsRes] = await Promise.all(promises);
 
                 assetsRes.data?.forEach(a => assetsMap[a.id] = a);
-                profilesRes.data?.forEach(p => profilesMap[p.id] = p.full_name);
+                profilesRes.data?.forEach(p => profilesMap[p.id] = p.full_name || p.username);
                 partsRes.data?.forEach(p => {
                     if (!partsMap[p.ticket_id]) partsMap[p.ticket_id] = [];
                     partsMap[p.ticket_id].push(p);
                 });
 
-                // 3. Setup Excel
+                // 3. Setup Excel Workbook
                 updateStatus('กำลังสร้างโครงสร้างไฟล์...', 30);
                 const workbook = new ExcelJS.Workbook();
-                const worksheet = workbook.addWorksheet('Repair Report');
+                const worksheet = workbook.addWorksheet('รายงานการซ่อมบำรุง');
 
-                // Define Columns
+                // Set Page Setup for A4 Landscape
+                worksheet.pageSetup = {
+                    paperSize: 9, // A4
+                    orientation: 'landscape',
+                    fitToPage: true,
+                    fitToWidth: 1,
+                    fitToHeight: 0,
+                    margins: {
+                        left: 0.5, right: 0.5, top: 0.75, bottom: 0.75,
+                        header: 0.3, footer: 0.3
+                    }
+                };
+
+                // Define Column Widths (Thai Template Format)
                 worksheet.columns = [
-                    { width: 10 }, // A เวลาเปิด
-                    { width: 10 }, // B เวลาปิด
-                    { width: 15 }, // C สถานที่
-                    { width: 25 }, // D เครื่องจักร
-                    { width: 25 }, // E อาการ
-                    { width: 25 }, // F สาเหตุ
-                    { width: 25 }, // G วิธีแก้ไข
-                    { width: 20 }, // H อุปกรณ์
-                    { width: 8 },  // I จำนวน
-                    { width: 20 }, // J ผู้ปฏิบัติงาน
-                    { width: 25 }, // K รูปก่อนซ่อม
-                    { width: 25 }, // L รูปหลังซ่อม
+                    { width: 8 },   // A: เวลาเริ่ม
+                    { width: 8 },   // B: เวลาเสร็จ
+                    { width: 12 },  // C: สถานที่ตั้ง
+                    { width: 20 },  // D: ชื่อเครื่องจักร
+                    { width: 18 },  // E: อาการ
+                    { width: 18 },  // F: สาเหตุ
+                    { width: 22 },  // G: วิธีใช้งาน/อะไหล่
+                    { width: 15 },  // H: อุปกรณ์ที่ใช้
+                    { width: 6 },   // I: จำนวน
+                    { width: 15 },  // J: ผู้ปฏิบัติงาน
+                    { width: 30 }   // K: ภาพประกอบ (ALL IMAGES)
                 ];
 
-                // Header Rows (FM-MT-01-11 Style)
-                worksheet.mergeCells('A1:L1');
-                const titleCell = worksheet.getCell('A1');
-                titleCell.value = "FM-MT-01-11 Rev.01 Issue 2/05/23";
-                titleCell.font = { size: 10, italic: true };
-                titleCell.alignment = { horizontal: 'left' };
+                // HEADER SECTION (Row 1-3)
+                // Row 1: Logo | Title | Date
+                const row1 = worksheet.getRow(1);
+                row1.height = 35;
 
-                worksheet.mergeCells('A2:I2');
-                const mainTitle = worksheet.getCell('A2');
-                mainTitle.value = "รายงานการปฏิบัติงานซ่อมบำรุง";
-                mainTitle.font = { bold: true, size: 16 };
-                mainTitle.alignment = { horizontal: 'center', vertical: 'middle' };
+                // Logo (Placeholder - using icon symbol)
+                worksheet.getCell('A1').value = '🏭 WD';
+                worksheet.getCell('A1').font = { size: 18, bold: true, color: { argb: 'FF0066CC' } };
+                worksheet.getCell('A1').alignment = { horizontal: 'left', vertical: 'middle' };
 
-                worksheet.mergeCells('J2:K2');
-                worksheet.getCell('J2').value = "วัน/เดือน/ปี";
-                worksheet.getCell('J2').alignment = { horizontal: 'right', vertical: 'middle' };
-                
-                worksheet.getCell('L2').value = dayjs().format('DD/MM/YYYY');
-                worksheet.getCell('L2').alignment = { horizontal: 'center', vertical: 'middle' };
-                worksheet.getCell('L2').border = { bottom: {style:'thin'} };
+                // Title (Centered)
+                worksheet.mergeCells('B1:I1');
+                const titleCell = worksheet.getCell('B1');
+                titleCell.value = "รายงานการปฏิบัติงานซ่อมบำรุง";
+                titleCell.font = { size: 18, bold: true, color: { argb: 'FF1F2937' } };
+                titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
-                // Table Headers
+                // Date (Right aligned)
+                worksheet.mergeCells('J1:K1');
+                const dateCell = worksheet.getCell('J1');
+                dateCell.value = `วันที่: ${dayjs().format('DD/MM/YYYY')}`;
+                dateCell.font = { size: 11, bold: true };
+                dateCell.alignment = { horizontal: 'right', vertical: 'middle' };
+
+                // Row 2: Subtitle/Period
+                const row2 = worksheet.getRow(2);
+                row2.height = 20;
+                worksheet.mergeCells('A2:K2');
+                const periodCell = worksheet.getCell('A2');
+                periodCell.value = `ประจำเดือน ${dayjs(startDate).format('MMMM YYYY')} | WD Manufacturing Co., Ltd.`;
+                periodCell.font = { size: 10, italic: true, color: { argb: 'FF6B7280' } };
+                periodCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+                // Row 3: Empty spacing
+                worksheet.getRow(3).height = 5;
+
+                // TABLE HEADERS (Row 4)
                 const headerLabels = [
-                    "เวลาเปิด", "เวลาปิด", "สถานที่ตั้ง", "ชื่อเครื่องจักร / อุปกรณ์", "อาการ", 
-                    "สาเหตุของปัญหา", "วิธีแก้ไข/รายละเอียด", "อุปกรณ์ที่ใช้", "จำนวน", "ผู้ปฎิบัติงาน", 
-                    "ภาพประกอบ (Before)", "ภาพประกอบ (After)"
+                    "เวลาเริ่ม",
+                    "เวลาเสร็จ",
+                    "สถานที่ตั้ง",
+                    "ชื่อเครื่องจักร/อุปกรณ์",
+                    "อาการ",
+                    "สาเหตุของอาการ",
+                    "วิธีใช้งาน/อะไหล่",
+                    "อุปกรณ์ที่ใช้",
+                    "จำนวน",
+                    "ผู้ปฏิบัติงาน",
+                    "ภาพประกอบ"
                 ];
-                
+
                 const headerRow = worksheet.addRow(headerLabels);
-                headerRow.height = 30;
+                headerRow.height = 35;
                 headerRow.eachCell((cell) => {
-                    cell.font = { bold: true };
-                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } }; // Light Gray
-                    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-                    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                    cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FF2563EB' } // Blue header
+                    };
+                    cell.alignment = {
+                        horizontal: 'center',
+                        vertical: 'middle',
+                        wrapText: true
+                    };
+                    cell.border = {
+                        top: { style: 'medium', color: { argb: 'FF1E3A8A' } },
+                        left: { style: 'thin', color: { argb: 'FF1E3A8A' } },
+                        bottom: { style: 'medium', color: { argb: 'FF1E3A8A' } },
+                        right: { style: 'thin', color: { argb: 'FF1E3A8A' } }
+                    };
                 });
 
-                // 4. Process Rows & Images
-                let currentRow = 4; // Data starts at row 4
-                
+                // 4. DATA ROWS WITH IMAGES
+                let currentRow = 5; // Data starts at row 5
+
                 for (let i = 0; i < tickets.length; i++) {
                     const t = tickets[i];
                     const pct = 30 + Math.round(((i + 1) / tickets.length) * 60);
@@ -172,128 +267,176 @@
 
                     const asset = assetsMap[t.asset_id] || {};
                     const parts = partsMap[t.id] || [];
-                    const partsStr = parts.map(p => p.part_name).join('\n');
-                    const qtyStr = parts.map(p => p.quantity).join('\n');
 
-                    // Extract Data
+                    // Format parts list
+                    const partsStr = parts.map(p => `${p.part_name}`).join('\n');
+                    const qtyStr = parts.map(p => p.quantity).join('\n');
+                    const partsDetail = parts.map(p => `${p.part_name} (${p.quantity})`).join(', ');
+
+                    // Extract Data (Thai Template Format)
                     const rowData = [
-                        dayjs(t.incident_time).format('HH:mm'),
+                        t.incident_time ? dayjs(t.incident_time).format('HH:mm') : '-',
                         t.finished_at ? dayjs(t.finished_at).format('HH:mm') : '-',
                         asset.location || '-',
                         asset.name || 'ไม่ระบุ',
-                        t.issue_text,
-                        t.description || '-', // สาเหตุ
-                        t.repair_details || '-', // วิธีแก้ไข
+                        t.issue_text || '-',
+                        t.description || '-',
+                        (t.repair_details || '') + (partsDetail ? '\n\nอะไหล่: ' + partsDetail : ''),
                         partsStr || '-',
                         qtyStr || '-',
                         profilesMap[t.technician_id] || '-',
-                        '', '' // Placeholders for images
+                        '' // Images placeholder
                     ];
 
                     const row = worksheet.addRow(rowData);
 
-                    // Note: Row height will be set dynamically after calculating image count
+                    // Style each cell
+                    row.eachCell((cell, colNumber) => {
+                        cell.alignment = {
+                            vertical: 'top',
+                            wrapText: true,
+                            horizontal: colNumber <= 2 || colNumber === 9 ? 'center' : 'left'
+                        };
+                        cell.font = { size: 10 };
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+                            left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+                            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+                            right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
+                        };
 
-                    // Style
-                    row.eachCell((cell) => {
-                        cell.alignment = { vertical: 'middle', wrapText: true, horizontal: 'center' };
-                        cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                        // Alternate row colors
+                        if (i % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
+                        }
                     });
 
-                    // --- IMAGE LOGIC (ALL IMAGES) ---
+                    // --- IMAGE LOGIC (ALL IMAGES IN GRID) ---
                     const { data: mediaList } = await supabaseClient.from('media').select('*').eq('ticket_id', t.id);
 
-                    // Group Images
-                    let beforeImgs = [];
-                    let afterImgs = [];
+                    // Collect ALL Images (Before + After)
+                    let allImages = [];
 
-                    if (t.photo_url) beforeImgs.push(t.photo_url); // Cover is always Before
+                    // Add cover photo
+                    if (t.photo_url) {
+                        allImages.push({ url: t.photo_url, type: 'BEFORE' });
+                    }
 
+                    // Add media images
                     if (mediaList && mediaList.length > 0) {
                         mediaList.forEach(m => {
-                            if (m.type === 'AFTER_IMAGE') {
-                                afterImgs.push(m.url);
-                            } else if (m.type === 'BEFORE_IMAGE' && m.url !== t.photo_url) {
-                                beforeImgs.push(m.url);
-                            } else if (!m.type && m.url !== t.photo_url) {
-                                // Legacy images without type - treat as Before
-                                beforeImgs.push(m.url);
-                            }
+                            const type = m.type === 'AFTER_IMAGE' ? 'AFTER' : 'BEFORE';
+                            allImages.push({ url: m.url, type });
                         });
                     }
 
-                    // Calculate dynamic row height based on total images
-                    const totalImages = Math.max(beforeImgs.length, afterImgs.length);
-                    const imagesPerRow = 2; // 2 images side by side
-                    const imageRows = Math.ceil(totalImages / imagesPerRow);
-                    const dynamicHeight = Math.max(100, imageRows * 95); // Minimum 100, or 95px per image row
+                    // Calculate dynamic row height based on number of images
+                    const imagesPerRow = 2; // 2 images per row
+                    const imageRows = Math.ceil(allImages.length / imagesPerRow);
+                    const imageHeight = 80; // Height per image row
+                    const dynamicHeight = Math.max(50, imageRows * imageHeight + 10);
                     row.height = dynamicHeight;
 
-                    // Helper to embed ALL images in a cell (grid layout)
-                    const embedImages = async (urls, colIndex) => {
-                        if (urls.length === 0) return;
+                    // Embed ALL images in grid format (Column K)
+                    if (allImages.length > 0) {
+                        for (let j = 0; j < allImages.length; j++) {
+                            const img = allImages[j];
+                            const b64 = await urlToBase64(img.url);
 
-                        // Display ALL images (no limit)
-                        for (let j = 0; j < urls.length; j++) {
-                            const b64 = await urlToBase64(urls[j]);
                             if (b64) {
-                                const imgId = workbook.addImage({ base64: b64, extension: 'jpeg' });
+                                const imgId = workbook.addImage({
+                                    base64: b64,
+                                    extension: 'jpeg'
+                                });
 
-                                // Calculate position: 2 images per row
+                                // Calculate position in grid (2 columns)
                                 const rowOffset = Math.floor(j / 2);
                                 const colOffset = (j % 2) * 0.5;
 
                                 worksheet.addImage(imgId, {
-                                    tl: { col: colIndex + colOffset, row: currentRow - 1 + (rowOffset * 0.95) },
-                                    ext: { width: 90, height: 90 },
+                                    tl: {
+                                        col: 10 + colOffset,  // Column K (index 10)
+                                        row: currentRow - 1 + (rowOffset * 0.85)
+                                    },
+                                    ext: { width: 110, height: 75 },
                                     editAs: 'oneCell'
                                 });
                             }
                         }
-                    };
-
-                    await embedImages(beforeImgs, 10); // Col K (Index 10)
-                    await embedImages(afterImgs, 11);  // Col L (Index 11)
+                    } else {
+                        // No images - add text
+                        const imgCell = worksheet.getCell(`K${currentRow}`);
+                        imgCell.value = '- ไม่มีรูป -';
+                        imgCell.font = { italic: true, color: { argb: 'FF9CA3AF' } };
+                        imgCell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    }
 
                     currentRow++;
                 }
 
-                // 5. Footer (Signatures)
-                worksheet.addRow([]); // Spacer
-                
-                const footerRow1 = worksheet.addRow(["", "..........................................", "", "", "..........................................", "", "", "", ".........................................."]);
-                const footerRow2 = worksheet.addRow(["", "ผู้จัดทำ (ธุรการซ่อมบำรุง)", "", "", "ผู้ตรวจสอบ (หัวหน้าช่าง)", "", "", "", "ผู้จัดการฝ่ายผลิต"]);
-                
-                [footerRow1, footerRow2].forEach(r => {
-                    r.font = { size: 11 };
-                    r.alignment = { horizontal: 'center' };
-                });
+                // 5. FOOTER (Signatures)
+                currentRow += 2; // Add spacing
 
-                // Merge Cells for Signatures
-                // Adjust merge ranges based on column indices (0-based)
-                // Col B-C (1-2), E-G (4-6), I-K (8-10) approx
-                worksheet.mergeCells(`B${currentRow+1}:D${currentRow+1}`); // Name line 1
-                worksheet.mergeCells(`B${currentRow+2}:D${currentRow+2}`); // Title 1
-                
-                worksheet.mergeCells(`E${currentRow+1}:G${currentRow+1}`); // Name line 2
-                worksheet.mergeCells(`E${currentRow+2}:G${currentRow+2}`); // Title 2
-                
-                worksheet.mergeCells(`I${currentRow+1}:K${currentRow+1}`); // Name line 3
-                worksheet.mergeCells(`I${currentRow+2}:K${currentRow+2}`); // Title 3
+                // Signature Lines
+                const sigRow1 = worksheet.getRow(currentRow);
+                sigRow1.height = 60;
 
-                // 6. Download
+                // Three signature columns
+                worksheet.mergeCells(`B${currentRow}:C${currentRow}`);
+                worksheet.mergeCells(`E${currentRow}:F${currentRow}`);
+                worksheet.mergeCells(`H${currentRow}:I${currentRow}`);
+
+                currentRow++;
+                const sigRow2 = worksheet.getRow(currentRow);
+
+                worksheet.mergeCells(`B${currentRow}:C${currentRow}`);
+                worksheet.getCell(`B${currentRow}`).value = '........................................';
+                worksheet.getCell(`B${currentRow}`).alignment = { horizontal: 'center' };
+                worksheet.getCell(`B${currentRow}`).font = { size: 10 };
+
+                worksheet.mergeCells(`E${currentRow}:F${currentRow}`);
+                worksheet.getCell(`E${currentRow}`).value = '........................................';
+                worksheet.getCell(`E${currentRow}`).alignment = { horizontal: 'center' };
+                worksheet.getCell(`E${currentRow}`).font = { size: 10 };
+
+                worksheet.mergeCells(`H${currentRow}:I${currentRow}`);
+                worksheet.getCell(`H${currentRow}`).value = '........................................';
+                worksheet.getCell(`H${currentRow}`).alignment = { horizontal: 'center' };
+                worksheet.getCell(`H${currentRow}`).font = { size: 10 };
+
+                currentRow++;
+                const sigRow3 = worksheet.getRow(currentRow);
+
+                worksheet.mergeCells(`B${currentRow}:C${currentRow}`);
+                worksheet.getCell(`B${currentRow}`).value = 'ผู้ตรวจการ (หัวหน้าซ่อมบำรุง)';
+                worksheet.getCell(`B${currentRow}`).alignment = { horizontal: 'center' };
+                worksheet.getCell(`B${currentRow}`).font = { size: 10, bold: true };
+
+                worksheet.mergeCells(`E${currentRow}:F${currentRow}`);
+                worksheet.getCell(`E${currentRow}`).value = 'ผู้อนุมัติ (ผู้จัดการฝ่าย)';
+                worksheet.getCell(`E${currentRow}`).alignment = { horizontal: 'center' };
+                worksheet.getCell(`E${currentRow}`).font = { size: 10, bold: true };
+
+                worksheet.mergeCells(`H${currentRow}:I${currentRow}`);
+                worksheet.getCell(`H${currentRow}`).value = 'ผู้จัดการโรงงาน';
+                worksheet.getCell(`H${currentRow}`).alignment = { horizontal: 'center' };
+                worksheet.getCell(`H${currentRow}`).font = { size: 10, bold: true };
+
+                // 6. DOWNLOAD FILE
                 updateStatus('เสร็จสิ้น! กำลังดาวน์โหลด...', 100);
                 const buffer = await workbook.xlsx.writeBuffer();
-                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                saveAs(blob, `Maintenance_Report_${monthFilter}.xlsx`);
-                
-                document.getElementById('status').innerHTML = '<span style="color:#4ade80; font-size: 20px;">✅ ดาวน์โหลดเรียบร้อย!</span><br><br><button onclick="window.close()" style="padding:10px 20px; cursor:pointer; background:#555; color:white; border:none; border-radius:5px;">ปิดหน้าต่าง</button>';
-                document.getElementById('progressBar').style.backgroundColor = '#4ade80';
+                const blob = new Blob([buffer], {
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                });
+                saveAs(blob, `รายงานการซ่อมบำรุง_${monthFilter.replace('-', '_')}.xlsx`);
+
+                document.getElementById('status').innerHTML = '<span style="color:#4ade80; font-size: 22px;">✅ ดาวน์โหลดเรียบร้อย!</span><br><br><button onclick="window.close()" style="padding:12px 30px; cursor:pointer; background:linear-gradient(135deg, #4ade80, #22c55e); color:white; border:none; border-radius:12px; font-weight: bold; font-size: 16px; box-shadow: 0 10px 30px rgba(34, 197, 94, 0.4); transition: all 0.3s;">ปิดหน้าต่าง</button>';
+                document.getElementById('progressBar').style.background = 'linear-gradient(90deg, #4ade80, #22c55e)';
 
             } catch (err) {
                 console.error(err);
-                document.getElementById('status').innerHTML = `<span style="color:#ef4444">❌ เกิดข้อผิดพลาด: ${err.message}</span>`;
-                document.getElementById('progressBar').style.backgroundColor = '#ef4444';
+                document.getElementById('status').innerHTML = `<span style="color:#fca5a5; font-size: 18px;">❌ เกิดข้อผิดพลาด:<br>${err.message}</span><br><br><button onclick="window.close()" style="padding:10px 24px; cursor:pointer; background:#ef4444; color:white; border:none; border-radius:10px; font-weight: bold;">ปิด</button>`;
+                document.getElementById('progressBar').style.background = '#ef4444';
             }
         }
 

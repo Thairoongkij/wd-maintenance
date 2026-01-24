@@ -13,64 +13,256 @@
     <script src="config.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
-        body { font-family: 'Sarabun', sans-serif; }
-        .bg-image { background-image: url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=2070'); background-size: cover; background-position: center; }
-        .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15); }
-        .animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .input-group:focus-within label, .input-group:focus-within i { color: #f97316; }
-        .input-group input:focus { border-color: #f97316; box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1); }
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap');
+
+        * {
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            overflow: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 80px rgba(102, 126, 234, 0.3);
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .input-group {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .input-group input {
+            transition: all 0.3s;
+        }
+
+        .input-group:focus-within {
+            transform: translateY(-2px);
+        }
+
+        .input-group:focus-within label {
+            color: #fbbf24;
+        }
+
+        .input-group:focus-within i {
+            color: #fbbf24;
+        }
+
+        .input-group input:focus {
+            border-color: #fbbf24;
+            box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.1), 0 10px 30px rgba(251, 191, 36, 0.2);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(245, 158, 11, 0.5);
+        }
+
+        .btn-login:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-login:hover::before {
+            left: 100%;
+        }
+
+        .demo-btn {
+            transition: all 0.2s;
+        }
+
+        .demo-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+        }
+
+        .demo-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.7;
+            animation: blobMove 20s ease-in-out infinite;
+        }
+
+        @keyframes blobMove {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-30px, 30px) scale(0.9); }
+        }
+
+        .logo-glow {
+            animation: logoGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes logoGlow {
+            from { box-shadow: 0 0 20px rgba(251, 191, 36, 0.5); }
+            to { box-shadow: 0 0 40px rgba(251, 191, 36, 0.8), 0 0 60px rgba(251, 191, 36, 0.4); }
+        }
     </style>
 </head>
-<body class="bg-gray-100 h-screen flex items-center justify-center bg-image relative overflow-hidden">
-    <div class="absolute inset-0 bg-slate-900/80 z-0"></div>
-    <div class="glass-panel w-full max-w-md p-8 rounded-3xl z-10 mx-4 shadow-2xl animate-fade-in relative overflow-hidden">
-        <div class="text-center mb-6">
-            <div class="w-20 h-20 bg-white rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-4 text-orange-500 text-4xl"><i class="fas fa-tools"></i></div>
-            <h1 class="text-2xl font-bold text-gray-800">WD Maintenance</h1>
-            <p class="text-sm text-gray-500">ระบบแจ้งซ่อมและบริหารจัดการ</p>
+<body class="min-h-screen flex items-center justify-center relative overflow-hidden">
+
+    <!-- Animated Background Blobs -->
+    <div class="blob w-96 h-96 bg-purple-400 absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2"></div>
+    <div class="blob w-80 h-80 bg-pink-400 absolute bottom-0 right-0 translate-x-1/2 translate-y-1/2" style="animation-delay: -5s;"></div>
+    <div class="blob w-72 h-72 bg-blue-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="animation-delay: -10s;"></div>
+
+    <div class="glass-card w-full max-w-md p-10 rounded-3xl z-10 mx-4 animate-fade-in-up relative">
+
+        <!-- Logo & Title -->
+        <div class="text-center mb-8 floating">
+            <div class="w-24 h-24 bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 rounded-3xl mx-auto flex items-center justify-center shadow-2xl mb-5 text-white text-5xl logo-glow">
+                <i class="fas fa-tools"></i>
+            </div>
+            <h1 class="text-4xl font-extrabold text-white mb-2 tracking-tight" style="text-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                WD Maintenance
+            </h1>
+            <p class="text-white/80 text-base font-medium">ระบบแจ้งซ่อมและบริหารจัดการ</p>
         </div>
 
-        <!-- DEMO BUTTONS -->
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-6 text-center">
-            <p class="text-xs font-bold text-blue-600 mb-2 uppercase tracking-wider">--- Demo Quick Login ---</p>
+        <!-- Demo Quick Login -->
+        <div class="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 mb-6 shadow-lg">
+            <p class="text-white text-xs font-bold mb-3 uppercase tracking-wider text-center flex items-center justify-center gap-2">
+                <i class="fas fa-rocket"></i> เข้าสู่ระบบด่วน
+            </p>
             <div class="grid grid-cols-4 gap-2">
-                <button onclick="fillLogin('user', '1234')" class="bg-white border border-blue-100 text-blue-600 rounded py-1.5 text-xs font-bold hover:bg-blue-50">User</button>
-                <button onclick="fillLogin('technician', '1234')" class="bg-white border border-orange-100 text-orange-600 rounded py-1.5 text-xs font-bold hover:bg-orange-50">Tech</button>
-                <button onclick="fillLogin('manager', '1234')" class="bg-white border border-purple-100 text-purple-600 rounded py-1.5 text-xs font-bold hover:bg-purple-50">Mgr</button>
-                <button onclick="fillLogin('admin', '1234')" class="bg-white border border-green-100 text-green-600 rounded py-1.5 text-xs font-bold hover:bg-green-50">Admin</button>
+                <button onclick="fillLogin('user', '1234')" class="demo-btn bg-blue-500 hover:bg-blue-600 text-white rounded-xl py-2.5 text-xs font-bold shadow-lg border border-blue-400/50">
+                    <i class="fas fa-user mb-1 block"></i>User
+                </button>
+                <button onclick="fillLogin('technician', '1234')" class="demo-btn bg-orange-500 hover:bg-orange-600 text-white rounded-xl py-2.5 text-xs font-bold shadow-lg border border-orange-400/50">
+                    <i class="fas fa-wrench mb-1 block"></i>Tech
+                </button>
+                <button onclick="fillLogin('manager', '1234')" class="demo-btn bg-purple-500 hover:bg-purple-600 text-white rounded-xl py-2.5 text-xs font-bold shadow-lg border border-purple-400/50">
+                    <i class="fas fa-chart-line mb-1 block"></i>Mgr
+                </button>
+                <button onclick="fillLogin('admin', '1234')" class="demo-btn bg-red-500 hover:bg-red-600 text-white rounded-xl py-2.5 text-xs font-bold shadow-lg border border-red-400/50">
+                    <i class="fas fa-shield-alt mb-1 block"></i>Admin
+                </button>
             </div>
         </div>
 
-        <form id="loginForm" class="space-y-5" onsubmit="handleLogin(event)">
+        <!-- Login Form -->
+        <form id="loginForm" class="space-y-6" onsubmit="handleLogin(event)">
             <div class="input-group">
-                <label class="block text-xs font-bold text-gray-600 mb-1 ml-1 uppercase">Username / Email</label>
+                <label class="block text-xs font-bold text-white/90 mb-2 ml-1 uppercase tracking-wider">
+                    <i class="fas fa-user mr-1"></i> Username / Email
+                </label>
                 <div class="relative">
-                    <i class="fas fa-user absolute left-4 top-3.5 text-gray-400"></i>
-                    <input type="text" id="username" class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-300 bg-white/50 focus:bg-white outline-none transition" placeholder="ระบุชื่อผู้ใช้" required>
+                    <i class="fas fa-user absolute left-4 top-4 text-gray-400 text-lg"></i>
+                    <input
+                        type="text"
+                        id="username"
+                        class="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-white/30 bg-white/80 focus:bg-white outline-none transition text-gray-800 font-medium shadow-lg"
+                        placeholder="ระบุชื่อผู้ใช้"
+                        required
+                    >
                 </div>
             </div>
+
             <div class="input-group">
-                <label class="block text-xs font-bold text-gray-600 mb-1 ml-1 uppercase">Password</label>
+                <label class="block text-xs font-bold text-white/90 mb-2 ml-1 uppercase tracking-wider">
+                    <i class="fas fa-lock mr-1"></i> Password
+                </label>
                 <div class="relative">
-                    <i class="fas fa-lock absolute left-4 top-3.5 text-gray-400"></i>
-                    <input type="password" id="password" class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-300 bg-white/50 focus:bg-white outline-none transition" placeholder="รหัสผ่าน" required>
+                    <i class="fas fa-lock absolute left-4 top-4 text-gray-400 text-lg"></i>
+                    <input
+                        type="password"
+                        id="password"
+                        class="w-full pl-12 pr-4 py-3.5 rounded-2xl border-2 border-white/30 bg-white/80 focus:bg-white outline-none transition text-gray-800 font-medium shadow-lg"
+                        placeholder="รหัสผ่าน"
+                        required
+                    >
                 </div>
             </div>
-            <button type="submit" id="btnLogin" class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3.5 rounded-xl font-bold shadow-lg hover:from-orange-600 hover:to-orange-700 transition transform hover:-translate-y-0.5">เข้าสู่ระบบ</button>
+
+            <button
+                type="submit"
+                id="btnLogin"
+                class="btn-login w-full py-4 rounded-2xl font-extrabold shadow-2xl text-white text-lg tracking-wide border-2 border-yellow-500/30"
+            >
+                <i class="fas fa-sign-in-alt mr-2"></i> เข้าสู่ระบบ
+            </button>
         </form>
-        <div id="loadingOverlay" class="absolute inset-0 bg-white/90 z-20 hidden flex flex-col items-center justify-center">
-            <div class="w-12 h-12 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mb-3"></div>
-            <p class="text-sm font-bold text-gray-600 animate-pulse">กำลังตรวจสอบ...</p>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="absolute inset-0 bg-white/95 backdrop-blur-sm z-20 hidden flex flex-col items-center justify-center rounded-3xl">
+            <div class="relative">
+                <div class="w-20 h-20 border-8 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
+                <div class="w-16 h-16 border-8 border-purple-200 border-t-purple-500 rounded-full animate-spin absolute top-2 left-2" style="animation-direction: reverse; animation-duration: 0.8s;"></div>
+            </div>
+            <p class="text-base font-bold text-gray-700 animate-pulse mt-6">กำลังตรวจสอบ...</p>
         </div>
     </div>
-    <div class="absolute bottom-4 text-center w-full z-10 text-[10px] text-white/50">© 2026 WD Manufacturing Co., Ltd.</div>
+
+    <!-- Footer -->
+    <div class="absolute bottom-6 text-center w-full z-10 text-xs text-white/60 font-medium">
+        <p>© 2026 WD Manufacturing Co., Ltd.</p>
+        <p class="text-[10px] mt-1 text-white/40">Powered by Modern Tech Stack</p>
+    </div>
 
     <script>
-        // ไม่ต้องประกาศ SUPABASE_KEY ซ้ำแล้ว เพราะอยู่ใน config.js
-
-        function fillLogin(u, p) { document.getElementById('username').value=u; document.getElementById('password').value=p; document.getElementById('btnLogin').click(); }
+        function fillLogin(u, p) {
+            document.getElementById('username').value = u;
+            document.getElementById('password').value = p;
+            document.getElementById('btnLogin').click();
+        }
 
         async function handleLogin(e) {
             e.preventDefault();
@@ -78,10 +270,13 @@
             const passIn = document.getElementById('password').value.trim();
             const loader = document.getElementById('loadingOverlay');
             loader.classList.remove('hidden');
-            
+
             try {
-                // 1. Try Auth (supabaseClient มาจาก config.js)
-                let { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({ email: userIn, password: passIn });
+                // 1. Try Auth (supabaseClient from config.js)
+                let { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
+                    email: userIn,
+                    password: passIn
+                });
                 let userProfile = null;
 
                 if (!authError && authData.user) {
@@ -95,9 +290,9 @@
 
                 if (!userProfile) throw new Error('ไม่พบผู้ใช้หรือรหัสผ่านผิด');
 
-                // บันทึก Session
+                // Save Session
                 localStorage.setItem('cmms_user_session', JSON.stringify(userProfile));
-                
+
                 setTimeout(() => {
                     switch(userProfile.role) {
                         case 'admin': Utils.safeRedirect('admin_dashboard.html'); break;
