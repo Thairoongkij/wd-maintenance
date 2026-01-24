@@ -1,44 +1,102 @@
 # CLAUDE.md - WD Maintenance System Documentation
 
-**Last Updated:** 2026-01-24 (Major Update v2.0)
+**Last Updated:** 2026-01-24 (Major Update v2.5)
 **Repository:** wd-maintenance
 **Type:** Web Application (Maintenance Management System)
 **Language:** Thai (ไทย)
 
 ---
 
-## 🆕 Recent Major Updates (v2.0 - January 2026)
+## 🆕 Recent Major Updates (v2.5 - January 2026)
 
-### New Features Implemented:
+### NEW Features Implemented in v2.5:
 
-1. **✅ Approval Workflow System**
+1. **🎨 Completely Redesigned Excel Export (FM-MT-01-11 Format)**
+   - Professional Thai template with WD logo
+   - Restructured columns matching Thai format:
+     - เวลาเริ่ม, เวลาเสร็จ, สถานที่ตั้ง, ชื่อเครื่องจักร/อุปกรณ์
+     - อาการ, สาเหตุของอาการ, วิธีใช้งาน/อะไหล่
+     - อุปกรณ์ที่ใช้, จำนวน, ผู้ปฏิบัติงาน, ภาพประกอบ
+   - ALL images displayed in 2-column grid format in "ภาพประกอบ" column
+   - Dynamic row heights based on image count
+   - Professional borders, alternating row colors, blue headers
+   - Footer with 3 signature columns (ผู้ตรวจการ, ผู้อนุมัติ, ผู้จัดการ)
+   - Report header with company info and date range
+   - A4 landscape page setup with proper margins
+
+2. **🗑️ Admin Ticket Deletion System**
+   - New "TICKETS" tab in admin dashboard
+   - View ALL system tickets (500 most recent) with complete details
+   - Cascade deletion that removes:
+     - Ticket record from `tickets` table
+     - ALL media records from `media` table
+     - ALL spare parts requests from `spare_parts_requests` table
+     - Storage files from Supabase `repair-files` bucket
+   - Confirmation dialog with detailed deletion info
+   - Print job sheet button for each ticket
+   - Loading states during deletion process
+   - Success/error notifications
+
+3. **🔐 Role-Based Approval Permissions**
+   - **CRITICAL SECURITY**: Only original requester can approve/reject tickets
+   - Admin override capability (admins can approve any ticket)
+   - Visual permission indicators:
+     - "คุณเป็นผู้แจ้งซ่อม - มีสิทธิ์อนุมัติงานนี้" (for requesters)
+     - "Admin Override - คุณสามารถอนุมัติงานนี้ได้" (for admins on others' tickets)
+     - "คุณไม่มีสิทธิ์อนุมัติงานนี้" (informational message for unauthorized users)
+   - Approve/Reject buttons hidden for unauthorized users
+   - Server-side validation in approval functions
+   - Permission checks in both `approveTicket()` and `submitReject()` functions
+   - Clear error messages when unauthorized users attempt approval
+
+4. **✨ Stunning Modern Login Page (index.html)**
+   - Animated gradient background with shifting colors (purple → pink → blue)
+   - Glassmorphism login card with backdrop blur
+   - Animated background blobs (3 floating colored circles)
+   - Floating logo with pulsing glow effect
+   - Enhanced input fields with smooth focus animations:
+     - Transform on focus (slight lift)
+     - Yellow accent color (#fbbf24)
+     - Shadow glow effects
+   - Modern gradient login button with:
+     - Shine animation on hover
+     - Lift effect on hover
+     - Smooth transitions
+   - Enhanced demo login buttons with hover/active states
+   - Dual-spinner loading overlay (counter-rotating spinners)
+   - Professional footer with company info
+   - Fully responsive design
+
+### Previous v2.0 Features (Still Active):
+
+5. **✅ Approval Workflow System**
    - Added CLOSED status to ticket lifecycle
    - Requesters can now approve or reject completed work
    - Jobs in PENDING_INSPECTION require approval before closing
    - Rejection feature sends work back to IN_PROGRESS with reason
    - Prominent banner notification for pending approvals
 
-2. **✅ All Maintenance History View**
+6. **✅ All Maintenance History View**
    - New "All History" modal showing ALL tickets system-wide
    - Advanced filtering: search, status, asset, technician, date range
    - Read-only access for all users
    - Real-time filter population from actual data
 
-3. **✅ Enhanced Manager Dashboard Filters**
+7. **✅ Enhanced Manager Dashboard Filters**
    - Date range picker (start/end dates) replacing month-only filter
    - Asset dropdown filter (dynamic population)
    - Technician dropdown filter (dynamic population)
    - Combined AND logic for all filters
    - Improved UX with reorganized filter layout
 
-4. **✅ Image Display & Export Improvements**
+8. **✅ Image Display & Export Improvements**
    - Fixed media type consistency (BEFORE_IMAGE vs AFTER_IMAGE)
    - Excel export now displays ALL images (removed 2-image limit)
    - Dynamic row heights in Excel based on image count
    - Proper image labeling throughout the system
    - All images display correctly in detail modals, history cards, print sheets
 
-5. **✅ UI/UX Enhancements**
+9. **✅ UI/UX Enhancements**
    - Loading skeletons for better perceived performance
    - Enhanced hover effects and transitions
    - Smooth scrolling behavior
@@ -700,18 +758,75 @@ Utils             // Utility functions
 
 ---
 
-### admin_dashboard.html - Admin Panel (429 lines)
+### admin_dashboard.html - Admin Panel (~490 lines) **[UPDATED v2.5]**
 
-**Features:**
-- User management (CRUD profiles)
-- Asset configuration (add/edit equipment)
-- Issue type templates (customize issue_options)
-- QR code generation for assets
+**Four Tabs (USERS, ASSETS, ISSUES, TICKETS):**
+
+1. **USERS Tab:**
+   - User management (CRUD profiles)
+   - Role assignment (user, technician, manager, admin)
+   - Password management
+   - Department assignment
+
+2. **ASSETS Tab:**
+   - Asset configuration (add/edit equipment)
+   - QR code generation for each asset
+   - Asset status management (active/inactive)
+   - Location tracking
+
+3. **ISSUES Tab:**
+   - Issue type templates (customize issue_options)
+   - Icon selection from Font Awesome library
+   - Active/inactive toggle
+
+4. **🆕 TICKETS Tab (NEW in v2.5):**
+   - View ALL system tickets (500 most recent)
+   - Comprehensive ticket information:
+     - Ticket ID (truncated UUID)
+     - Asset name
+     - Issue description (truncated)
+     - Status badge (color-coded)
+     - Requester name
+     - Technician name
+     - Incident date
+   - **Cascade Deletion System:**
+     - Delete button for each ticket
+     - Confirmation dialog with detailed deletion info
+     - Deletes ticket AND all related data:
+       - Media records from `media` table
+       - Spare parts requests from `spare_parts_requests`
+       - Storage files from Supabase `repair-files` bucket
+       - Finally, the ticket itself
+     - Loading state during deletion
+     - Success/error notifications
+   - Print job sheet button (opens print_job_sheet.html in new tab)
+   - Color-coded status badges:
+     - Red: รอรับงาน (OPEN)
+     - Blue: กำลังซ่อม (IN_PROGRESS)
+     - Purple: รอตรวจสอบ (PENDING_INSPECTION)
+     - Green: เสร็จสิ้น (CLOSED)
 
 **Key Functions:**
-- `loadUsers()` - Display all profiles
-- `loadAssets()` - Display all equipment
-- `generateQrCode(assetCode)` - Create QR code for asset
+- `switchTab(tab)` - Handle tab switching (USERS, ASSETS, ISSUES, TICKETS)
+- `fetchData()` - Fetch data for current tab with joined relationships
+- `renderTable()` - Render appropriate table based on current tab
+- `openModal(id)` - Open edit/create modal with dynamic fields
+- `deleteItem(id)` - Delete item from USERS/ASSETS/ISSUES tabs
+- **🆕 `deleteTicket(ticketId)`** - Cascade delete ticket with all related data:
+  1. Fetch media records for ticket
+  2. Extract filenames and delete from storage
+  3. Delete media records from database
+  4. Delete spare parts requests
+  5. Delete ticket record
+  6. Show confirmation and refresh data
+- `openQRModal(assetId)` - Generate and display QR code for asset
+- `generateQrCode(assetCode)` - Create QR code using QRCode.js library
+
+**Security Notes:**
+- Admin-only access (enforced via `Auth.requireRole(['admin'])`)
+- Confirmation dialogs for all destructive actions
+- Cascade deletion ensures data integrity (no orphaned records)
+- Storage cleanup prevents wasted space
 
 ---
 
@@ -744,22 +859,50 @@ Utils             // Utility functions
 
 ---
 
-### export_report.html - Excel Reports (~300+ lines) **[UPDATED v2.0]**
+### export_report.html - Excel Reports (~450 lines) **[COMPLETELY REDESIGNED v2.5]**
 
 **Features:**
-- Monthly maintenance reports
-- ExcelJS file generation
-- Progress tracking
-- Formatted Excel output (FM-MT-01-11 format)
-- **🆕 Unlimited image embedding** (no 2-image limit)
-- **🆕 Dynamic row heights** based on image count
-- **🆕 Improved image detection** (BEFORE_IMAGE vs AFTER_IMAGE)
-- Grid layout for multiple images (2 per row)
+- **🆕 Professional Thai Template Format (FM-MT-01-11)**
+- **🆕 WD Logo** at top left (🏭 WD icon placeholder)
+- **🆕 Report Header:**
+  - Title: "รายงานการปฏิบัติงานซ่อมบำรุง" (centered)
+  - Date: "วันที่: DD/MM/YYYY" (top right)
+  - Subtitle: Period and company name
+- **🆕 Thai Column Structure:**
+  - เวลาเริ่ม (Start Time), เวลาเสร็จ (End Time)
+  - สถานที่ตั้ง (Location), ชื่อเครื่องจักร/อุปกรณ์ (Asset Name)
+  - อาการ (Issue), สาเหตุของอาการ (Description/Cause)
+  - วิธีใช้งาน/อะไหล่ (Repair Details/Parts)
+  - อุปกรณ์ที่ใช้ (Parts Used), จำนวน (Quantity)
+  - ผู้ปฏิบัติงาน (Technician), ภาพประกอบ (ALL Images)
+- **🆕 ALL Images in Grid Format:**
+  - 2 images per row in "ภาพประกอบ" column
+  - Unlimited images (no 2-image limit)
+  - Dynamic row heights based on image count (80px per image row)
+  - Proper positioning with grid calculation
+- **🆕 Professional Styling:**
+  - Blue header (#2563EB) with white text
+  - Alternating row colors (white/light gray)
+  - Professional borders throughout
+  - Proper text alignment and wrapping
+- **🆕 Footer with Signatures:**
+  - 3 signature columns
+  - ผู้ตรวจการ (Maintenance Supervisor)
+  - ผู้อนุมัติ (Department Manager)
+  - ผู้จัดการโรงงาน (Plant Manager)
+- **🆕 A4 Landscape Setup:**
+  - Proper page margins
+  - Fit to page width
+  - Print-ready formatting
 
 **Key Functions:**
-- `exportToExcel(month, year)` - Generate Excel report
-- `embedImages()` - Embed ALL images with grid layout
-- Format includes: asset, issue, status, dates, technician, ALL photos
+- `generateReport()` - Main Excel generation with Thai template
+- `urlToBase64()` - Convert image URLs to base64 for embedding
+- `updateStatus()` - Progress tracking with percentage
+- Automatic file download with Thai filename
+
+**File Format:** `.xlsx` compatible with Excel 2007+
+**Output:** รายงานการซ่อมบำรุง_YYYY_MM.xlsx
 
 ---
 
@@ -977,6 +1120,7 @@ const { data } = await supabaseClient
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-01-24 | 2.5 | **MAJOR UPDATE**: Excel redesign (Thai template), Admin ticket deletion, Role-based approval permissions, Modern login page UI |
 | 2026-01-24 | 2.0 | **MAJOR UPDATE**: Approval workflow system, All history view, Advanced filters, Image system improvements, UI/UX enhancements |
 | 2026-01-24 | 1.0 | Initial CLAUDE.md creation |
 

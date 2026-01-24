@@ -110,6 +110,9 @@
                     <button onclick="switchTab('ISSUES')" id="nav-issues" class="menu-btn w-full flex items-center px-4 py-3 rounded-xl text-left text-slate-300 hover:text-white">
                         <i class="fas fa-exclamation-circle w-6 text-center text-lg mr-2"></i> <span>อาการเสีย (Issues)</span>
                     </button>
+                    <button onclick="switchTab('TICKETS')" id="nav-tickets" class="menu-btn w-full flex items-center px-4 py-3 rounded-xl text-left text-slate-300 hover:text-white">
+                        <i class="fas fa-ticket-alt w-6 text-center text-lg mr-2 text-red-400"></i> <span>ประวัติงานซ่อม (Tickets)</span>
+                    </button>
                 </div>
             </div>
 
@@ -282,16 +285,25 @@
             if(tab === 'USERS') document.getElementById('nav-users').classList.add('active');
             if(tab === 'ASSETS') document.getElementById('nav-assets').classList.add('active');
             if(tab === 'ISSUES') document.getElementById('nav-issues').classList.add('active');
-            
-            const titles = { 'USERS': 'ผู้ใช้งาน (Users)', 'ASSETS': 'เครื่องจักร (Assets)', 'ISSUES': 'อาการเสีย (Issues)' };
-            const btnTexts = { 'USERS': 'เพิ่มผู้ใช้', 'ASSETS': 'เพิ่มเครื่องจักร', 'ISSUES': 'เพิ่มอาการ' };
-            
+            if(tab === 'TICKETS') document.getElementById('nav-tickets').classList.add('active');
+
+            const titles = { 'USERS': 'ผู้ใช้งาน (Users)', 'ASSETS': 'เครื่องจักร (Assets)', 'ISSUES': 'อาการเสีย (Issues)', 'TICKETS': 'ประวัติงานซ่อม (Tickets)' };
+            const btnTexts = { 'USERS': 'เพิ่มผู้ใช้', 'ASSETS': 'เพิ่มเครื่องจักร', 'ISSUES': 'เพิ่มอาการ', 'TICKETS': '' };
+
             document.getElementById('pageTitleDisplay').innerText = titles[tab];
             document.getElementById('currentSectionName').innerText = tab;
             document.getElementById('addBtnText').innerText = btnTexts[tab];
-            
+
+            // Hide add button for TICKETS tab
+            const addBtn = document.querySelector('button[onclick="openModal()"]');
+            if(tab === 'TICKETS') {
+                addBtn.style.display = 'none';
+            } else {
+                addBtn.style.display = 'flex';
+            }
+
             fetchData();
-            
+
             // Auto close sidebar on mobile when clicking item
             if(window.innerWidth < 768) toggleSidebar();
         }
@@ -305,10 +317,42 @@
                 if (currentTab === 'USERS') query = supabaseClient.from('profiles').select('*').order('username');
                 else if (currentTab === 'ASSETS') query = supabaseClient.from('assets').select('*').order('name');
                 else if (currentTab === 'ISSUES') query = supabaseClient.from('issue_options').select('*').order('created_at');
+                else if (currentTab === 'TICKETS') {
+                    // Fetch tickets with joined data
+                    const { data: tickets } = await supabaseClient.from('tickets').select('*').order('incident_time', { ascending: false }).limit(500);
+
+                    // Get related data
+                    const assetIds = [...new Set(tickets.map(t => t.asset_id).filter(Boolean))];
+                    const userIds = [...new Set([...tickets.map(t => t.requester_id), ...tickets.map(t => t.technician_id)].filter(Boolean))];
+
+                    let assetsMap = {}, usersMap = {};
+
+                    if (assetIds.length) {
+                        const { data: assets } = await supabaseClient.from('assets').select('id,name,asset_code').in('id', assetIds);
+                        assets?.forEach(a => assetsMap[a.id] = a);
+                    }
+
+                    if (userIds.length) {
+                        const { data: users } = await supabaseClient.from('profiles').select('id,full_name,username').in('id', userIds);
+                        users?.forEach(u => usersMap[u.id] = u.full_name || u.username);
+                    }
+
+                    dataList = tickets.map(t => ({
+                        ...t,
+                        asset_name: assetsMap[t.asset_id]?.name || 'ไม่ระบุ',
+                        asset_code: assetsMap[t.asset_id]?.asset_code || '-',
+                        requester_name: usersMap[t.requester_id] || '-',
+                        technician_name: usersMap[t.technician_id] || '-'
+                    }));
+
+                    document.getElementById('dataCount').innerText = `${dataList.length} รายการ`;
+                    renderTable();
+                    return;
+                }
 
                 let { data, error } = await query;
                 if (error) throw error;
-                
+
                 dataList = data || [];
                 document.getElementById('dataCount').innerText = `${dataList.length} รายการ`;
                 renderTable();
@@ -345,6 +389,39 @@
                     const st = i.is_active ? '<i class="fas fa-check-circle text-emerald-500"></i>' : '<i class="fas fa-times-circle text-slate-300"></i>';
                     const iconColor = i.is_active ? 'text-blue-600 bg-blue-50 border-blue-100' : 'text-slate-400 bg-slate-50 border-slate-100';
                     tableRows += `<tr class="hover:bg-blue-50/40 border-b border-gray-100 last:border-0 transition-colors"><td class="px-8 py-4 text-center"><div class="w-9 h-9 rounded-lg flex items-center justify-center mx-auto border ${iconColor} shadow-sm"><i class="fas ${i.icon_class}"></i></div></td><td class="px-6 py-4 font-bold text-slate-700">${i.label}</td><td class="px-6 py-4 text-center font-mono text-xs text-slate-400">${i.icon_class}</td><td class="px-6 py-4 text-center">${st}</td><td class="px-8 py-4 text-right"><div class="flex justify-end gap-2"><button onclick="openModal('${i.id}')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-slate-400 hover:border-blue-500 hover:text-blue-600 hover:shadow-sm flex items-center justify-center transition"><i class="fas fa-pen text-xs"></i></button><button onclick="deleteItem('${i.id}')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-slate-400 hover:border-red-500 hover:text-red-600 hover:shadow-sm flex items-center justify-center transition"><i class="fas fa-trash text-xs"></i></button></div></td></tr>`;
+                });
+            } else if (currentTab === 'TICKETS') {
+                tableHeader = `<th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase">Ticket ID</th><th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase">เครื่องจักร</th><th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase">อาการ</th><th class="px-4 py-4 text-center text-xs font-bold text-slate-500 uppercase">สถานะ</th><th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase">ผู้แจ้ง</th><th class="px-4 py-4 text-xs font-bold text-slate-500 uppercase">ช่าง</th><th class="px-4 py-4 text-center text-xs font-bold text-slate-500 uppercase">วันที่</th><th class="px-4 py-4 text-right text-xs font-bold text-slate-500 uppercase">Action</th>`;
+
+                dataList.forEach(t => {
+                    let statusBadge = '';
+                    if (t.status === 'OPEN') statusBadge = '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold">รอรับงาน</span>';
+                    else if (t.status === 'IN_PROGRESS') statusBadge = '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">กำลังซ่อม</span>';
+                    else if (t.status === 'PENDING_INSPECTION') statusBadge = '<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">รอตรวจสอบ</span>';
+                    else if (t.status === 'CLOSED') statusBadge = '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">เสร็จสิ้น</span>';
+                    else statusBadge = '<span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[10px] font-bold">' + t.status + '</span>';
+
+                    const ticketDate = t.incident_time ? new Date(t.incident_time).toLocaleDateString('th-TH', { day: '2-digit', month: 'short' }) : '-';
+
+                    tableRows += `<tr class="hover:bg-red-50/40 border-b border-gray-100 last:border-0 transition-colors">
+                        <td class="px-4 py-4 font-mono text-xs text-blue-600 font-bold">${t.id.substring(0, 8)}...</td>
+                        <td class="px-4 py-4 text-sm font-medium text-slate-700">${t.asset_name}</td>
+                        <td class="px-4 py-4 text-xs text-slate-600">${(t.issue_text || '').substring(0, 30)}...</td>
+                        <td class="px-4 py-4 text-center">${statusBadge}</td>
+                        <td class="px-4 py-4 text-xs text-slate-600">${t.requester_name}</td>
+                        <td class="px-4 py-4 text-xs text-slate-600">${t.technician_name}</td>
+                        <td class="px-4 py-4 text-center text-xs text-slate-500">${ticketDate}</td>
+                        <td class="px-4 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                <button onclick="window.open('print_job_sheet.html?id=${t.id}','_blank')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-slate-400 hover:border-blue-500 hover:text-blue-600 hover:shadow-sm flex items-center justify-center transition" title="พิมพ์ใบงาน">
+                                    <i class="fas fa-print text-xs"></i>
+                                </button>
+                                <button onclick="deleteTicket('${t.id}')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 text-slate-400 hover:border-red-500 hover:text-red-600 hover:shadow-sm flex items-center justify-center transition" title="ลบงานซ่อม">
+                                    <i class="fas fa-trash text-xs"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`;
                 });
             }
 
@@ -422,8 +499,72 @@
             document.getElementById('qrAssetName').innerText = asset.name;
             document.getElementById('qrAssetId').innerText = asset.asset_code || asset.id;
             const qrContainer = document.getElementById('qrcode');
-            qrContainer.innerHTML = ''; 
+            qrContainer.innerHTML = '';
             new QRCode(qrContainer, { text: asset.id, width: 160, height: 160, colorDark : "#0f172a", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
+        }
+
+        // === TICKET DELETION FUNCTION (CASCADE DELETE) ===
+        async function deleteTicket(ticketId) {
+            if (!confirm('⚠️ ยืนยันการลบงานซ่อมนี้?\n\n- ข้อมูลที่จะถูกลบ:\n  • ใบแจ้งซ่อม\n  • รูปภาพทั้งหมด\n  • รายการเบิกอะไหล่\n\n※ ไม่สามารถกู้คืนข้อมูลได้!')) {
+                return;
+            }
+
+            const container = document.getElementById('contentArea');
+            const originalHTML = container.innerHTML;
+            container.innerHTML = '<div class="flex flex-col justify-center items-center h-80 text-slate-300"><i class="fas fa-circle-notch fa-spin text-5xl mb-4 text-red-500"></i><p class="text-sm font-medium text-slate-600">กำลังลบข้อมูล...</p></div>';
+
+            try {
+                // 1. Fetch all media records for this ticket
+                const { data: mediaRecords } = await supabaseClient
+                    .from('media')
+                    .select('url')
+                    .eq('ticket_id', ticketId);
+
+                // 2. Extract filenames from URLs and delete from storage
+                if (mediaRecords && mediaRecords.length > 0) {
+                    for (const media of mediaRecords) {
+                        if (media.url) {
+                            // Extract filename from URL
+                            const urlParts = media.url.split('/');
+                            const filename = urlParts[urlParts.length - 1];
+
+                            // Delete from storage
+                            await supabaseClient.storage
+                                .from('repair-files')
+                                .remove([filename]);
+                        }
+                    }
+                }
+
+                // 3. Delete media records from database
+                await supabaseClient
+                    .from('media')
+                    .delete()
+                    .eq('ticket_id', ticketId);
+
+                // 4. Delete spare parts requests
+                await supabaseClient
+                    .from('spare_parts_requests')
+                    .delete()
+                    .eq('ticket_id', ticketId);
+
+                // 5. Delete the ticket itself
+                const { error: ticketError } = await supabaseClient
+                    .from('tickets')
+                    .delete()
+                    .eq('id', ticketId);
+
+                if (ticketError) throw ticketError;
+
+                // Success!
+                alert('✅ ลบงานซ่อมเรียบร้อยแล้ว\n\n- ลบใบแจ้งซ่อม\n- ลบรูปภาพทั้งหมด\n- ลบรายการเบิกอะไหล่');
+                fetchData(); // Refresh
+
+            } catch (error) {
+                console.error('Delete error:', error);
+                alert('❌ เกิดข้อผิดพลาดในการลบ:\n\n' + error.message);
+                container.innerHTML = originalHTML; // Restore
+            }
         }
     </script>
 </body>

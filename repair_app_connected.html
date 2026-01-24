@@ -590,10 +590,35 @@
             else if(t.status==='PENDING_INSPECTION') { banner.className='p-4 rounded-2xl text-center font-bold text-lg mb-2 shadow-sm bg-purple-50 text-purple-600 border border-purple-100'; banner.innerHTML='<i class="fas fa-check-circle"></i> ซ่อมเสร็จแล้ว (รอตรวจ)'; }
             else { banner.className='p-4 rounded-2xl text-center font-bold text-lg mb-2 shadow-sm bg-green-50 text-green-600 border border-green-100'; banner.innerHTML='<i class="fas fa-check-double"></i> ปิดงานเรียบร้อย'; }
 
-            // Show approval section if PENDING_INSPECTION and user is requester
+            // Show approval section if PENDING_INSPECTION and user is requester OR admin
             const approvalSection = document.getElementById('approvalSection');
-            if(t.status === 'PENDING_INSPECTION' && t.requester_id === currentUser.id) {
+            const isRequester = t.requester_id === currentUser.id;
+            const isAdmin = currentUser.role === 'admin';
+            const canApprove = isRequester || isAdmin;
+
+            if(t.status === 'PENDING_INSPECTION' && canApprove) {
                 approvalSection.classList.remove('hidden');
+
+                // Update approval text based on user role
+                const approvalText = approvalSection.querySelector('p');
+                if (isRequester && !isAdmin) {
+                    approvalText.innerHTML = '<i class="fas fa-clipboard-check"></i> <strong>คุณเป็นผู้แจ้งซ่อม</strong> - มีสิทธิ์ตรวจสอบและอนุมัติงานนี้';
+                } else if (isAdmin && !isRequester) {
+                    approvalText.innerHTML = '<i class="fas fa-shield-alt"></i> <strong>Admin Override</strong> - คุณสามารถอนุมัติงานนี้ได้';
+                } else {
+                    approvalText.innerHTML = '<i class="fas fa-clipboard-check"></i> งานนี้รอการตรวจสอบจากคุณ';
+                }
+            } else if(t.status === 'PENDING_INSPECTION' && !canApprove) {
+                // Show informational message that user cannot approve
+                approvalSection.classList.remove('hidden');
+                approvalSection.innerHTML = `
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center">
+                        <p class="text-slate-600 font-medium text-sm mb-2">
+                            <i class="fas fa-info-circle text-slate-400"></i> งานนี้รอการตรวจสอบจากผู้แจ้งซ่อม
+                        </p>
+                        <p class="text-xs text-slate-500">คุณไม่มีสิทธิ์อนุมัติงานนี้ (ผู้แจ้งซ่อมเท่านั้นที่สามารถอนุมัติได้)</p>
+                    </div>
+                `;
             } else {
                 approvalSection.classList.add('hidden');
             }
@@ -643,6 +668,16 @@
         // --- APPROVAL SYSTEM FUNCTIONS ---
         window.approveTicket = async function() {
             if(!window.currentViewingTicket) return;
+
+            // Permission check
+            const isRequester = window.currentViewingTicket.requester_id === currentUser.id;
+            const isAdmin = currentUser.role === 'admin';
+
+            if(!isRequester && !isAdmin) {
+                showToast('คุณไม่มีสิทธิ์อนุมัติงานนี้ (เฉพาะผู้แจ้งซ่อมเท่านั้น)', 'error');
+                return;
+            }
+
             if(!confirm('ยืนยันการอนุมัติงานนี้?')) return;
 
             document.getElementById('loadingOverlay').classList.remove('hidden');
@@ -677,6 +712,15 @@
             const reason = document.getElementById('rejectReason').value.trim();
             if(!reason) return showToast('กรุณาระบุเหตุผล', 'error');
             if(!window.currentViewingTicket) return;
+
+            // Permission check
+            const isRequester = window.currentViewingTicket.requester_id === currentUser.id;
+            const isAdmin = currentUser.role === 'admin';
+
+            if(!isRequester && !isAdmin) {
+                showToast('คุณไม่มีสิทธิ์ส่งกลับแก้ไขงานนี้ (เฉพาะผู้แจ้งซ่อมเท่านั้น)', 'error');
+                return;
+            }
 
             document.getElementById('loadingOverlay').classList.remove('hidden');
             try {
