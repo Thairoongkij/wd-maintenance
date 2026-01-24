@@ -164,6 +164,21 @@
                         </select>
                     </div>
 
+                    <!-- Row 2.5: Priority & Request Type (NEW v2.6) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <select id="priorityFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
+                            <option value="ALL">ความเร่งด่วน: ทั้งหมด</option>
+                            <option value="ปกติ">🟢 ปกติ</option>
+                            <option value="ด่วน">🟡 ด่วน</option>
+                            <option value="ด่วนที่สุด">🔴 ด่วนที่สุด</option>
+                        </select>
+                        <select id="requestTypeFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
+                            <option value="ALL">ประเภทงาน: ทั้งหมด</option>
+                            <option value="QR">📱 QR Asset</option>
+                            <option value="MANUAL">✍️ ซ่อมทั่วไป</option>
+                        </select>
+                    </div>
+
                     <!-- Row 3: Date Range -->
                     <div class="grid grid-cols-2 gap-3">
                         <div>
@@ -207,10 +222,11 @@
                     </div>
                 </div>
 
-                <!-- Charts Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10 fade-in-up" style="animation-delay: 0.1s;">
+                <!-- Charts Section (EXPANDED WITH PRIORITY CHART v2.6) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10 fade-in-up" style="animation-delay: 0.1s;">
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100"><h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><span class="w-1.5 h-6 bg-blue-500 rounded-full"></span> สัดส่วนอาการเสีย</h3><div class="h-64 relative"><canvas id="issueChart"></canvas></div></div>
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100"><h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><span class="w-1.5 h-6 bg-orange-500 rounded-full"></span> 5 อันดับเครื่องจักรมีปัญหา</h3><div class="h-64 relative"><canvas id="assetChart"></canvas></div></div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100"><h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><span class="w-1.5 h-6 bg-red-500 rounded-full"></span> ความเร่งด่วน</h3><div class="h-64 relative"><canvas id="priorityChart"></canvas></div></div>
                 </div>
 
                 <!-- Ticket List Section -->
@@ -361,6 +377,8 @@
             const statusFilter = document.getElementById('statusFilter').value;
             const assetFilter = document.getElementById('assetFilter').value;
             const technicianFilter = document.getElementById('technicianFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;      // NEW v2.6
+            const requestTypeFilter = document.getElementById('requestTypeFilter').value; // NEW v2.6
             const dateStart = document.getElementById('dateStartFilter').value;
             const dateEnd = document.getElementById('dateEndFilter').value;
 
@@ -373,6 +391,11 @@
                 const matchAsset = assetFilter === 'ALL' || t.asset_name === assetFilter;
                 const matchTech = technicianFilter === 'ALL' || t.technician_name === technicianFilter;
 
+                // NEW FILTERS v2.6
+                const matchPriority = priorityFilter === 'ALL' || (t.priority || 'ปกติ') === priorityFilter;
+                const matchRequestType = requestTypeFilter === 'ALL' ||
+                    (requestTypeFilter === 'MANUAL' ? t.is_manual_request === true : t.is_manual_request === false);
+
                 let matchDate = true;
                 if(dateStart) {
                     matchDate = matchDate && dayjs(t.incident_time).isAfter(dayjs(dateStart).subtract(1, 'day'));
@@ -381,7 +404,7 @@
                     matchDate = matchDate && dayjs(t.incident_time).isBefore(dayjs(dateEnd).add(1, 'day'));
                 }
 
-                return matchSearch && matchStatus && matchAsset && matchTech && matchDate;
+                return matchSearch && matchStatus && matchAsset && matchTech && matchPriority && matchRequestType && matchDate;
             });
 
             // Use SAFE SET TEXT
@@ -397,6 +420,8 @@
             document.getElementById('statusFilter').value = 'ALL';
             document.getElementById('assetFilter').value = 'ALL';
             document.getElementById('technicianFilter').value = 'ALL';
+            document.getElementById('priorityFilter').value = 'ALL';        // NEW v2.6
+            document.getElementById('requestTypeFilter').value = 'ALL';   // NEW v2.6
             document.getElementById('dateStartFilter').value = '';
             document.getElementById('dateEndFilter').value = '';
             applyFilters();
@@ -422,20 +447,58 @@
         }
 
         function renderCharts(tickets) {
-             const issueCounts = {}; const assetCounts = {};
-             tickets.forEach(t => { const issue = t.issue_text || 'อื่นๆ'; issueCounts[issue] = (issueCounts[issue] || 0) + 1; const asset = t.asset_name; assetCounts[asset] = (assetCounts[asset] || 0) + 1; });
+             const issueCounts = {}; const assetCounts = {}; const priorityCounts = {};
+             tickets.forEach(t => {
+                 const issue = t.issue_text || 'อื่นๆ';
+                 issueCounts[issue] = (issueCounts[issue] || 0) + 1;
+
+                 const asset = t.asset_name;
+                 assetCounts[asset] = (assetCounts[asset] || 0) + 1;
+
+                 // Count by priority (NEW v2.6)
+                 const priority = t.priority || 'ปกติ';
+                 priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
+             });
 
              const ctxIssue = document.getElementById('issueChart');
              if(ctxIssue) {
                  if (window.myIssueChart instanceof Chart) window.myIssueChart.destroy();
-                 window.myIssueChart = new Chart(ctxIssue.getContext('2d'), { type: 'doughnut', data: { labels: Object.keys(issueCounts), datasets: [{ data: Object.values(issueCounts), backgroundColor: ['#3b82f6', '#f97316', '#a855f7', '#22c55e', '#6366f1'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+                 window.myIssueChart = new Chart(ctxIssue.getContext('2d'), { type: 'doughnut', data: { labels: Object.keys(issueCounts), datasets: [{ data: Object.values(issueCounts), backgroundColor: ['#3b82f6', '#f97316', '#a855f7', '#22c55e', '#6366f1'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
              }
 
              const ctxAsset = document.getElementById('assetChart');
              if(ctxAsset) {
                  if (window.myAssetChart instanceof Chart) window.myAssetChart.destroy();
                  const sorted = Object.entries(assetCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-                 window.myAssetChart = new Chart(ctxAsset.getContext('2d'), { type: 'bar', data: { labels: sorted.map(i=>i[0]), datasets: [{ label: 'จำนวนครั้ง', data: sorted.map(i=>i[1]), backgroundColor: '#f97316', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false } });
+                 window.myAssetChart = new Chart(ctxAsset.getContext('2d'), { type: 'bar', data: { labels: sorted.map(i=>i[0]), datasets: [{ label: 'จำนวนครั้ง', data: sorted.map(i=>i[1]), backgroundColor: '#f97316', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+             }
+
+             // Priority Chart (NEW v2.6)
+             const ctxPriority = document.getElementById('priorityChart');
+             if(ctxPriority) {
+                 if (window.myPriorityChart instanceof Chart) window.myPriorityChart.destroy();
+                 window.myPriorityChart = new Chart(ctxPriority.getContext('2d'), {
+                     type: 'doughnut',
+                     data: {
+                         labels: ['ปกติ', 'ด่วน', 'ด่วนที่สุด'],
+                         datasets: [{
+                             data: [
+                                 priorityCounts['ปกติ'] || 0,
+                                 priorityCounts['ด่วน'] || 0,
+                                 priorityCounts['ด่วนที่สุด'] || 0
+                             ],
+                             backgroundColor: ['#10b981', '#f59e0b', '#ef4444']
+                         }]
+                     },
+                     options: {
+                         responsive: true,
+                         maintainAspectRatio: false,
+                         plugins: {
+                             legend: { position: 'bottom' },
+                             title: { display: false }
+                         }
+                     }
+                 });
              }
         }
 

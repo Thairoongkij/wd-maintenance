@@ -1,13 +1,46 @@
 # CLAUDE.md - WD Maintenance System Documentation
 
-**Last Updated:** 2026-01-24 (Major Update v2.5)
+**Last Updated:** 2026-01-24 (Major Update v2.6)
 **Repository:** wd-maintenance
 **Type:** Web Application (Maintenance Management System)
 **Language:** Thai (ไทย)
 
 ---
 
-## 🆕 Recent Major Updates (v2.5 - January 2026)
+## 🆕 Recent Major Updates (v2.6 - January 2026)
+
+### NEW Features Implemented in v2.6:
+
+1. **📊 Structured Data Architecture**
+   - Added dedicated database columns for metadata (no more concatenation):
+     - `priority` - ความเร่งด่วน (ปกติ, ด่วน, ด่วนที่สุด)
+     - `contact_number` - เบอร์โทรติดต่อ
+     - `is_manual_request` - Flag for manual vs QR requests
+     - `manual_asset_name` - ชื่อเครื่องจักร (for manual requests)
+     - `manual_location` - สถานที่ตั้ง (for manual requests)
+   - Clean `description` field (no metadata mixed in)
+   - Better data integrity and queryability
+
+2. **🎯 Advanced Filtering System**
+   - Manager dashboard priority filter (ปกติ/ด่วน/ด่วนที่สุด)
+   - Request type filter (QR Asset vs ซ่อมทั่วไป)
+   - All history modal supports new filters
+   - Combined AND logic for all filter criteria
+
+3. **📈 Enhanced Excel Reports**
+   - New columns in export:
+     - ความเร่งด่วน (with color coding)
+     - ประเภทงาน (QR Asset / ซ่อมทั่วไป)
+     - เบอร์ติดต่อ
+   - Priority color coding (red = ด่วนที่สุด, orange = ด่วน)
+   - Proper handling of manual vs QR asset data
+
+4. **📊 Priority Analytics Chart**
+   - New doughnut chart in manager dashboard
+   - Visual breakdown: ปกติ (green), ด่วน (orange), ด่วนที่สุด (red)
+   - Real-time updates with filters
+
+### Previous Updates (v2.5 - January 2026)
 
 ### NEW Features Implemented in v2.5:
 
@@ -253,18 +286,25 @@ wd-maintenance/
 ```javascript
 {
   id: UUID,
-  asset_id: UUID,            // FK to assets
+  asset_id: UUID,            // FK to assets (nullable for manual requests)
   requester_id: UUID,        // FK to profiles
   technician_id: UUID,       // FK to profiles
   status: ENUM('OPEN', 'IN_PROGRESS', 'PENDING_INSPECTION', 'CLOSED'),
   // Note: COMPLETED is legacy, CLOSED is the new final status
   incident_time: TIMESTAMP,
   issue_text: STRING,        // Issue title
-  description: TEXT,         // Issue details (may include rejection reasons)
+  description: TEXT,         // Issue details only (clean, no meta data)
   photo_url: STRING,         // Initial report photo (BEFORE)
   repair_details: TEXT,      // Technician notes
   finished_at: TIMESTAMP,
-  created_at: TIMESTAMP
+  created_at: TIMESTAMP,
+
+  // v2.6 - Structured Data Fields (NEW)
+  priority: VARCHAR(50),           // 'ปกติ', 'ด่วน', 'ด่วนที่สุด' (default: 'ปกติ')
+  contact_number: VARCHAR(20),     // Contact phone number
+  is_manual_request: BOOLEAN,      // true = manual (no QR), false = QR asset (default: false)
+  manual_asset_name: VARCHAR(255), // Asset name for manual requests (null if QR)
+  manual_location: VARCHAR(255)    // Location for manual requests (null if QR)
 }
 ```
 
@@ -327,10 +367,15 @@ wd-maintenance/
 }
 ```
 
-### Data Flow (Updated v2.0 with Approval Workflow)
+### Data Flow (Updated v2.6 with Structured Data)
 
 1. **User creates ticket** → `tickets` table (status: OPEN)
    - Upload initial photos → `media` table (type: BEFORE_IMAGE)
+   - **NEW v2.6**: Structured fields populated:
+     - `priority` (ปกติ/ด่วน/ด่วนที่สุด)
+     - `contact_number` (optional)
+     - `is_manual_request` (true if no QR, false if QR asset)
+     - `manual_asset_name`, `manual_location` (if manual request)
 2. **Technician accepts** → Update `technician_id` (status: IN_PROGRESS)
 3. **Technician works on job**:
    - Photos uploaded → Supabase Storage → `media` table (type: AFTER_IMAGE)
@@ -1120,6 +1165,7 @@ const { data } = await supabaseClient
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-01-24 | 2.6 | **MAJOR UPDATE**: Structured data architecture, Priority filtering, Enhanced Excel with new columns, Priority analytics chart |
 | 2026-01-24 | 2.5 | **MAJOR UPDATE**: Excel redesign (Thai template), Admin ticket deletion, Role-based approval permissions, Modern login page UI |
 | 2026-01-24 | 2.0 | **MAJOR UPDATE**: Approval workflow system, All history view, Advanced filters, Image system improvements, UI/UX enhancements |
 | 2026-01-24 | 1.0 | Initial CLAUDE.md creation |

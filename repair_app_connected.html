@@ -753,29 +753,38 @@
             const aid = document.getElementById('assetId').value;
             const man = document.getElementById('manualAssetInput').value.trim();
             const loc = document.getElementById('manualLocationInput').value.trim();
-            const desc = document.getElementById('issueDescription').value;
+            const desc = document.getElementById('issueDescription').value.trim();
             const prio = document.getElementById('priorityInput').value;
-            const tel = document.getElementById('contactNumber') ? document.getElementById('contactNumber').value : '';
+            const tel = document.getElementById('contactNumber') ? document.getElementById('contactNumber').value.trim() : '';
 
             if(!aid && !man) return showToast("กรุณาระบุรายการแจ้งซ่อม", 'error');
             if(!selectedIssue) return showToast("กรุณาเลือกอาการเสีย", 'error');
 
             document.getElementById('loadingOverlay').classList.remove('hidden');
-            
-            try {
-                let fullDesc = desc;
-                let meta = [];
-                if(prio !== 'ปกติ') meta.push(`[ความเร่งด่วน: ${prio}]`);
-                if(tel) meta.push(`[ติดต่อ: ${tel}]`);
-                if(!aid && man) { meta.push(`[ซ่อมทั่วไป: ${man}]`); if(loc) meta.push(`[สถานที่: ${loc}]`); }
-                if(meta.length) fullDesc = meta.join(' ') + '\n\n' + desc;
 
-                const cover = mediaList.length > 0 ? mediaList[0].url : null; 
-                
-                const {data, error} = await supabaseClient.from('tickets').insert([{ asset_id: aid || null, requester_id: currentUser.id, issue_text: selectedIssue, description: fullDesc, photo_url: cover, status: 'OPEN', incident_time: new Date().toISOString() }]).select();
+            try {
+                const cover = mediaList.length > 0 ? mediaList[0].url : null;
+
+                // Use new structured database columns (v2.6)
+                const {data, error} = await supabaseClient.from('tickets').insert([{
+                    asset_id: aid || null,
+                    requester_id: currentUser.id,
+                    issue_text: selectedIssue,
+                    description: desc || null,  // Clean description only
+                    photo_url: cover,
+                    status: 'OPEN',
+                    incident_time: new Date().toISOString(),
+
+                    // NEW FIELDS - Structured data (v2.6)
+                    priority: prio,                      // 'ปกติ', 'ด่วน', 'ด่วนที่สุด'
+                    contact_number: tel || null,
+                    is_manual_request: !aid,             // true if no QR code
+                    manual_asset_name: man || null,
+                    manual_location: loc || null
+                }]).select();
                 if(error) throw error;
                 const tid = data[0].id;
-                
+
                 if(mediaList.length) {
                     const rows = mediaList.map(m => ({ticket_id: tid, type: 'BEFORE_IMAGE', url: m.url}));
                     await supabaseClient.from('media').insert(rows);
