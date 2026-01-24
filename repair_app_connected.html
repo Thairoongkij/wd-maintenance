@@ -59,6 +59,18 @@
         .toast { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); padding: 14px 18px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; animation: slideIn 0.3s ease-out; pointer-events: auto; border: 1px solid rgba(255,255,255,0.5); font-weight: 600; }
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+        /* Loading Skeleton */
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s ease-in-out infinite; border-radius: 12px; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .skeleton-card { height: 120px; margin-bottom: 12px; }
+        .skeleton-text { height: 16px; width: 80%; margin-bottom: 8px; }
+        .skeleton-title { height: 20px; width: 60%; margin-bottom: 12px; }
+
+        /* Enhanced Transitions */
+        * { scroll-behavior: smooth; }
+        .modern-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .modern-card:hover { transform: translateY(-2px); box-shadow: 0 20px 40px -5px rgba(239, 68, 68, 0.15); }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-gray-700 bg-[#fff1f2]">
@@ -82,7 +94,7 @@
     </header>
 
     <main class="flex-1 overflow-y-auto p-5 pb-32 relative scroll-smooth no-scrollbar" id="mainContainer">
-        
+
         <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0 opacity-50">
             <div class="absolute top-[-50px] right-[-50px] w-64 h-64 bg-orange-300 rounded-full blur-[80px] mix-blend-multiply"></div>
             <div class="absolute top-[200px] left-[-50px] w-52 h-52 bg-red-300 rounded-full blur-[80px] mix-blend-multiply"></div>
@@ -90,6 +102,21 @@
         </div>
 
         <div class="relative z-10 space-y-6">
+            <!-- Pending Inspection Banner -->
+            <div id="pendingInspectionBanner" class="hidden modern-card p-5 border-l-8 border-purple-500 bg-gradient-to-r from-purple-50 to-white shadow-lg animate-pulse cursor-pointer" onclick="showPendingInspections()">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-full bg-purple-500 flex items-center justify-center text-white text-2xl shadow-lg">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-purple-700 mb-1">มีงานรอการตรวจสอบ</h3>
+                        <p class="text-sm text-purple-600" id="pendingInspectionText">คุณมี 0 งานที่รอการอนุมัติ คลิกเพื่อดู</p>
+                    </div>
+                    <div class="text-purple-500">
+                        <i class="fas fa-chevron-right text-2xl"></i>
+                    </div>
+                </div>
+            </div>
             <section>
                 <div class="flex items-center gap-3 mb-4 px-2">
                     <div class="step-badge">1</div>
@@ -201,10 +228,15 @@
             </section>
         </div>
 
-        <div class="text-center pt-4 relative z-10">
+        <div class="text-center pt-4 relative z-10 space-y-3">
             <button onclick="openHistoryModal()" class="text-purple-500 text-xs font-bold py-3 px-6 rounded-full bg-white/60 hover:bg-white transition active:scale-95 shadow-sm border border-purple-100 backdrop-blur-sm">
-                ดูประวัติการแจ้งซ่อมทั้งหมด <i class="fas fa-chevron-right text-[10px] ml-1"></i>
+                ดูประวัติการแจ้งซ่อมของฉัน <i class="fas fa-chevron-right text-[10px] ml-1"></i>
             </button>
+            <div>
+                <button onclick="openAllHistoryModal()" class="text-blue-600 text-xs font-bold py-3 px-6 rounded-full bg-blue-50 hover:bg-blue-100 transition active:scale-95 shadow-sm border border-blue-200">
+                    <i class="fas fa-globe"></i> ดูประวัติงานซ่อมทั้งหมด (All History) <i class="fas fa-chevron-right text-[10px] ml-1"></i>
+                </button>
+            </div>
         </div>
     </main>
 
@@ -247,6 +279,48 @@
         </div>
     </div>
     
+    <!-- All History Modal (All Tickets with Filters) -->
+    <div id="allHistoryModal" class="fixed inset-0 bg-slate-900/60 z-[60] hidden flex items-end sm:items-center justify-center backdrop-blur-sm transition-opacity duration-300">
+        <div class="bg-slate-50 w-full sm:w-[650px] h-[95vh] sm:h-[90vh] sm:rounded-2xl rounded-t-3xl flex flex-col shadow-2xl transform transition-transform duration-300 translate-y-full" id="allHistoryModalContent">
+            <div class="bg-white p-6 rounded-t-3xl border-b border-slate-100 sticky top-0 z-10 flex justify-between items-center shadow-sm">
+                <div><h3 class="font-bold text-2xl text-slate-800 flex items-center gap-2"><i class="fas fa-globe text-blue-500"></i> ประวัติงานซ่อมทั้งหมด</h3><p class="text-xs text-slate-500 mt-1">ดูข้อมูลทุกใบแจ้งซ่อม (Read-only)</p></div>
+                <button onclick="closeAllHistoryModal()" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 active:bg-slate-300 transition"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <!-- Advanced Filters -->
+            <div class="bg-white px-6 py-4 border-b border-slate-100 space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="allHistorySearch" oninput="filterAllHistory()" placeholder="ค้นหา Ticket ID..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-100 outline-none transition font-medium">
+                    <select id="allHistoryStatus" onchange="filterAllHistory()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-100 outline-none transition font-medium cursor-pointer">
+                        <option value="ALL">สถานะ: ทั้งหมด</option>
+                        <option value="OPEN">รอรับงาน</option>
+                        <option value="IN_PROGRESS">กำลังซ่อม</option>
+                        <option value="PENDING_INSPECTION">รอตรวจสอบ</option>
+                        <option value="CLOSED">เสร็จสิ้น</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <select id="allHistoryAsset" onchange="filterAllHistory()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-100 outline-none transition font-medium cursor-pointer">
+                        <option value="ALL">เครื่องจักร: ทั้งหมด</option>
+                    </select>
+                    <select id="allHistoryTech" onchange="filterAllHistory()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-100 outline-none transition font-medium cursor-pointer">
+                        <option value="ALL">ช่าง: ทั้งหมด</option>
+                    </select>
+                </div>
+                <div class="flex gap-3">
+                    <input type="date" id="allHistoryDateStart" onchange="filterAllHistory()" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-100 outline-none transition font-medium cursor-pointer">
+                    <span class="flex items-center text-slate-400">-</span>
+                    <input type="date" id="allHistoryDateEnd" onchange="filterAllHistory()" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-100 outline-none transition font-medium cursor-pointer">
+                </div>
+                <button onclick="resetAllHistoryFilters()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl font-bold transition text-sm">
+                    <i class="fas fa-undo-alt mr-2"></i> รีเซ็ตฟิลเตอร์
+                </button>
+            </div>
+            <div class="overflow-y-auto p-4 flex-1 pb-safe" id="allHistoryListContainer">
+                <div class="text-center py-10 text-slate-400 text-sm">กำลังโหลดข้อมูล...</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Detail Modal (Fixed Images & Content) -->
     <div id="ticketDetailModal" class="fixed inset-0 bg-slate-900/80 z-[70] hidden flex items-center justify-center backdrop-blur-sm transition-opacity p-4">
         <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
@@ -285,8 +359,43 @@
                     <div id="detailImageGallery" class="grid grid-cols-2 gap-3"></div>
                 </div>
             </div>
-            <div class="p-4 bg-white border-t flex justify-center">
-                 <button onclick="closeTicketDetail()" class="w-full py-3 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200">ปิด</button>
+            <div class="p-4 bg-white border-t">
+                <!-- Approval Section (Only for PENDING_INSPECTION status & requester) -->
+                <div id="approvalSection" class="hidden mb-4 space-y-3">
+                    <div class="bg-purple-50 border border-purple-200 rounded-2xl p-4 text-center">
+                        <p class="text-purple-700 font-bold text-sm mb-3">
+                            <i class="fas fa-clipboard-check"></i> งานนี้รอการตรวจสอบจากคุณ
+                        </p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="approveTicket()" class="bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg">
+                                <i class="fas fa-check-circle"></i> อนุมัติ
+                            </button>
+                            <button onclick="openRejectModal()" class="bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg">
+                                <i class="fas fa-times-circle"></i> ส่งกลับแก้ไข
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="closeTicketDetail()" class="w-full py-3 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200">ปิด</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div id="rejectModal" class="fixed inset-0 bg-slate-900/80 z-[80] hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b bg-red-50">
+                <h3 class="text-xl font-bold text-red-600 flex items-center gap-2">
+                    <i class="fas fa-exclamation-triangle"></i> ส่งกลับแก้ไข
+                </h3>
+            </div>
+            <div class="p-6">
+                <label class="text-sm font-bold text-slate-600 mb-3 block">เหตุผลที่ต้องแก้ไข *</label>
+                <textarea id="rejectReason" rows="4" class="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 text-sm focus:ring-4 focus:ring-red-100 focus:border-red-400 focus:bg-white transition placeholder-slate-400" placeholder="ระบุสิ่งที่ต้องการให้ช่างแก้ไข..."></textarea>
+            </div>
+            <div class="p-4 bg-slate-50 flex gap-3">
+                <button onclick="closeRejectModal()" class="flex-1 py-3 rounded-xl bg-slate-200 text-slate-700 font-bold hover:bg-slate-300">ยกเลิก</button>
+                <button onclick="submitReject()" class="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600">ยืนยันส่งกลับ</button>
             </div>
         </div>
     </div>
@@ -334,10 +443,11 @@
         window.confirmReset = function() { if(confirm('รีเซ็ตหน้าจอ?')) location.reload(); }
         window.handleLogout = function() { Auth.logout(); }
         
-        window.openHistoryModal = function() { 
-            document.getElementById('historyModal').classList.remove('hidden'); 
-            setTimeout(()=>document.getElementById('historyModalContent').classList.remove('translate-y-full'),10); 
-            fetchHistory(); 
+        window.openHistoryModal = function() {
+            document.getElementById('historyModal').classList.remove('hidden');
+            setTimeout(()=>document.getElementById('historyModalContent').classList.remove('translate-y-full'),10);
+            showHistoryLoading(); // Show skeleton first
+            fetchHistory();
         }
         window.closeHistoryModal = function() { 
             document.getElementById('historyModalContent').classList.add('translate-y-full'); 
@@ -441,9 +551,9 @@
             document.getElementById('loadingOverlay').classList.remove('hidden');
             for(const f of input.files) {
                 try {
-                    const url = await uploadFileToSupabase(f); 
-                    mediaList.push({type:'IMAGE', url: url});
-                } catch(e){showToast(e.message, 'error')} 
+                    const url = await uploadFileToSupabase(f);
+                    mediaList.push({type:'BEFORE_IMAGE', url: url});
+                } catch(e){showToast(e.message, 'error')}
             } 
             renderMedia(); 
             document.getElementById('loadingOverlay').classList.add('hidden'); 
@@ -465,10 +575,14 @@
             }); 
         }
 
+        window.currentViewingTicket = null; // Store current ticket for approval actions
+
         window.openTicketDetail = function(index) {
             const t = ticketsCache[index];
             if(!t) return;
-            
+
+            window.currentViewingTicket = t; // Store for approval
+
             // Status
             const banner = document.getElementById('detailStatusBanner');
             if(t.status==='OPEN') { banner.className='p-4 rounded-2xl text-center font-bold text-lg mb-2 shadow-sm bg-red-50 text-red-600 border border-red-100'; banner.innerHTML='<i class="fas fa-clock"></i> รอช่างรับงาน'; }
@@ -476,17 +590,25 @@
             else if(t.status==='PENDING_INSPECTION') { banner.className='p-4 rounded-2xl text-center font-bold text-lg mb-2 shadow-sm bg-purple-50 text-purple-600 border border-purple-100'; banner.innerHTML='<i class="fas fa-check-circle"></i> ซ่อมเสร็จแล้ว (รอตรวจ)'; }
             else { banner.className='p-4 rounded-2xl text-center font-bold text-lg mb-2 shadow-sm bg-green-50 text-green-600 border border-green-100'; banner.innerHTML='<i class="fas fa-check-double"></i> ปิดงานเรียบร้อย'; }
 
+            // Show approval section if PENDING_INSPECTION and user is requester
+            const approvalSection = document.getElementById('approvalSection');
+            if(t.status === 'PENDING_INSPECTION' && t.requester_id === currentUser.id) {
+                approvalSection.classList.remove('hidden');
+            } else {
+                approvalSection.classList.add('hidden');
+            }
+
             // Info
             document.getElementById('detailAssetName').innerText = t.asset_name;
             document.getElementById('detailAssetCode').innerText = `ID: ${t.asset_code || '-'}`;
             document.getElementById('detailIssue').innerText = t.issue_text;
             document.getElementById('detailDesc').innerText = t.description || '-';
             document.getElementById('detailRepairNote').innerText = t.repair_details || '- ยังไม่มีรายละเอียดการซ่อม -';
-            
+
             // Images Gallery (Full Logic)
             const gal = document.getElementById('detailImageGallery');
             gal.innerHTML = '';
-            
+
             // 1. Cover (Before)
             if(t.photo_url) {
                 gal.innerHTML += `
@@ -495,14 +617,14 @@
                     <div class="absolute bottom-0 left-0 bg-black/50 text-white text-[10px] px-2 py-1 w-full text-center font-bold">BEFORE</div>
                 </div>`;
             }
-            
+
             // 2. Additional Media (After/More)
             if(t.media && t.media.length > 0) {
                 t.media.forEach(m => {
                     const isAfter = m.type === 'AFTER_IMAGE';
-                    const label = isAfter ? 'AFTER' : 'IMG';
+                    const label = isAfter ? 'AFTER' : 'BEFORE';
                     const color = isAfter ? 'bg-green-600/80' : 'bg-blue-600/80';
-                    
+
                     gal.innerHTML += `
                     <div class="relative rounded-xl overflow-hidden aspect-square border border-slate-200 cursor-pointer group" onclick="viewImage('${m.url}')">
                         <img src="${m.url}" class="w-full h-full object-cover">
@@ -510,13 +632,78 @@
                     </div>`;
                 });
             }
-            
+
             if(gal.innerHTML === '') gal.innerHTML = '<div class="col-span-2 text-center text-slate-400 text-sm py-4">- ไม่มีรูปภาพ -</div>';
-            
+
             document.getElementById('ticketDetailModal').classList.remove('hidden');
         }
 
         window.closeTicketDetail = function() { document.getElementById('ticketDetailModal').classList.add('hidden'); }
+
+        // --- APPROVAL SYSTEM FUNCTIONS ---
+        window.approveTicket = async function() {
+            if(!window.currentViewingTicket) return;
+            if(!confirm('ยืนยันการอนุมัติงานนี้?')) return;
+
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            try {
+                const { error } = await supabaseClient
+                    .from('tickets')
+                    .update({ status: 'CLOSED', finished_at: new Date().toISOString() })
+                    .eq('id', window.currentViewingTicket.id);
+
+                if(error) throw error;
+
+                showToast('อนุมัติงานสำเร็จ!', 'success');
+                closeTicketDetail();
+                fetchHistory(); // Reload
+            } catch(e) {
+                showToast('เกิดข้อผิดพลาด: ' + e.message, 'error');
+            } finally {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+        }
+
+        window.openRejectModal = function() {
+            document.getElementById('rejectModal').classList.remove('hidden');
+        }
+
+        window.closeRejectModal = function() {
+            document.getElementById('rejectModal').classList.add('hidden');
+            document.getElementById('rejectReason').value = '';
+        }
+
+        window.submitReject = async function() {
+            const reason = document.getElementById('rejectReason').value.trim();
+            if(!reason) return showToast('กรุณาระบุเหตุผล', 'error');
+            if(!window.currentViewingTicket) return;
+
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            try {
+                // Update status back to IN_PROGRESS with rejection note
+                const currentDesc = window.currentViewingTicket.description || '';
+                const rejectionNote = `\n\n[❌ ส่งกลับแก้ไข: ${reason}]`;
+
+                const { error } = await supabaseClient
+                    .from('tickets')
+                    .update({
+                        status: 'IN_PROGRESS',
+                        description: currentDesc + rejectionNote
+                    })
+                    .eq('id', window.currentViewingTicket.id);
+
+                if(error) throw error;
+
+                showToast('ส่งกลับแก้ไขเรียบร้อย', 'success');
+                closeRejectModal();
+                closeTicketDetail();
+                fetchHistory(); // Reload
+            } catch(e) {
+                showToast('เกิดข้อผิดพลาด: ' + e.message, 'error');
+            } finally {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+        }
 
         window.submitTicket = async function() {
             const aid = document.getElementById('assetId').value;
@@ -545,9 +732,9 @@
                 if(error) throw error;
                 const tid = data[0].id;
                 
-                if(mediaList.length) { 
-                    const rows = mediaList.map(m => ({ticket_id: tid, type: 'IMAGE', url: m.url})); 
-                    await supabaseClient.from('media').insert(rows); 
+                if(mediaList.length) {
+                    const rows = mediaList.map(m => ({ticket_id: tid, type: 'BEFORE_IMAGE', url: m.url}));
+                    await supabaseClient.from('media').insert(rows);
                 }
 
                 showToast("ส่งแจ้งซ่อมสำเร็จ!", 'success');
@@ -595,15 +782,211 @@
                 }
 
                 ticketsCache = tickets.map(t => ({
-                    ...t, 
+                    ...t,
                     asset_name: assetMap[t.asset_id]||'ไม่ระบุ',
                     asset_code: assetCodeMap[t.asset_id]||'-',
                     // Use photo_url OR first image from media
                     cover: t.photo_url || (mediaMap[t.id] && mediaMap[t.id][0] ? mediaMap[t.id][0].url : null),
                     media: mediaMap[t.id] || []
                 }));
+
+                // Check for pending inspections
+                const pendingCount = ticketsCache.filter(t => t.status === 'PENDING_INSPECTION').length;
+                const banner = document.getElementById('pendingInspectionBanner');
+                if(pendingCount > 0) {
+                    banner.classList.remove('hidden');
+                    document.getElementById('pendingInspectionText').innerText = `คุณมี ${pendingCount} งานที่รอการอนุมัติ คลิกเพื่อดู`;
+                } else {
+                    banner.classList.add('hidden');
+                }
+
                 renderHistory(ticketsCache);
             } catch(e){ console.error(e); }
+        }
+
+        window.showPendingInspections = function() {
+            openHistoryModal();
+            // Auto-filter to show only PENDING_INSPECTION
+            const filtered = ticketsCache.filter(t => t.status === 'PENDING_INSPECTION');
+            renderHistory(filtered);
+        }
+
+        // --- ALL HISTORY MODAL FUNCTIONS ---
+        let allTicketsCache = [];
+        let allTicketsFiltered = [];
+
+        window.openAllHistoryModal = async function() {
+            document.getElementById('allHistoryModal').classList.remove('hidden');
+            setTimeout(()=>document.getElementById('allHistoryModalContent').classList.remove('translate-y-full'),10);
+            await fetchAllHistory();
+        }
+
+        window.closeAllHistoryModal = function() {
+            document.getElementById('allHistoryModalContent').classList.add('translate-y-full');
+            setTimeout(()=>document.getElementById('allHistoryModal').classList.add('hidden'),300);
+        }
+
+        async function fetchAllHistory() {
+            try {
+                // Fetch ALL Tickets (not just current user's)
+                const { data: tickets } = await supabaseClient.from('tickets').select('*').order('incident_time', { ascending: false }).limit(500);
+                if(!tickets) return;
+
+                const ticketIds = tickets.map(t => t.id);
+
+                // Get Assets Info
+                const assetIds = [...new Set(tickets.map(t=>t.asset_id).filter(Boolean))];
+                let assetMap = {};
+                let assetCodeMap = {};
+                if(assetIds.length) {
+                    const {data:a} = await supabaseClient.from('assets').select('id,name,asset_code').in('id',assetIds);
+                    a?.forEach(x=>{ assetMap[x.id]=x.name; assetCodeMap[x.id]=x.asset_code; });
+                }
+
+                // Get Users (Requesters & Technicians)
+                const userIds = [...new Set([...tickets.map(t=>t.requester_id), ...tickets.map(t=>t.technician_id)].filter(Boolean))];
+                let userMap = {};
+                if(userIds.length) {
+                    const {data:u} = await supabaseClient.from('profiles').select('id,full_name,username').in('id',userIds);
+                    u?.forEach(x=>{ userMap[x.id] = x.full_name || x.username; });
+                }
+
+                // Get Media (Images)
+                let mediaMap = {};
+                if(ticketIds.length) {
+                    const {data:m} = await supabaseClient.from('media').select('*').in('ticket_id', ticketIds);
+                    m?.forEach(x => {
+                        if(!mediaMap[x.ticket_id]) mediaMap[x.ticket_id] = [];
+                        mediaMap[x.ticket_id].push(x);
+                    });
+                }
+
+                allTicketsCache = tickets.map(t => ({
+                    ...t,
+                    asset_name: assetMap[t.asset_id]||'ไม่ระบุ',
+                    asset_code: assetCodeMap[t.asset_id]||'-',
+                    requester_name: userMap[t.requester_id]||'Unknown',
+                    technician_name: userMap[t.technician_id]||'-',
+                    cover: t.photo_url || (mediaMap[t.id] && mediaMap[t.id][0] ? mediaMap[t.id][0].url : null),
+                    media: mediaMap[t.id] || []
+                }));
+
+                // Populate filter dropdowns
+                populateAllHistoryFilters();
+                filterAllHistory();
+            } catch(e){ console.error(e); }
+        }
+
+        function populateAllHistoryFilters() {
+            // Populate Asset dropdown
+            const assetSelect = document.getElementById('allHistoryAsset');
+            const uniqueAssets = [...new Set(allTicketsCache.map(t => t.asset_name))].filter(Boolean).sort();
+            assetSelect.innerHTML = '<option value="ALL">เครื่องจักร: ทั้งหมด</option>';
+            uniqueAssets.forEach(a => {
+                assetSelect.innerHTML += `<option value="${a}">${a}</option>`;
+            });
+
+            // Populate Technician dropdown
+            const techSelect = document.getElementById('allHistoryTech');
+            const uniqueTechs = [...new Set(allTicketsCache.map(t => t.technician_name))].filter(n => n && n !== '-').sort();
+            techSelect.innerHTML = '<option value="ALL">ช่าง: ทั้งหมด</option>';
+            uniqueTechs.forEach(t => {
+                techSelect.innerHTML += `<option value="${t}">${t}</option>`;
+            });
+        }
+
+        window.filterAllHistory = function() {
+            const searchTerm = document.getElementById('allHistorySearch').value.toLowerCase();
+            const statusFilter = document.getElementById('allHistoryStatus').value;
+            const assetFilter = document.getElementById('allHistoryAsset').value;
+            const techFilter = document.getElementById('allHistoryTech').value;
+            const dateStart = document.getElementById('allHistoryDateStart').value;
+            const dateEnd = document.getElementById('allHistoryDateEnd').value;
+
+            allTicketsFiltered = allTicketsCache.filter(t => {
+                const matchSearch = !searchTerm || t.id.toLowerCase().includes(searchTerm) || t.asset_name.toLowerCase().includes(searchTerm);
+                const matchStatus = statusFilter === 'ALL' || t.status === statusFilter;
+                const matchAsset = assetFilter === 'ALL' || t.asset_name === assetFilter;
+                const matchTech = techFilter === 'ALL' || t.technician_name === techFilter;
+
+                let matchDate = true;
+                if(dateStart) {
+                    matchDate = matchDate && dayjs(t.incident_time).isAfter(dayjs(dateStart).subtract(1, 'day'));
+                }
+                if(dateEnd) {
+                    matchDate = matchDate && dayjs(t.incident_time).isBefore(dayjs(dateEnd).add(1, 'day'));
+                }
+
+                return matchSearch && matchStatus && matchAsset && matchTech && matchDate;
+            });
+
+            renderAllHistory(allTicketsFiltered);
+        }
+
+        window.resetAllHistoryFilters = function() {
+            document.getElementById('allHistorySearch').value = '';
+            document.getElementById('allHistoryStatus').value = 'ALL';
+            document.getElementById('allHistoryAsset').value = 'ALL';
+            document.getElementById('allHistoryTech').value = 'ALL';
+            document.getElementById('allHistoryDateStart').value = '';
+            document.getElementById('allHistoryDateEnd').value = '';
+            filterAllHistory();
+        }
+
+        function renderAllHistory(data) {
+            const list = document.getElementById('allHistoryListContainer');
+            if(!data || !data.length) { list.innerHTML='<div class="text-center py-12 text-slate-400 text-sm font-medium">ไม่พบข้อมูลตามเงื่อนไข</div>'; return; }
+
+            list.innerHTML = '<div class="mb-4 text-sm font-bold text-slate-600"><i class="fas fa-check-circle text-green-500 mr-2"></i>พบ ' + data.length + ' รายการ</div>';
+
+            list.innerHTML += data.map((t, idx) => {
+                let stClass='bg-slate-100 text-slate-600', stLabel=t.status;
+                if(t.status==='OPEN') { stClass='bg-red-50 text-red-600 border border-red-100'; stLabel='รอรับงาน'; }
+                if(t.status==='IN_PROGRESS') { stClass='bg-blue-50 text-blue-600 border border-blue-100'; stLabel='กำลังซ่อม'; }
+                if(t.status==='PENDING_INSPECTION') { stClass='bg-purple-50 text-purple-600 border border-purple-100'; stLabel='รอตรวจสอบ'; }
+                if(t.status==='CLOSED') { stClass='bg-green-50 text-green-600 border border-green-100'; stLabel='เสร็จสิ้น'; }
+
+                let imgHtml = `<div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center text-slate-300 text-2xl flex-shrink-0"><i class="fas fa-image"></i></div>`;
+                if(t.cover) imgHtml = `<img src="${t.cover}" class="w-16 h-16 rounded-lg object-cover border border-slate-100 flex-shrink-0" onclick="viewImage('${t.cover}')">`;
+
+                return `
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm mb-3 relative hover:shadow-md transition">
+                    <div class="flex gap-4 mb-3">
+                        ${imgHtml}
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-start mb-1">
+                                <h4 class="font-bold text-slate-800 text-base truncate">${t.asset_name}</h4>
+                                <span class="${stClass} px-2 py-0.5 rounded-lg text-[10px] font-bold whitespace-nowrap inline-block">${stLabel}</span>
+                            </div>
+                            <div class="text-xs text-slate-500 line-clamp-1 mb-2">${t.issue_text}</div>
+                            <div class="text-[10px] text-slate-400 font-medium"><i class="far fa-clock mr-1"></i> ${Utils.formatDate(t.incident_time)}</div>
+                        </div>
+                    </div>
+                    <div class="border-t border-slate-100 pt-3 flex items-center justify-between text-xs">
+                        <div class="flex gap-3">
+                            <span class="text-slate-500"><i class="fas fa-user mr-1"></i> ${t.requester_name}</span>
+                            <span class="text-blue-600"><i class="fas fa-wrench mr-1"></i> ${t.technician_name}</span>
+                        </div>
+                        <button onclick="window.open('print_job_sheet.html?id=${t.id}','_blank')" class="text-slate-400 hover:text-blue-600 p-1"><i class="fas fa-print text-lg"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function showHistoryLoading() {
+            const list = document.getElementById('historyListContainer');
+            list.innerHTML = Array(3).fill(0).map(() => `
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm mb-3">
+                    <div class="flex gap-4">
+                        <div class="skeleton w-16 h-16 rounded-lg flex-shrink-0"></div>
+                        <div class="flex-1">
+                            <div class="skeleton skeleton-title"></div>
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text" style="width: 40%;"></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
         }
 
         function renderHistory(data) {
@@ -613,6 +996,7 @@
                 let stClass='bg-slate-100 text-slate-600', stLabel=t.status;
                 if(t.status==='OPEN') { stClass='bg-red-50 text-red-600 border border-red-100'; stLabel='รอรับงาน'; }
                 if(t.status==='IN_PROGRESS') { stClass='bg-blue-50 text-blue-600 border border-blue-100'; stLabel='กำลังซ่อม'; }
+                if(t.status==='PENDING_INSPECTION') { stClass='bg-purple-50 text-purple-600 border border-purple-100'; stLabel='รอตรวจสอบ'; }
                 if(t.status==='CLOSED') { stClass='bg-green-50 text-green-600 border border-green-100'; stLabel='เสร็จสิ้น'; }
                 
                 let imgHtml = `<div class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center text-slate-300 text-2xl flex-shrink-0"><i class="fas fa-image"></i></div>`;

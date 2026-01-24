@@ -191,9 +191,8 @@
                     ];
 
                     const row = worksheet.addRow(rowData);
-                    
-                    // Set Row Height (Ensure enough space for images)
-                    row.height = 100;
+
+                    // Note: Row height will be set dynamically after calculating image count
 
                     // Style
                     row.eachCell((cell) => {
@@ -203,31 +202,49 @@
 
                     // --- IMAGE LOGIC (ALL IMAGES) ---
                     const { data: mediaList } = await supabaseClient.from('media').select('*').eq('ticket_id', t.id);
-                    
+
                     // Group Images
                     let beforeImgs = [];
                     let afterImgs = [];
 
                     if (t.photo_url) beforeImgs.push(t.photo_url); // Cover is always Before
-                    
+
                     if (mediaList && mediaList.length > 0) {
                         mediaList.forEach(m => {
-                            if (m.type === 'AFTER_IMAGE') afterImgs.push(m.url);
-                            else if (m.url !== t.photo_url) beforeImgs.push(m.url); // Other images as Before
+                            if (m.type === 'AFTER_IMAGE') {
+                                afterImgs.push(m.url);
+                            } else if (m.type === 'BEFORE_IMAGE' && m.url !== t.photo_url) {
+                                beforeImgs.push(m.url);
+                            } else if (!m.type && m.url !== t.photo_url) {
+                                // Legacy images without type - treat as Before
+                                beforeImgs.push(m.url);
+                            }
                         });
                     }
 
-                    // Helper to embed images in a cell (side-by-side)
+                    // Calculate dynamic row height based on total images
+                    const totalImages = Math.max(beforeImgs.length, afterImgs.length);
+                    const imagesPerRow = 2; // 2 images side by side
+                    const imageRows = Math.ceil(totalImages / imagesPerRow);
+                    const dynamicHeight = Math.max(100, imageRows * 95); // Minimum 100, or 95px per image row
+                    row.height = dynamicHeight;
+
+                    // Helper to embed ALL images in a cell (grid layout)
                     const embedImages = async (urls, colIndex) => {
                         if (urls.length === 0) return;
-                        
-                        // Limit to 2 images per cell to prevent overflow mess, or shrink
-                        for (let j = 0; j < Math.min(urls.length, 2); j++) {
+
+                        // Display ALL images (no limit)
+                        for (let j = 0; j < urls.length; j++) {
                             const b64 = await urlToBase64(urls[j]);
                             if (b64) {
                                 const imgId = workbook.addImage({ base64: b64, extension: 'jpeg' });
+
+                                // Calculate position: 2 images per row
+                                const rowOffset = Math.floor(j / 2);
+                                const colOffset = (j % 2) * 0.5;
+
                                 worksheet.addImage(imgId, {
-                                    tl: { col: colIndex + (j * 0.5), row: currentRow - 1 }, // Shift slightly right
+                                    tl: { col: colIndex + colOffset, row: currentRow - 1 + (rowOffset * 0.95) },
                                     ext: { width: 90, height: 90 },
                                     editAs: 'oneCell'
                                 });

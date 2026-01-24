@@ -1,9 +1,57 @@
 # CLAUDE.md - WD Maintenance System Documentation
 
-**Last Updated:** 2026-01-24
+**Last Updated:** 2026-01-24 (Major Update v2.0)
 **Repository:** wd-maintenance
 **Type:** Web Application (Maintenance Management System)
 **Language:** Thai (ไทย)
+
+---
+
+## 🆕 Recent Major Updates (v2.0 - January 2026)
+
+### New Features Implemented:
+
+1. **✅ Approval Workflow System**
+   - Added CLOSED status to ticket lifecycle
+   - Requesters can now approve or reject completed work
+   - Jobs in PENDING_INSPECTION require approval before closing
+   - Rejection feature sends work back to IN_PROGRESS with reason
+   - Prominent banner notification for pending approvals
+
+2. **✅ All Maintenance History View**
+   - New "All History" modal showing ALL tickets system-wide
+   - Advanced filtering: search, status, asset, technician, date range
+   - Read-only access for all users
+   - Real-time filter population from actual data
+
+3. **✅ Enhanced Manager Dashboard Filters**
+   - Date range picker (start/end dates) replacing month-only filter
+   - Asset dropdown filter (dynamic population)
+   - Technician dropdown filter (dynamic population)
+   - Combined AND logic for all filters
+   - Improved UX with reorganized filter layout
+
+4. **✅ Image Display & Export Improvements**
+   - Fixed media type consistency (BEFORE_IMAGE vs AFTER_IMAGE)
+   - Excel export now displays ALL images (removed 2-image limit)
+   - Dynamic row heights in Excel based on image count
+   - Proper image labeling throughout the system
+   - All images display correctly in detail modals, history cards, print sheets
+
+5. **✅ UI/UX Enhancements**
+   - Loading skeletons for better perceived performance
+   - Enhanced hover effects and transitions
+   - Smooth scrolling behavior
+   - Improved card shadows and depth
+   - Better mobile responsiveness
+
+### Updated Ticket Lifecycle:
+
+```
+OPEN → IN_PROGRESS → PENDING_INSPECTION → CLOSED
+  ↑                         ↓
+  └────── (Rejected) ───────┘
+```
 
 ---
 
@@ -31,12 +79,14 @@ A **Computerized Maintenance Management System (CMMS)** for **WD Manufacturing C
 
 - **Role-Based Access Control**: 4 user roles (User, Technician, Manager, Admin)
 - **Asset Management**: QR code scanning and equipment tracking
-- **Ticket Lifecycle Management**: OPEN → IN_PROGRESS → PENDING_INSPECTION → COMPLETED
-- **Media Documentation**: Photo evidence with cloud storage
+- **Ticket Lifecycle Management**: OPEN → IN_PROGRESS → PENDING_INSPECTION → CLOSED (with approval workflow)
+- **Approval Workflow**: Requesters approve/reject completed work before final closure
+- **Media Documentation**: Photo evidence with cloud storage (BEFORE/AFTER labeling)
 - **Spare Parts System**: Inventory tracking and requisition
 - **Voice-to-Text**: Speech recording for repair notes
-- **Analytics Dashboard**: Charts and KPIs for managers
-- **Report Generation**: Excel exports and printable job sheets
+- **Analytics Dashboard**: Charts and KPIs with advanced filtering
+- **All History View**: System-wide ticket visibility with filters
+- **Report Generation**: Excel exports (unlimited images) and printable job sheets
 - **Mobile-Responsive**: Touch-optimized UI for field technicians
 
 ### User Roles
@@ -148,11 +198,12 @@ wd-maintenance/
   asset_id: UUID,            // FK to assets
   requester_id: UUID,        // FK to profiles
   technician_id: UUID,       // FK to profiles
-  status: ENUM('OPEN', 'IN_PROGRESS', 'PENDING_INSPECTION', 'COMPLETED'),
+  status: ENUM('OPEN', 'IN_PROGRESS', 'PENDING_INSPECTION', 'CLOSED'),
+  // Note: COMPLETED is legacy, CLOSED is the new final status
   incident_time: TIMESTAMP,
   issue_text: STRING,        // Issue title
-  description: TEXT,
-  photo_url: STRING,         // Initial report photo
+  description: TEXT,         // Issue details (may include rejection reasons)
+  photo_url: STRING,         // Initial report photo (BEFORE)
   repair_details: TEXT,      // Technician notes
   finished_at: TIMESTAMP,
   created_at: TIMESTAMP
@@ -212,18 +263,25 @@ wd-maintenance/
 {
   id: UUID,
   ticket_id: UUID,
+  type: ENUM('BEFORE_IMAGE', 'AFTER_IMAGE'),  // Image classification
   url: STRING,               // Supabase storage URL
   uploaded_at: TIMESTAMP
 }
 ```
 
-### Data Flow
+### Data Flow (Updated v2.0 with Approval Workflow)
 
 1. **User creates ticket** → `tickets` table (status: OPEN)
+   - Upload initial photos → `media` table (type: BEFORE_IMAGE)
 2. **Technician accepts** → Update `technician_id` (status: IN_PROGRESS)
-3. **Photos uploaded** → Supabase Storage → `media` table
-4. **Parts requested** → `spare_parts_requests` table
-5. **Job finished** → Update `repair_details`, `finished_at` (status: COMPLETED)
+3. **Technician works on job**:
+   - Photos uploaded → Supabase Storage → `media` table (type: AFTER_IMAGE)
+   - Parts requested → `spare_parts_requests` table
+4. **Technician finishes** → Update `repair_details`, `finished_at` (status: PENDING_INSPECTION)
+5. **Requester reviews work**:
+   - **If approved**: Status changes to CLOSED
+   - **If rejected**: Status returns to IN_PROGRESS (with rejection reason in description)
+6. **Final state**: CLOSED (job complete and approved)
 
 ---
 
@@ -572,55 +630,73 @@ Utils             // Utility functions
 
 ---
 
-### repair_app_connected.html - User Dashboard (669 lines)
+### repair_app_connected.html - User Dashboard (~900+ lines) **[UPDATED v2.0]**
 
 **Features:**
 - QR code scanner for asset identification
 - Issue type selection (from `issue_options` table)
-- Photo upload for initial report
-- Ticket history view
+- Photo upload for initial report (type: BEFORE_IMAGE)
+- Ticket history view (personal tickets)
+- **🆕 All Maintenance History** - View ALL system tickets with advanced filters
+- **🆕 Approval Workflow** - Approve or reject completed work
+- **🆕 Pending Inspection Notification** - Banner for jobs awaiting approval
 - Real-time status tracking
+- Loading skeletons for better UX
 
 **Key Functions:**
 - `startQrScanner()` - Activate camera for QR scanning
 - `submitTicket()` - Create new maintenance request
-- `loadMyTickets()` - Display user's ticket history
+- `fetchHistory()` - Display user's ticket history
+- **🆕 `approveTicket()`** - Approve completed work (PENDING_INSPECTION → CLOSED)
+- **🆕 `submitReject()`** - Reject and send back to IN_PROGRESS
+- **🆕 `openAllHistoryModal()`** - Show all system tickets with filters
+- **🆕 `filterAllHistory()`** - Apply advanced filters (search, status, asset, tech, date range)
 
 ---
 
-### technician_dashboard.html - Technician Workspace (625 lines)
+### technician_dashboard.html - Technician Workspace (625 lines) **[UPDATED v2.0]**
 
 **Three Tabs:**
 1. **OPEN** - Available jobs (status: OPEN)
 2. **MY_JOBS** - Jobs assigned to technician (status: IN_PROGRESS)
-3. **HISTORY** - Completed jobs
+3. **HISTORY** - Completed/Pending jobs (PENDING_INSPECTION, CLOSED)
 
 **Key Features:**
 - Accept job (OPEN → IN_PROGRESS)
 - Voice-to-text repair notes (Web Speech API)
 - Spare parts requisition with inventory modal
-- Before/after photo upload
-- Finish job modal (IN_PROGRESS → COMPLETED)
+- Before/after photo upload (type: AFTER_IMAGE)
+- **🆕 Finish job modal** (IN_PROGRESS → **PENDING_INSPECTION**)
 
 **Key Functions:**
 - `acceptJob(ticketId)` - Assign job to technician
 - `openFinishModal(ticketId)` - Open completion form
-- `finishJob()` - Complete job with repair details
+- `finishJob()` - Complete job with repair details (sets status to PENDING_INSPECTION)
 
 ---
 
-### manager_dashboard.html - Manager Analytics (393 lines)
+### manager_dashboard.html - Manager Analytics (~450+ lines) **[UPDATED v2.0]**
 
 **Features:**
-- KPI cards (total tickets, open, in-progress, completed)
+- KPI cards (total tickets, in-progress, pending inspection, closed)
+- **🆕 Advanced Filter Panel** with:
+  - Search (ID, asset, issue, technician)
+  - Status dropdown
+  - **Asset dropdown** (dynamic population)
+  - **Technician dropdown** (dynamic population)
+  - **Date range picker** (start/end dates)
 - Chart.js visualizations
-- Status distribution pie chart
-- Monthly trend line chart
-- Navigation to inventory management
+- Issue distribution pie chart
+- Top 5 problematic assets bar chart
+- Enhanced table with hover effects
+- Export to Excel with current filters
 
 **Key Functions:**
-- `loadDashboard()` - Fetch all analytics data
-- `renderCharts()` - Display Chart.js graphs
+- `fetchData()` - Fetch all analytics data
+- **🆕 `populateFilterDropdowns()`** - Dynamically populate asset and tech filters
+- **🆕 `applyFilters()`** - Apply combined AND logic for all filters
+- `renderCharts()` - Display Chart.js graphs with filtered data
+- `goToExportPage()` - Export Excel report with date range
 
 ---
 
@@ -668,17 +744,22 @@ Utils             // Utility functions
 
 ---
 
-### export_report.html - Excel Reports (285 lines)
+### export_report.html - Excel Reports (~300+ lines) **[UPDATED v2.0]**
 
 **Features:**
 - Monthly maintenance reports
 - ExcelJS file generation
 - Progress tracking
 - Formatted Excel output (FM-MT-01-11 format)
+- **🆕 Unlimited image embedding** (no 2-image limit)
+- **🆕 Dynamic row heights** based on image count
+- **🆕 Improved image detection** (BEFORE_IMAGE vs AFTER_IMAGE)
+- Grid layout for multiple images (2 per row)
 
 **Key Functions:**
 - `exportToExcel(month, year)` - Generate Excel report
-- Format includes: asset, issue, status, dates, technician
+- `embedImages()` - Embed ALL images with grid layout
+- Format includes: asset, issue, status, dates, technician, ALL photos
 
 ---
 
@@ -804,10 +885,15 @@ Before committing changes:
 - [ ] Verify mobile responsiveness (DevTools mobile view)
 - [ ] Check browser console for errors
 - [ ] Test all CRUD operations (Create, Read, Update, Delete)
-- [ ] Verify photo uploads work
+- [ ] Verify photo uploads work (BEFORE and AFTER images)
+- [ ] **🆕 Test approval workflow** (approve/reject functionality)
+- [ ] **🆕 Verify All History view** with filters (search, status, asset, tech, date range)
+- [ ] **🆕 Test manager dashboard filters** (all combinations)
+- [ ] **🆕 Verify Excel export** with multiple images
 - [ ] Ensure Thai text displays correctly
 - [ ] Test on different browsers (Chrome, Firefox, Safari)
 - [ ] Check loading states and error handling
+- [ ] **🆕 Verify loading skeletons** display correctly
 
 ---
 
@@ -891,6 +977,7 @@ const { data } = await supabaseClient
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-01-24 | 2.0 | **MAJOR UPDATE**: Approval workflow system, All history view, Advanced filters, Image system improvements, UI/UX enhancements |
 | 2026-01-24 | 1.0 | Initial CLAUDE.md creation |
 
 ---
