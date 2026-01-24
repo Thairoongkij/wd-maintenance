@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Generating Excel Report...</title>
+    <!-- Supabase & Tools -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <!-- ExcelJS & FileSaver -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #1f2937; color: white; margin: 0; }
+        .loader { width: 64px; height: 64px; border: 5px solid #FFF; border-bottom-color: #3b82f6; border-radius: 50%; animation: rotation 1s linear infinite; margin-bottom: 20px; }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .progress-container { width: 400px; background-color: #374151; border-radius: 10px; overflow: hidden; margin-top: 10px; border: 1px solid #4b5563; }
+        .progress-bar { width: 0%; height: 10px; background-color: #3b82f6; transition: width 0.3s; }
+        #status { margin-top: 15px; font-size: 16px; color: #d1d5db; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="loader"></div>
+    <h2 style="font-weight: bold; font-size: 24px;">กำลังสร้างรายงาน Excel (FM-MT-01-11)...</h2>
+    <div class="progress-container">
+        <div id="progressBar" class="progress-bar"></div>
+    </div>
+    <p id="status">กำลังเชื่อมต่อฐานข้อมูล...</p>
+
+    <script>
+        // Config
+        const SUPABASE_URL = 'https://nmezqexpvhdozpdzxxek.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tZXpxZXhwdmhkb3pwZHp4eGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5OTAwNTEsImV4cCI6MjA4MjU2NjA1MX0.N1OjCh1sp0xx0DGFjR6yX2hix5oIX7suzrnvQk8qPWU';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const monthFilter = urlParams.get('month');
+
+        function updateStatus(msg, percent) {
+            document.getElementById('status').innerText = msg;
+            document.getElementById('progressBar').style.width = `${percent}%`;
+        }
+
+        async function urlToBase64(url) {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                return new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                    reader.readAsDataURL(blob);
+                });
+            } catch (error) {
+                console.warn("Failed to load image:", url);
+                return null;
+            }
+        }
+
+        async function generateReport() {
+            try {
+                if (!monthFilter) throw new Error("กรุณาเลือกเดือนก่อน Export");
+
+                const startDate = `${monthFilter}-01`;
+                const endDate = dayjs(startDate).add(1, 'month').format('YYYY-MM-DD');
+
+                updateStatus('กำลังดึงข้อมูลใบแจ้งซ่อม...', 10);
+
+                // 1. Fetch Tickets
+                const { data: tickets, error } = await supabaseClient
+                    .from('tickets')
+                    .select('*')
+                    .gte('incident_time', startDate)
+                    .lt('incident_time', endDate)
+                    .order('incident_time');
+
+                if (error) throw error;
+                if (!tickets || tickets.length === 0) throw new Error("ไม่พบข้อมูลในเดือนนี้");
+
+                // 2. Fetch Related Data (Batch)
+                updateStatus('กำลังรวบรวมข้อมูลประกอบ...', 20);
+                
+                const assetIds = [...new Set(tickets.map(t => t.asset_id).filter(id => id))];
+                const userIds = [...new Set(tickets.map(t => t.requester_id).filter(id => id))];
+                const techIds = [...new Set(tickets.map(t => t.technician_id).filter(id => id))];
+                const allUserIds = [...new Set([...userIds, ...techIds])];
+                const ticketIds = tickets.map(t => t.id);
+
+                let assetsMap = {}, profilesMap = {}, partsMap = {};
+
+                const promises = [
+                    assetIds.length ? supabaseClient.from('assets').select('id, name, location').in('id', assetIds) : { data: [] },
+                    allUserIds.length ? supabaseClient.from('profiles').select('id, full_name').in('id', allUserIds) : { data: [] },
+                    ticketIds.length ? supabaseClient.from('spare_parts_requests').select('*').in('ticket_id', ticketIds) : { data: [] }
+                ];
+
+                const [assetsRes, profilesRes, partsRes] = await Promise.all(promises);
+
+                assetsRes.data?.forEach(a => assetsMap[a.id] = a);
+                profilesRes.data?.forEach(p => profilesMap[p.id] = p.full_name);
+                partsRes.data?.forEach(p => {
+                    if (!partsMap[p.ticket_id]) partsMap[p.ticket_id] = [];
+                    partsMap[p.ticket_id].push(p);
+                });
+
+                // 3. Setup Excel
+                updateStatus('กำลังสร้างโครงสร้างไฟล์...', 30);
+                const workbook = new ExcelJS.Workbook();
+                const worksheet = workbook.addWorksheet('Repair Report');
+
+                // Define Columns
+                worksheet.columns = [
+                    { width: 10 }, // A เวลาเปิด
+                    { width: 10 }, // B เวลาปิด
+                    { width: 15 }, // C สถานที่
+                    { width: 25 }, // D เครื่องจักร
+                    { width: 25 }, // E อาการ
+                    { width: 25 }, // F สาเหตุ
+                    { width: 25 }, // G วิธีแก้ไข
+                    { width: 20 }, // H อุปกรณ์
+                    { width: 8 },  // I จำนวน
+                    { width: 20 }, // J ผู้ปฏิบัติงาน
+                    { width: 25 }, // K รูปก่อนซ่อม
+                    { width: 25 }, // L รูปหลังซ่อม
+                ];
+
+                // Header Rows (FM-MT-01-11 Style)
+                worksheet.mergeCells('A1:L1');
+                const titleCell = worksheet.getCell('A1');
+                titleCell.value = "FM-MT-01-11 Rev.01 Issue 2/05/23";
+                titleCell.font = { size: 10, italic: true };
+                titleCell.alignment = { horizontal: 'left' };
+
+                worksheet.mergeCells('A2:I2');
+                const mainTitle = worksheet.getCell('A2');
+                mainTitle.value = "รายงานการปฏิบัติงานซ่อมบำรุง";
+                mainTitle.font = { bold: true, size: 16 };
+                mainTitle.alignment = { horizontal: 'center', vertical: 'middle' };
+
+                worksheet.mergeCells('J2:K2');
+                worksheet.getCell('J2').value = "วัน/เดือน/ปี";
+                worksheet.getCell('J2').alignment = { horizontal: 'right', vertical: 'middle' };
+                
+                worksheet.getCell('L2').value = dayjs().format('DD/MM/YYYY');
+                worksheet.getCell('L2').alignment = { horizontal: 'center', vertical: 'middle' };
+                worksheet.getCell('L2').border = { bottom: {style:'thin'} };
+
+                // Table Headers
+                const headerLabels = [
+                    "เวลาเปิด", "เวลาปิด", "สถานที่ตั้ง", "ชื่อเครื่องจักร / อุปกรณ์", "อาการ", 
+                    "สาเหตุของปัญหา", "วิธีแก้ไข/รายละเอียด", "อุปกรณ์ที่ใช้", "จำนวน", "ผู้ปฎิบัติงาน", 
+                    "ภาพประกอบ (Before)", "ภาพประกอบ (After)"
+                ];
+                
+                const headerRow = worksheet.addRow(headerLabels);
+                headerRow.height = 30;
+                headerRow.eachCell((cell) => {
+                    cell.font = { bold: true };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } }; // Light Gray
+                    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                });
+
+                // 4. Process Rows & Images
+                let currentRow = 4; // Data starts at row 4
+                
+                for (let i = 0; i < tickets.length; i++) {
+                    const t = tickets[i];
+                    const pct = 30 + Math.round(((i + 1) / tickets.length) * 60);
+                    updateStatus(`กำลังประมวลผลรายการที่ ${i + 1}/${tickets.length}...`, pct);
+
+                    const asset = assetsMap[t.asset_id] || {};
+                    const parts = partsMap[t.id] || [];
+                    const partsStr = parts.map(p => p.part_name).join('\n');
+                    const qtyStr = parts.map(p => p.quantity).join('\n');
+
+                    // Extract Data
+                    const rowData = [
+                        dayjs(t.incident_time).format('HH:mm'),
+                        t.finished_at ? dayjs(t.finished_at).format('HH:mm') : '-',
+                        asset.location || '-',
+                        asset.name || 'ไม่ระบุ',
+                        t.issue_text,
+                        t.description || '-', // สาเหตุ
+                        t.repair_details || '-', // วิธีแก้ไข
+                        partsStr || '-',
+                        qtyStr || '-',
+                        profilesMap[t.technician_id] || '-',
+                        '', '' // Placeholders for images
+                    ];
+
+                    const row = worksheet.addRow(rowData);
+                    
+                    // Set Row Height (Ensure enough space for images)
+                    row.height = 100;
+
+                    // Style
+                    row.eachCell((cell) => {
+                        cell.alignment = { vertical: 'middle', wrapText: true, horizontal: 'center' };
+                        cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                    });
+
+                    // --- IMAGE LOGIC (ALL IMAGES) ---
+                    const { data: mediaList } = await supabaseClient.from('media').select('*').eq('ticket_id', t.id);
+                    
+                    // Group Images
+                    let beforeImgs = [];
+                    let afterImgs = [];
+
+                    if (t.photo_url) beforeImgs.push(t.photo_url); // Cover is always Before
+                    
+                    if (mediaList && mediaList.length > 0) {
+                        mediaList.forEach(m => {
+                            if (m.type === 'AFTER_IMAGE') afterImgs.push(m.url);
+                            else if (m.url !== t.photo_url) beforeImgs.push(m.url); // Other images as Before
+                        });
+                    }
+
+                    // Helper to embed images in a cell (side-by-side)
+                    const embedImages = async (urls, colIndex) => {
+                        if (urls.length === 0) return;
+                        
+                        // Limit to 2 images per cell to prevent overflow mess, or shrink
+                        for (let j = 0; j < Math.min(urls.length, 2); j++) {
+                            const b64 = await urlToBase64(urls[j]);
+                            if (b64) {
+                                const imgId = workbook.addImage({ base64: b64, extension: 'jpeg' });
+                                worksheet.addImage(imgId, {
+                                    tl: { col: colIndex + (j * 0.5), row: currentRow - 1 }, // Shift slightly right
+                                    ext: { width: 90, height: 90 },
+                                    editAs: 'oneCell'
+                                });
+                            }
+                        }
+                    };
+
+                    await embedImages(beforeImgs, 10); // Col K (Index 10)
+                    await embedImages(afterImgs, 11);  // Col L (Index 11)
+
+                    currentRow++;
+                }
+
+                // 5. Footer (Signatures)
+                worksheet.addRow([]); // Spacer
+                
+                const footerRow1 = worksheet.addRow(["", "..........................................", "", "", "..........................................", "", "", "", ".........................................."]);
+                const footerRow2 = worksheet.addRow(["", "ผู้จัดทำ (ธุรการซ่อมบำรุง)", "", "", "ผู้ตรวจสอบ (หัวหน้าช่าง)", "", "", "", "ผู้จัดการฝ่ายผลิต"]);
+                
+                [footerRow1, footerRow2].forEach(r => {
+                    r.font = { size: 11 };
+                    r.alignment = { horizontal: 'center' };
+                });
+
+                // Merge Cells for Signatures
+                // Adjust merge ranges based on column indices (0-based)
+                // Col B-C (1-2), E-G (4-6), I-K (8-10) approx
+                worksheet.mergeCells(`B${currentRow+1}:D${currentRow+1}`); // Name line 1
+                worksheet.mergeCells(`B${currentRow+2}:D${currentRow+2}`); // Title 1
+                
+                worksheet.mergeCells(`E${currentRow+1}:G${currentRow+1}`); // Name line 2
+                worksheet.mergeCells(`E${currentRow+2}:G${currentRow+2}`); // Title 2
+                
+                worksheet.mergeCells(`I${currentRow+1}:K${currentRow+1}`); // Name line 3
+                worksheet.mergeCells(`I${currentRow+2}:K${currentRow+2}`); // Title 3
+
+                // 6. Download
+                updateStatus('เสร็จสิ้น! กำลังดาวน์โหลด...', 100);
+                const buffer = await workbook.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                saveAs(blob, `Maintenance_Report_${monthFilter}.xlsx`);
+                
+                document.getElementById('status').innerHTML = '<span style="color:#4ade80; font-size: 20px;">✅ ดาวน์โหลดเรียบร้อย!</span><br><br><button onclick="window.close()" style="padding:10px 20px; cursor:pointer; background:#555; color:white; border:none; border-radius:5px;">ปิดหน้าต่าง</button>';
+                document.getElementById('progressBar').style.backgroundColor = '#4ade80';
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('status').innerHTML = `<span style="color:#ef4444">❌ เกิดข้อผิดพลาด: ${err.message}</span>`;
+                document.getElementById('progressBar').style.backgroundColor = '#ef4444';
+            }
+        }
+
+        generateReport();
+    </script>
+</body>
+</html>
