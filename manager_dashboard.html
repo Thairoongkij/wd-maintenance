@@ -147,10 +147,10 @@
                         </div>
                         <select id="statusFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
                             <option value="ALL">สถานะ: ทั้งหมด</option>
+                            <option value="OPEN">🔴 รอรับงาน</option>
+                            <option value="IN_PROGRESS">🔵 กำลังซ่อม</option>
                             <option value="PENDING_INSPECTION">🟣 รอตรวจสอบ</option>
                             <option value="CLOSED">🟢 เสร็จสิ้น</option>
-                            <option value="OPEN">🔴 รอรับงาน</option>
-                            <option value="IN_PROGRESS">🟠 กำลังซ่อม</option>
                         </select>
                     </div>
 
@@ -176,7 +176,22 @@
                         </div>
                     </div>
 
-                    <!-- Row 4: Reset Button -->
+                    <!-- Row 4: Priority & Type -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <select id="priorityFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
+                            <option value="ALL">ความเร่งด่วน: ทั้งหมด</option>
+                            <option value="ปกติ">🟢 ปกติ</option>
+                            <option value="ด่วน">🟡 ด่วน</option>
+                            <option value="ด่วนที่สุด">🔴 ด่วนที่สุด</option>
+                        </select>
+                        <select id="requestTypeFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
+                            <option value="ALL">ประเภท: ทั้งหมด</option>
+                            <option value="QR">📱 QR Asset</option>
+                            <option value="MANUAL">✍️ ซ่อมทั่วไป</option>
+                        </select>
+                    </div>
+
+                    <!-- Row 5: Reset Button -->
                     <div class="flex gap-3">
                         <button onclick="resetFilters()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm border border-slate-200">
                             <i class="fas fa-undo"></i> รีเซ็ตฟิลเตอร์
@@ -227,9 +242,12 @@
                             <thead class="bg-gray-50 text-gray-500 uppercase text-xs font-bold border-b border-gray-200 sticky top-0 z-10">
                                 <tr>
                                     <th class="px-6 py-5 pl-8">Job ID</th>
+                                    <th class="px-6 py-5">ภาพ</th>
                                     <th class="px-6 py-5">เวลาแจ้ง</th>
                                     <th class="px-6 py-5">เครื่องจักร</th>
                                     <th class="px-6 py-5">อาการ</th>
+                                    <th class="px-6 py-5">ผู้แจ้ง</th>
+                                    <th class="px-6 py-5">ช่าง</th>
                                     <th class="px-6 py-5 text-center">สถานะ</th>
                                     <th class="px-6 py-5 text-right pr-8">จัดการ</th>
                                 </tr>
@@ -245,6 +263,134 @@
             </div>
         </div>
     </main>
+
+    <!-- Ticket Detail Modal -->
+    <div id="ticketDetailModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeDetailModal()">
+        <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
+            <!-- Header -->
+            <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-3xl z-10">
+                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-file-alt text-blue-500"></i>
+                    <span id="detailTitle">รายละเอียดงานซ่อม</span>
+                </h2>
+                <button onclick="closeDetailModal()" class="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition flex items-center justify-center">
+                    <i class="fas fa-times text-gray-600"></i>
+                </button>
+            </div>
+
+            <!-- Status Banner -->
+            <div id="detailStatusBanner" class="px-6 py-4"></div>
+
+            <!-- Content -->
+            <div class="px-6 pb-6 space-y-6">
+                <!-- Basic Info -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-xs text-gray-500 font-bold mb-1">รหัสงาน</p>
+                        <p class="font-mono text-blue-600 font-bold" id="detailJobId">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-bold mb-1">วันที่แจ้ง</p>
+                        <p class="text-gray-700 font-medium" id="detailIncidentTime">-</p>
+                    </div>
+                </div>
+
+                <!-- Asset Info -->
+                <div class="bg-blue-50 rounded-2xl p-4">
+                    <p class="text-xs text-blue-600 font-bold mb-2">เครื่องจักร</p>
+                    <p class="font-bold text-gray-800 text-lg" id="detailAssetName">-</p>
+                    <p class="text-sm text-gray-600 mt-1" id="detailLocation">-</p>
+                </div>
+
+                <!-- Issue -->
+                <div>
+                    <p class="text-xs text-gray-500 font-bold mb-2">อาการเสีย</p>
+                    <p class="text-gray-800 font-medium" id="detailIssue">-</p>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <p class="text-xs text-gray-500 font-bold mb-2">รายละเอียด</p>
+                    <p class="text-gray-700 text-sm whitespace-pre-wrap" id="detailDescription">-</p>
+                </div>
+
+                <!-- People -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-xs text-gray-500 font-bold mb-1">ผู้แจ้ง</p>
+                        <p class="text-gray-700" id="detailRequester">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-bold mb-1">ช่างผู้รับผิดชอบ</p>
+                        <p class="text-gray-700" id="detailTechnician">-</p>
+                    </div>
+                </div>
+
+                <!-- Repair Details (if exists) -->
+                <div id="repairDetailsSection" class="hidden">
+                    <div class="bg-green-50 rounded-2xl p-4">
+                        <p class="text-xs text-green-600 font-bold mb-2 flex items-center gap-2">
+                            <i class="fas fa-wrench"></i> รายละเอียดการซ่อม
+                        </p>
+                        <p class="text-gray-800 whitespace-pre-wrap" id="detailRepairDetails">-</p>
+                        <p class="text-xs text-gray-500 mt-2" id="detailFinishedAt">-</p>
+                    </div>
+                </div>
+
+                <!-- Images Gallery -->
+                <div id="imagesSection" class="hidden">
+                    <p class="text-xs text-gray-500 font-bold mb-3">รูปภาพประกอบ</p>
+                    <div id="detailImagesGrid" class="grid grid-cols-2 gap-3"></div>
+                </div>
+
+                <!-- Manager Actions (only for PENDING_INSPECTION) -->
+                <div id="managerActionsSection" class="hidden">
+                    <div class="border-t border-gray-200 pt-6 space-y-3">
+                        <p class="text-sm font-bold text-gray-700 mb-3">การจัดการของผู้บริหาร</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="approveTicket()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg">
+                                <i class="fas fa-check-circle"></i> อนุมัติปิดงาน
+                            </button>
+                            <button onclick="openRejectModal()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg">
+                                <i class="fas fa-times-circle"></i> ส่งกลับแก้ไข
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Print Button -->
+                <div class="border-t border-gray-200 pt-4">
+                    <button onclick="printJobSheet()" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 px-6 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 border border-blue-200">
+                        <i class="fas fa-print"></i> พิมพ์ใบงาน
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div id="rejectModal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[80] hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeRejectModal()">
+        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl animate-fade-in-up">
+            <div class="bg-red-500 text-white px-6 py-4 rounded-t-3xl">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    ส่งกลับแก้ไข
+                </h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-gray-700">กรุณาระบุเหตุผลในการส่งกลับแก้ไข:</p>
+                <textarea id="rejectReasonInput" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none resize-none" placeholder="เช่น: ยังซ่อมไม่สมบูรณ์, ต้องทำความสะอาดเพิ่ม..."></textarea>
+                <div class="flex gap-3">
+                    <button onclick="closeRejectModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-bold transition">
+                        ยกเลิก
+                    </button>
+                    <button onclick="submitReject()" class="flex-1 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold transition">
+                        ยืนยันส่งกลับ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // --- EMBEDDED CONFIG ---
@@ -268,6 +414,7 @@
         let assetChartInstance = null;
         let allTickets = [];
         let currentTickets = [];
+        let currentTicketDetail = null;
 
         // Helper to safely set text content (PREVENTS NULL ERROR)
         function safeSetText(id, text) {
@@ -363,6 +510,8 @@
             const technicianFilter = document.getElementById('technicianFilter').value;
             const dateStart = document.getElementById('dateStartFilter').value;
             const dateEnd = document.getElementById('dateEndFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+            const requestTypeFilter = document.getElementById('requestTypeFilter').value;
 
             currentTickets = allTickets.filter(t => {
                 const matchSearch = t.id.toLowerCase().includes(searchTerm) ||
@@ -372,6 +521,10 @@
                 const matchStatus = statusFilter === 'ALL' || t.status === statusFilter;
                 const matchAsset = assetFilter === 'ALL' || t.asset_name === assetFilter;
                 const matchTech = technicianFilter === 'ALL' || t.technician_name === technicianFilter;
+                const matchPriority = priorityFilter === 'ALL' || (t.priority || 'ปกติ') === priorityFilter;
+                const matchRequestType = requestTypeFilter === 'ALL' ||
+                    (requestTypeFilter === 'QR' && t.asset_id) ||
+                    (requestTypeFilter === 'MANUAL' && !t.asset_id);
 
                 let matchDate = true;
                 if(dateStart) {
@@ -381,11 +534,11 @@
                     matchDate = matchDate && dayjs(t.incident_time).isBefore(dayjs(dateEnd).add(1, 'day'));
                 }
 
-                return matchSearch && matchStatus && matchAsset && matchTech && matchDate;
+                return matchSearch && matchStatus && matchAsset && matchTech && matchDate && matchPriority && matchRequestType;
             });
 
-            // Use SAFE SET TEXT
-            safeSetText('filterCount', `${currentTickets.length} รายการ`);
+            // Use SAFE SET TEXT with count display
+            safeSetText('filterCount', `แสดง ${currentTickets.length} จาก ${allTickets.length} รายการ`);
 
             updateStats(currentTickets);
             renderCharts(currentTickets);
@@ -399,6 +552,8 @@
             document.getElementById('technicianFilter').value = 'ALL';
             document.getElementById('dateStartFilter').value = '';
             document.getElementById('dateEndFilter').value = '';
+            document.getElementById('priorityFilter').value = 'ALL';
+            document.getElementById('requestTypeFilter').value = 'ALL';
             applyFilters();
         }
         
