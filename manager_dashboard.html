@@ -54,6 +54,15 @@
 
         /* Smooth Scrolling */
         * { scroll-behavior: smooth; }
+
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Sticky Filter Bar */
+        .sticky-filter { position: sticky; top: 0; z-index: 30; }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden bg-gray-100 text-gray-800">
@@ -147,10 +156,10 @@
                         </div>
                         <select id="statusFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
                             <option value="ALL">สถานะ: ทั้งหมด</option>
+                            <option value="OPEN">🔴 รอรับงาน</option>
+                            <option value="IN_PROGRESS">🔵 กำลังซ่อม</option>
                             <option value="PENDING_INSPECTION">🟣 รอตรวจสอบ</option>
                             <option value="CLOSED">🟢 เสร็จสิ้น</option>
-                            <option value="OPEN">🔴 รอรับงาน</option>
-                            <option value="IN_PROGRESS">🟠 กำลังซ่อม</option>
                         </select>
                     </div>
 
@@ -161,21 +170,6 @@
                         </select>
                         <select id="technicianFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
                             <option value="ALL">ช่าง: ทั้งหมด</option>
-                        </select>
-                    </div>
-
-                    <!-- Row 2.5: Priority & Request Type (NEW v2.6) -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <select id="priorityFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
-                            <option value="ALL">ความเร่งด่วน: ทั้งหมด</option>
-                            <option value="ปกติ">🟢 ปกติ</option>
-                            <option value="ด่วน">🟡 ด่วน</option>
-                            <option value="ด่วนที่สุด">🔴 ด่วนที่สุด</option>
-                        </select>
-                        <select id="requestTypeFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
-                            <option value="ALL">ประเภทงาน: ทั้งหมด</option>
-                            <option value="QR">📱 QR Asset</option>
-                            <option value="MANUAL">✍️ ซ่อมทั่วไป</option>
                         </select>
                     </div>
 
@@ -191,7 +185,22 @@
                         </div>
                     </div>
 
-                    <!-- Row 4: Reset Button -->
+                    <!-- Row 4: Priority & Type -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <select id="priorityFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
+                            <option value="ALL">ความเร่งด่วน: ทั้งหมด</option>
+                            <option value="ปกติ">🟢 ปกติ</option>
+                            <option value="ด่วน">🟡 ด่วน</option>
+                            <option value="ด่วนที่สุด">🔴 ด่วนที่สุด</option>
+                        </select>
+                        <select id="requestTypeFilter" onchange="applyFilters()" class="filter-input cursor-pointer">
+                            <option value="ALL">ประเภท: ทั้งหมด</option>
+                            <option value="QR">📱 QR Asset</option>
+                            <option value="MANUAL">✍️ ซ่อมทั่วไป</option>
+                        </select>
+                    </div>
+
+                    <!-- Row 5: Reset Button -->
                     <div class="flex gap-3">
                         <button onclick="resetFilters()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2.5 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm border border-slate-200">
                             <i class="fas fa-undo"></i> รีเซ็ตฟิลเตอร์
@@ -222,11 +231,10 @@
                     </div>
                 </div>
 
-                <!-- Charts Section (EXPANDED WITH PRIORITY CHART v2.6) -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10 fade-in-up" style="animation-delay: 0.1s;">
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10 fade-in-up" style="animation-delay: 0.1s;">
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100"><h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><span class="w-1.5 h-6 bg-blue-500 rounded-full"></span> สัดส่วนอาการเสีย</h3><div class="h-64 relative"><canvas id="issueChart"></canvas></div></div>
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100"><h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><span class="w-1.5 h-6 bg-orange-500 rounded-full"></span> 5 อันดับเครื่องจักรมีปัญหา</h3><div class="h-64 relative"><canvas id="assetChart"></canvas></div></div>
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100"><h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><span class="w-1.5 h-6 bg-red-500 rounded-full"></span> ความเร่งด่วน</h3><div class="h-64 relative"><canvas id="priorityChart"></canvas></div></div>
                 </div>
 
                 <!-- Ticket List Section -->
@@ -243,9 +251,12 @@
                             <thead class="bg-gray-50 text-gray-500 uppercase text-xs font-bold border-b border-gray-200 sticky top-0 z-10">
                                 <tr>
                                     <th class="px-6 py-5 pl-8">Job ID</th>
+                                    <th class="px-6 py-5">ภาพ</th>
                                     <th class="px-6 py-5">เวลาแจ้ง</th>
                                     <th class="px-6 py-5">เครื่องจักร</th>
                                     <th class="px-6 py-5">อาการ</th>
+                                    <th class="px-6 py-5">ผู้แจ้ง</th>
+                                    <th class="px-6 py-5">ช่าง</th>
                                     <th class="px-6 py-5 text-center">สถานะ</th>
                                     <th class="px-6 py-5 text-right pr-8">จัดการ</th>
                                 </tr>
@@ -261,6 +272,134 @@
             </div>
         </div>
     </main>
+
+    <!-- Ticket Detail Modal -->
+    <div id="ticketDetailModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeDetailModal()">
+        <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
+            <!-- Header -->
+            <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-3xl z-10">
+                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-file-alt text-blue-500"></i>
+                    <span id="detailTitle">รายละเอียดงานซ่อม</span>
+                </h2>
+                <button onclick="closeDetailModal()" class="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition flex items-center justify-center">
+                    <i class="fas fa-times text-gray-600"></i>
+                </button>
+            </div>
+
+            <!-- Status Banner -->
+            <div id="detailStatusBanner" class="px-6 py-4"></div>
+
+            <!-- Content -->
+            <div class="px-6 pb-6 space-y-6">
+                <!-- Basic Info -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-xs text-gray-500 font-bold mb-1">รหัสงาน</p>
+                        <p class="font-mono text-blue-600 font-bold" id="detailJobId">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-bold mb-1">วันที่แจ้ง</p>
+                        <p class="text-gray-700 font-medium" id="detailIncidentTime">-</p>
+                    </div>
+                </div>
+
+                <!-- Asset Info -->
+                <div class="bg-blue-50 rounded-2xl p-4">
+                    <p class="text-xs text-blue-600 font-bold mb-2">เครื่องจักร</p>
+                    <p class="font-bold text-gray-800 text-lg" id="detailAssetName">-</p>
+                    <p class="text-sm text-gray-600 mt-1" id="detailLocation">-</p>
+                </div>
+
+                <!-- Issue -->
+                <div>
+                    <p class="text-xs text-gray-500 font-bold mb-2">อาการเสีย</p>
+                    <p class="text-gray-800 font-medium" id="detailIssue">-</p>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <p class="text-xs text-gray-500 font-bold mb-2">รายละเอียด</p>
+                    <p class="text-gray-700 text-sm whitespace-pre-wrap" id="detailDescription">-</p>
+                </div>
+
+                <!-- People -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-xs text-gray-500 font-bold mb-1">ผู้แจ้ง</p>
+                        <p class="text-gray-700" id="detailRequester">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-bold mb-1">ช่างผู้รับผิดชอบ</p>
+                        <p class="text-gray-700" id="detailTechnician">-</p>
+                    </div>
+                </div>
+
+                <!-- Repair Details (if exists) -->
+                <div id="repairDetailsSection" class="hidden">
+                    <div class="bg-green-50 rounded-2xl p-4">
+                        <p class="text-xs text-green-600 font-bold mb-2 flex items-center gap-2">
+                            <i class="fas fa-wrench"></i> รายละเอียดการซ่อม
+                        </p>
+                        <p class="text-gray-800 whitespace-pre-wrap" id="detailRepairDetails">-</p>
+                        <p class="text-xs text-gray-500 mt-2" id="detailFinishedAt">-</p>
+                    </div>
+                </div>
+
+                <!-- Images Gallery -->
+                <div id="imagesSection" class="hidden">
+                    <p class="text-xs text-gray-500 font-bold mb-3">รูปภาพประกอบ</p>
+                    <div id="detailImagesGrid" class="grid grid-cols-2 gap-3"></div>
+                </div>
+
+                <!-- Manager Actions (only for PENDING_INSPECTION) -->
+                <div id="managerActionsSection" class="hidden">
+                    <div class="border-t border-gray-200 pt-6 space-y-3">
+                        <p class="text-sm font-bold text-gray-700 mb-3">การจัดการของผู้บริหาร</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="approveTicket()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg">
+                                <i class="fas fa-check-circle"></i> อนุมัติปิดงาน
+                            </button>
+                            <button onclick="openRejectModal()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg">
+                                <i class="fas fa-times-circle"></i> ส่งกลับแก้ไข
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Print Button -->
+                <div class="border-t border-gray-200 pt-4">
+                    <button onclick="printJobSheet()" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 px-6 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 border border-blue-200">
+                        <i class="fas fa-print"></i> พิมพ์ใบงาน
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div id="rejectModal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[80] hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeRejectModal()">
+        <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl animate-fade-in-up">
+            <div class="bg-red-500 text-white px-6 py-4 rounded-t-3xl">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    ส่งกลับแก้ไข
+                </h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-gray-700">กรุณาระบุเหตุผลในการส่งกลับแก้ไข:</p>
+                <textarea id="rejectReasonInput" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none resize-none" placeholder="เช่น: ยังซ่อมไม่สมบูรณ์, ต้องทำความสะอาดเพิ่ม..."></textarea>
+                <div class="flex gap-3">
+                    <button onclick="closeRejectModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-bold transition">
+                        ยกเลิก
+                    </button>
+                    <button onclick="submitReject()" class="flex-1 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold transition">
+                        ยืนยันส่งกลับ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // --- EMBEDDED CONFIG ---
@@ -284,6 +423,7 @@
         let assetChartInstance = null;
         let allTickets = [];
         let currentTickets = [];
+        let currentTicketDetail = null;
 
         // Helper to safely set text content (PREVENTS NULL ERROR)
         function safeSetText(id, text) {
@@ -377,10 +517,10 @@
             const statusFilter = document.getElementById('statusFilter').value;
             const assetFilter = document.getElementById('assetFilter').value;
             const technicianFilter = document.getElementById('technicianFilter').value;
-            const priorityFilter = document.getElementById('priorityFilter').value;      // NEW v2.6
-            const requestTypeFilter = document.getElementById('requestTypeFilter').value; // NEW v2.6
             const dateStart = document.getElementById('dateStartFilter').value;
             const dateEnd = document.getElementById('dateEndFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+            const requestTypeFilter = document.getElementById('requestTypeFilter').value;
 
             currentTickets = allTickets.filter(t => {
                 const matchSearch = t.id.toLowerCase().includes(searchTerm) ||
@@ -390,11 +530,10 @@
                 const matchStatus = statusFilter === 'ALL' || t.status === statusFilter;
                 const matchAsset = assetFilter === 'ALL' || t.asset_name === assetFilter;
                 const matchTech = technicianFilter === 'ALL' || t.technician_name === technicianFilter;
-
-                // NEW FILTERS v2.6
                 const matchPriority = priorityFilter === 'ALL' || (t.priority || 'ปกติ') === priorityFilter;
                 const matchRequestType = requestTypeFilter === 'ALL' ||
-                    (requestTypeFilter === 'MANUAL' ? t.is_manual_request === true : t.is_manual_request === false);
+                    (requestTypeFilter === 'QR' && t.asset_id) ||
+                    (requestTypeFilter === 'MANUAL' && !t.asset_id);
 
                 let matchDate = true;
                 if(dateStart) {
@@ -404,11 +543,11 @@
                     matchDate = matchDate && dayjs(t.incident_time).isBefore(dayjs(dateEnd).add(1, 'day'));
                 }
 
-                return matchSearch && matchStatus && matchAsset && matchTech && matchPriority && matchRequestType && matchDate;
+                return matchSearch && matchStatus && matchAsset && matchTech && matchDate && matchPriority && matchRequestType;
             });
 
-            // Use SAFE SET TEXT
-            safeSetText('filterCount', `${currentTickets.length} รายการ`);
+            // Use SAFE SET TEXT with count display
+            safeSetText('filterCount', `แสดง ${currentTickets.length} จาก ${allTickets.length} รายการ`);
 
             updateStats(currentTickets);
             renderCharts(currentTickets);
@@ -420,10 +559,10 @@
             document.getElementById('statusFilter').value = 'ALL';
             document.getElementById('assetFilter').value = 'ALL';
             document.getElementById('technicianFilter').value = 'ALL';
-            document.getElementById('priorityFilter').value = 'ALL';        // NEW v2.6
-            document.getElementById('requestTypeFilter').value = 'ALL';   // NEW v2.6
             document.getElementById('dateStartFilter').value = '';
             document.getElementById('dateEndFilter').value = '';
+            document.getElementById('priorityFilter').value = 'ALL';
+            document.getElementById('requestTypeFilter').value = 'ALL';
             applyFilters();
         }
         
@@ -447,72 +586,34 @@
         }
 
         function renderCharts(tickets) {
-             const issueCounts = {}; const assetCounts = {}; const priorityCounts = {};
-             tickets.forEach(t => {
-                 const issue = t.issue_text || 'อื่นๆ';
-                 issueCounts[issue] = (issueCounts[issue] || 0) + 1;
-
-                 const asset = t.asset_name;
-                 assetCounts[asset] = (assetCounts[asset] || 0) + 1;
-
-                 // Count by priority (NEW v2.6)
-                 const priority = t.priority || 'ปกติ';
-                 priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
-             });
+             const issueCounts = {}; const assetCounts = {};
+             tickets.forEach(t => { const issue = t.issue_text || 'อื่นๆ'; issueCounts[issue] = (issueCounts[issue] || 0) + 1; const asset = t.asset_name; assetCounts[asset] = (assetCounts[asset] || 0) + 1; });
 
              const ctxIssue = document.getElementById('issueChart');
              if(ctxIssue) {
                  if (window.myIssueChart instanceof Chart) window.myIssueChart.destroy();
-                 window.myIssueChart = new Chart(ctxIssue.getContext('2d'), { type: 'doughnut', data: { labels: Object.keys(issueCounts), datasets: [{ data: Object.values(issueCounts), backgroundColor: ['#3b82f6', '#f97316', '#a855f7', '#22c55e', '#6366f1'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
+                 window.myIssueChart = new Chart(ctxIssue.getContext('2d'), { type: 'doughnut', data: { labels: Object.keys(issueCounts), datasets: [{ data: Object.values(issueCounts), backgroundColor: ['#3b82f6', '#f97316', '#a855f7', '#22c55e', '#6366f1'] }] }, options: { responsive: true, maintainAspectRatio: false } });
              }
 
              const ctxAsset = document.getElementById('assetChart');
              if(ctxAsset) {
                  if (window.myAssetChart instanceof Chart) window.myAssetChart.destroy();
                  const sorted = Object.entries(assetCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-                 window.myAssetChart = new Chart(ctxAsset.getContext('2d'), { type: 'bar', data: { labels: sorted.map(i=>i[0]), datasets: [{ label: 'จำนวนครั้ง', data: sorted.map(i=>i[1]), backgroundColor: '#f97316', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-             }
-
-             // Priority Chart (NEW v2.6)
-             const ctxPriority = document.getElementById('priorityChart');
-             if(ctxPriority) {
-                 if (window.myPriorityChart instanceof Chart) window.myPriorityChart.destroy();
-                 window.myPriorityChart = new Chart(ctxPriority.getContext('2d'), {
-                     type: 'doughnut',
-                     data: {
-                         labels: ['ปกติ', 'ด่วน', 'ด่วนที่สุด'],
-                         datasets: [{
-                             data: [
-                                 priorityCounts['ปกติ'] || 0,
-                                 priorityCounts['ด่วน'] || 0,
-                                 priorityCounts['ด่วนที่สุด'] || 0
-                             ],
-                             backgroundColor: ['#10b981', '#f59e0b', '#ef4444']
-                         }]
-                     },
-                     options: {
-                         responsive: true,
-                         maintainAspectRatio: false,
-                         plugins: {
-                             legend: { position: 'bottom' },
-                             title: { display: false }
-                         }
-                     }
-                 });
+                 window.myAssetChart = new Chart(ctxAsset.getContext('2d'), { type: 'bar', data: { labels: sorted.map(i=>i[0]), datasets: [{ label: 'จำนวนครั้ง', data: sorted.map(i=>i[1]), backgroundColor: '#f97316', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false } });
              }
         }
 
-        function renderData(tickets) {
+        async function renderData(tickets) {
             const tbody = document.getElementById('ticketTableBody');
             const mList = document.getElementById('mobileTicketCards');
             const noDataDesk = document.getElementById('noDataDesk');
             const noDataMob = document.getElementById('noDataMob');
-            
+
             if(!tbody || !mList) return;
 
             tbody.innerHTML = '';
             mList.innerHTML = '';
-            
+
             if (tickets.length === 0) {
                 if(noDataDesk) noDataDesk.classList.remove('hidden');
                 if(noDataMob) noDataMob.classList.remove('hidden');
@@ -522,15 +623,258 @@
                 if(noDataMob) noDataMob.classList.add('hidden');
             }
 
+            // Fetch thumbnails for all tickets
+            const ticketIds = tickets.map(t => t.id);
+            let mediaMap = {};
+            if(ticketIds.length > 0) {
+                const { data: mediaData } = await supabaseClient
+                    .from('media')
+                    .select('ticket_id, url, type')
+                    .in('ticket_id', ticketIds);
+                if(mediaData) {
+                    mediaData.forEach(m => {
+                        if(!mediaMap[m.ticket_id]) mediaMap[m.ticket_id] = [];
+                        mediaMap[m.ticket_id].push(m);
+                    });
+                }
+            }
+
             tickets.forEach(t => {
-                const btn = `<button onclick="window.open('print_job_sheet.html?id=${t.id}','_blank')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1 rounded text-xs font-bold border border-blue-100 transition">รายละเอียด</button>`;
-                const badgeClass = t.status === 'CLOSED' ? 'bg-green-100 text-green-700' : (t.status === 'OPEN' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700');
-                const badge = `<span class="${badgeClass} px-2 py-0.5 rounded text-[10px] font-bold">${t.status}</span>`;
-                
-                tbody.innerHTML += `<tr class="bg-white border-b hover:bg-indigo-50/30 transition-colors group"><td class="px-6 py-4 pl-8 text-xs font-mono text-blue-600 font-bold">#${t.id.substring(0,4)}</td><td class="px-6 py-4 text-sm text-gray-500">${Utils.formatDate(t.incident_time)}</td><td class="px-6 py-4 font-bold text-gray-700">${t.asset_name}</td><td class="px-6 py-4 text-sm text-gray-600">${t.issue_text}</td><td class="px-6 py-4 text-center">${badge}</td><td class="px-6 py-4 pr-8 text-right">${btn}</td></tr>`;
-                
-                mList.innerHTML += `<div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-3"><div class="flex justify-between items-start mb-3"><span class="text-xs font-mono bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-bold">#${t.id.substring(0,4)}</span>${badge}</div><div class="mb-4"><h4 class="font-bold text-gray-800 text-lg mb-1 leading-snug">${t.issue_text}</h4><div class="flex items-center gap-1.5 text-sm text-indigo-600 font-bold"><i class="fas fa-industry"></i> ${t.asset_name}</div></div><div class="flex items-center justify-between pt-3 border-t border-gray-50"><div class="text-[10px] text-gray-400">${Utils.formatDate(t.incident_time)}</div>${btn}</div></div>`;
+                // Get thumbnail (first BEFORE or AFTER image)
+                const images = mediaMap[t.id] || [];
+                const thumbnail = images.find(m => m.type === 'BEFORE_IMAGE') || images[0];
+                const thumbHtml = thumbnail
+                    ? `<img src="${thumbnail.url}" class="w-12 h-12 object-cover rounded-lg border border-gray-200" alt="Thumbnail">`
+                    : `<div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200"><i class="fas fa-image text-gray-400"></i></div>`;
+
+                // Status badge with Thai labels
+                const statusMap = {
+                    'OPEN': { label: 'รอรับงาน', color: 'bg-red-100 text-red-700 border-red-200' },
+                    'IN_PROGRESS': { label: 'กำลังซ่อม', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+                    'PENDING_INSPECTION': { label: 'รอตรวจสอบ', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+                    'CLOSED': { label: 'เสร็จสิ้น', color: 'bg-green-100 text-green-700 border-green-200' }
+                };
+                const statusInfo = statusMap[t.status] || { label: t.status, color: 'bg-gray-100 text-gray-700' };
+                const badge = `<span class="${statusInfo.color} px-3 py-1.5 rounded-lg text-xs font-bold border inline-flex items-center gap-1">${statusInfo.label}</span>`;
+
+                // Priority badge
+                const priority = t.priority || 'ปกติ';
+                const priorityColors = {
+                    'ปกติ': 'bg-gray-100 text-gray-600 border-gray-200',
+                    'ด่วน': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+                    'ด่วนที่สุด': 'bg-red-100 text-red-700 border-red-200'
+                };
+                const priorityBadge = `<span class="${priorityColors[priority] || priorityColors['ปกติ']} px-2 py-0.5 rounded text-[10px] font-bold border">${priority}</span>`;
+
+                const btn = `<button onclick="openDetailModal('${t.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1.5">
+                    <i class="fas fa-eye"></i> ดูรายละเอียด
+                </button>`;
+
+                tbody.innerHTML += `<tr class="bg-white border-b hover:bg-blue-50/50 transition-all cursor-pointer group" onclick="openDetailModal('${t.id}')">
+                    <td class="px-6 py-4 pl-8">
+                        <div class="flex flex-col gap-1">
+                            <span class="text-xs font-mono text-blue-600 font-bold">#${t.id.substring(0,8)}</span>
+                            ${priorityBadge}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">${thumbHtml}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${Utils.formatDate(t.incident_time)}</td>
+                    <td class="px-6 py-4 font-bold text-gray-700">${t.asset_name}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">${t.issue_text}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${t.requester_name}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${t.technician_name}</td>
+                    <td class="px-6 py-4 text-center">${badge}</td>
+                    <td class="px-6 py-4 pr-8 text-right" onclick="event.stopPropagation()">${btn}</td>
+                </tr>`;
+
+                mList.innerHTML += `<div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-3" onclick="openDetailModal('${t.id}')">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs font-mono bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-bold">#${t.id.substring(0,8)}</span>
+                        <div class="flex flex-col gap-1 items-end">
+                            ${badge}
+                            ${priorityBadge}
+                        </div>
+                    </div>
+                    ${thumbnail ? `<div class="mb-3">${thumbHtml}</div>` : ''}
+                    <div class="mb-4">
+                        <h4 class="font-bold text-gray-800 text-lg mb-1 leading-snug">${t.issue_text}</h4>
+                        <div class="flex items-center gap-1.5 text-sm text-indigo-600 font-bold">
+                            <i class="fas fa-industry"></i> ${t.asset_name}
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">ผู้แจ้ง: ${t.requester_name}</div>
+                    </div>
+                    <div class="flex items-center justify-between pt-3 border-t border-gray-50">
+                        <div class="text-[10px] text-gray-400">${Utils.formatDate(t.incident_time)}</div>
+                    </div>
+                </div>`;
             });
+        }
+
+        // Open Detail Modal
+        async function openDetailModal(ticketId) {
+            try {
+                const ticket = allTickets.find(t => t.id === ticketId);
+                if(!ticket) return;
+
+                currentTicketDetail = ticket;
+
+                // Fetch all images
+                const { data: mediaData } = await supabaseClient
+                    .from('media')
+                    .select('*')
+                    .eq('ticket_id', ticketId)
+                    .order('uploaded_at', { ascending: true });
+
+                // Update modal content
+                safeSetText('detailTitle', `รายละเอียดงานซ่อม #${ticketId.substring(0,8)}`);
+                safeSetText('detailJobId', `#${ticketId}`);
+                safeSetText('detailIncidentTime', Utils.formatDate(ticket.incident_time));
+                safeSetText('detailAssetName', ticket.asset_name);
+                safeSetText('detailLocation', ticket.location);
+                safeSetText('detailIssue', ticket.issue_text || '-');
+                safeSetText('detailDescription', ticket.description || '-');
+                safeSetText('detailRequester', ticket.requester_name);
+                safeSetText('detailTechnician', ticket.technician_name);
+
+                // Status Banner
+                const statusMap = {
+                    'OPEN': { label: 'รอรับงาน', color: 'bg-red-100 text-red-700 border-red-200' },
+                    'IN_PROGRESS': { label: 'กำลังซ่อม', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+                    'PENDING_INSPECTION': { label: 'รอตรวจสอบ', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+                    'CLOSED': { label: 'เสร็จสิ้น', color: 'bg-green-100 text-green-700 border-green-200' }
+                };
+                const statusInfo = statusMap[ticket.status] || { label: ticket.status, color: 'bg-gray-100 text-gray-700' };
+                const statusBanner = document.getElementById('detailStatusBanner');
+                statusBanner.innerHTML = `<div class="${statusInfo.color} px-4 py-3 rounded-xl border font-bold text-center">${statusInfo.label}</div>`;
+
+                // Repair Details
+                const repairSection = document.getElementById('repairDetailsSection');
+                if(ticket.repair_details) {
+                    repairSection.classList.remove('hidden');
+                    safeSetText('detailRepairDetails', ticket.repair_details);
+                    safeSetText('detailFinishedAt', ticket.finished_at ? `เสร็จสิ้นเมื่อ: ${Utils.formatDate(ticket.finished_at)}` : '');
+                } else {
+                    repairSection.classList.add('hidden');
+                }
+
+                // Images
+                const imagesSection = document.getElementById('imagesSection');
+                const imagesGrid = document.getElementById('detailImagesGrid');
+                if(mediaData && mediaData.length > 0) {
+                    imagesSection.classList.remove('hidden');
+                    imagesGrid.innerHTML = '';
+                    mediaData.forEach(m => {
+                        const typeLabel = m.type === 'BEFORE_IMAGE' ? 'ก่อนซ่อม' : 'หลังซ่อม';
+                        const typeBadge = m.type === 'BEFORE_IMAGE'
+                            ? 'bg-orange-100 text-orange-700 border-orange-200'
+                            : 'bg-green-100 text-green-700 border-green-200';
+                        imagesGrid.innerHTML += `
+                            <div class="relative group">
+                                <img src="${m.url}" class="w-full h-48 object-cover rounded-xl border-2 border-gray-200 group-hover:border-blue-400 transition cursor-pointer" onclick="window.open('${m.url}', '_blank')">
+                                <span class="${typeBadge} px-2 py-1 rounded-lg text-xs font-bold border absolute top-2 left-2">${typeLabel}</span>
+                            </div>
+                        `;
+                    });
+                } else {
+                    imagesSection.classList.add('hidden');
+                }
+
+                // Manager Actions (only for PENDING_INSPECTION)
+                const actionsSection = document.getElementById('managerActionsSection');
+                if(ticket.status === 'PENDING_INSPECTION') {
+                    actionsSection.classList.remove('hidden');
+                } else {
+                    actionsSection.classList.add('hidden');
+                }
+
+                // Show modal
+                document.getElementById('ticketDetailModal').classList.remove('hidden');
+
+            } catch(err) {
+                alert('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message);
+            }
+        }
+
+        function closeDetailModal() {
+            document.getElementById('ticketDetailModal').classList.add('hidden');
+            currentTicketDetail = null;
+        }
+
+        // Approve Ticket (Manager)
+        async function approveTicket() {
+            if(!currentTicketDetail) return;
+            if(!confirm('ยืนยันอนุมัติปิดงานนี้?')) return;
+
+            try {
+                const currentUser = Auth.getUser();
+                const { error } = await supabaseClient
+                    .from('tickets')
+                    .update({
+                        status: 'CLOSED',
+                        approved_by: currentUser?.id,
+                        approved_at: new Date().toISOString()
+                    })
+                    .eq('id', currentTicketDetail.id);
+
+                if(error) throw error;
+
+                alert('✅ อนุมัติปิดงานเรียบร้อยแล้ว');
+                closeDetailModal();
+                fetchData(); // Refresh data
+
+            } catch(err) {
+                alert('เกิดข้อผิดพลาด: ' + err.message);
+            }
+        }
+
+        // Open Reject Modal
+        function openRejectModal() {
+            document.getElementById('rejectReasonInput').value = '';
+            document.getElementById('rejectModal').classList.remove('hidden');
+        }
+
+        function closeRejectModal() {
+            document.getElementById('rejectModal').classList.add('hidden');
+        }
+
+        // Submit Rejection (Manager)
+        async function submitReject() {
+            if(!currentTicketDetail) return;
+
+            const reason = document.getElementById('rejectReasonInput').value.trim();
+            if(!reason) {
+                alert('⚠️ กรุณาระบุเหตุผลในการส่งกลับแก้ไข');
+                return;
+            }
+
+            try {
+                const currentUser = Auth.getUser();
+                const rejectNote = `\n\n[ผู้จัดการส่งกลับแก้ไข - ${new Date().toLocaleString('th-TH')}]\n${reason}\n(โดย: ${currentUser?.full_name || 'Manager'})`;
+
+                const { error } = await supabaseClient
+                    .from('tickets')
+                    .update({
+                        status: 'IN_PROGRESS',
+                        description: (currentTicketDetail.description || '') + rejectNote
+                    })
+                    .eq('id', currentTicketDetail.id);
+
+                if(error) throw error;
+
+                alert('✅ ส่งกลับแก้ไขเรียบร้อยแล้ว');
+                closeRejectModal();
+                closeDetailModal();
+                fetchData(); // Refresh data
+
+            } catch(err) {
+                alert('เกิดข้อผิดพลาด: ' + err.message);
+            }
+        }
+
+        // Print Job Sheet
+        function printJobSheet() {
+            if(!currentTicketDetail) return;
+            window.open(`print_job_sheet.html?id=${currentTicketDetail.id}`, '_blank');
         }
     </script>
 </body>
